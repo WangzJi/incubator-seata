@@ -44,7 +44,7 @@
         <module>compatible</module>
         <module>dependencies</module>
         <module>discovery</module>
-        <module>distribution</module>
+        <!--<module>distribution</module>--> <!-- excluded from source release -->
         <module>integration/rpc-core</module>
         <module>integration/dubbo</module>
         <module>integration/dubbo-alibaba</module>
@@ -60,9 +60,9 @@
         <module>rocketmq</module>
         <module>spring</module>
         <module>tcc</module>
-        <module>test</module>
+        <!--<module>test</module>--> <!-- excluded from source release -->
         <module>mock-server</module>
-        <module>test-old-version</module>
+        <!--<module>test-old-version</module>--> <!-- excluded from source release -->
         <module>tm</module>
         <module>metrics</module>
         <module>serializer</module>
@@ -392,7 +392,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-assembly-plugin</artifactId>
-                        <version>3.7.1</version>
                         <configuration>
                             <descriptors>
                                 <descriptor>src/assembly/source-release.xml</descriptor>
