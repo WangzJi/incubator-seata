@@ -386,11 +386,6 @@
         <!-- profile: source-release -->
         <profile>
             <id>source-release</id>
-            <activation>
-                <property>
-                    <name>source-release</name>
-                </property>
-            </activation>
             <modules>
                 <module>build</module>
                 <module>all</module>

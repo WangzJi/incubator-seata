@@ -47,5 +47,6 @@
         <exclude>**/dist/**</exclude>
         <exclude>**/public/saga-statemachine-designer/**</exclude>
       </excludes>
+    </fileSet>
   </fileSets>
 </assembly>
