@@ -382,7 +382,7 @@
                 </plugins>
             </build>
         </profile>
-        
+
         <!-- profile: source-release -->
         <profile>
             <id>source-release</id>
