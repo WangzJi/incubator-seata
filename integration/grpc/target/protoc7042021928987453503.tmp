@@ -1,0 +1,6 @@
+--proto_path=/Users/wang/idea/github/WangzJi/incubator-seata/integration/grpc/src/test/proto
+--proto_path=/Users/wang/idea/github/WangzJi/incubator-seata/integration/grpc/target/protoc-dependencies/2542433dc5453fd9b2f7213314983ca0
+--proto_path=/Users/wang/idea/github/WangzJi/incubator-seata/integration/grpc/target/protoc-dependencies/4852f37274fd14a80fbe5b694b2205ca
+--proto_path=/Users/wang/idea/github/WangzJi/incubator-seata/integration/grpc/target/classes
+--java_out=/Users/wang/idea/github/WangzJi/incubator-seata/integration/grpc/target/generated-test-sources/protobuf/java
+/Users/wang/idea/github/WangzJi/incubator-seata/integration/grpc/src/test/proto/contextTest.proto
