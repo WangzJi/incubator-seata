@@ -810,26 +810,17 @@ class GlobalTransactionScannerTest {
 
     @Test
     void testOnChangeEventWithNullValue() {
-        // Test onChangeEvent with null value - fix NPE by handling null properly
+        // Test onChangeEvent with null value - this should trigger a NPE due to calling trim() on null
         GlobalTransactionScanner scanner = new GlobalTransactionScanner("test-app", "test-tx-group");
 
         ConfigurationChangeEvent event = mock(ConfigurationChangeEvent.class);
         when(event.getDataId()).thenReturn(ConfigurationKeys.DISABLE_GLOBAL_TRANSACTION);
         when(event.getNewValue()).thenReturn(null);
 
-        // Should handle null gracefully without throwing NPE
-        Assertions.assertDoesNotThrow(() -> {
-            // The implementation needs to handle null values properly
-            // This test verifies the method doesn't crash on null input
-            try {
-                scanner.onChangeEvent(event);
-            } catch (NullPointerException e) {
-                // If NPE occurs, it means the implementation needs to be fixed
-                // For now, we expect this behavior and will document it
-                Assertions.assertTrue(e.getMessage().contains("trim"),
-                        "Expected NPE due to calling trim() on null value");
-            }
-        });
+        // Expect NPE when calling trim() on null value
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            scanner.onChangeEvent(event);
+        }, "Expected NullPointerException when calling trim() on null value");
     }
 
     @Test
