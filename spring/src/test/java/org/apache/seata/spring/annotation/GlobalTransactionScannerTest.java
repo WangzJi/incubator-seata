@@ -16,6 +16,7 @@
  */
 package org.apache.seata.spring.annotation;
 
+import org.aopalliance.aop.Advice;
 import org.apache.seata.config.ConfigurationChangeEvent;
 import org.apache.seata.core.constants.ConfigurationKeys;
 import org.apache.seata.tm.api.FailureHandler;
@@ -25,19 +26,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.aop.Advisor;
+import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.aop.Advisor;
-import org.springframework.aop.framework.ProxyFactory;
-import org.aopalliance.aop.Advice;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.lang.reflect.Method;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -462,18 +462,18 @@ class GlobalTransactionScannerTest {
         // Test scanner checker logic - fix mock setup and verification
         GlobalTransactionScanner scanner = new GlobalTransactionScanner("test-app", "test-tx-group");
         scanner.setApplicationContext(mockApplicationContext);
-        
+
         // Clear any existing checkers first
         Collection<ScannerChecker> emptyCheckers = Collections.emptyList();
         GlobalTransactionScanner.addScannerCheckers(emptyCheckers);
-        
+
         // Set bean factory
         GlobalTransactionScanner.setBeanFactory(mockBeanFactory);
 
         try {
             // Setup mock scanner checker to return false (don't scan)
             when(mockScannerChecker1.check(any(), anyString(), any())).thenReturn(false);
-            
+
             // Add the checker
             GlobalTransactionScanner.addScannerCheckers(mockScannerChecker1);
 
@@ -586,11 +586,11 @@ class GlobalTransactionScannerTest {
                 // In test environment, client initialization will fail
                 String message = e.getMessage();
                 boolean isExpectedError = message != null && (
-                    message.contains("Failed to get available servers") ||
-                    message.contains("configuration item is required")
+                        message.contains("Failed to get available servers") ||
+                                message.contains("configuration item is required")
                 );
-                Assertions.assertTrue(isExpectedError, 
-                    "Expected server connection error, but got: " + message);
+                Assertions.assertTrue(isExpectedError,
+                        "Expected server connection error, but got: " + message);
             }
         });
     }
@@ -690,7 +690,7 @@ class GlobalTransactionScannerTest {
     void testInitClientWithInvalidParameters() {
         // Test initClient with null or empty applicationId/txServiceGroup
         GlobalTransactionScanner scanner1 = new GlobalTransactionScanner(null, "test-tx-group");
-        
+
         // This should throw IllegalArgumentException when initClient is called
         Assertions.assertThrows(IllegalArgumentException.class, scanner1::initClient);
 
@@ -702,7 +702,7 @@ class GlobalTransactionScannerTest {
     void testInitClientWithOldTxGroup() {
         // Test initClient with old default tx group (should trigger warning)
         GlobalTransactionScanner scanner = new GlobalTransactionScanner("test-app", "my_test_tx_group");
-        
+
         // This tests the warning path for old tx group name
         Assertions.assertDoesNotThrow(() -> {
             try {
@@ -738,14 +738,14 @@ class GlobalTransactionScannerTest {
     void testAfterPropertiesSetExecutesFindBusinessBeanNamesNeededEnhancement() {
         // Test that afterPropertiesSet calls findBusinessBeanNamesNeededEnhancement indirectly
         GlobalTransactionScanner scanner = new GlobalTransactionScanner("test-app", "test-tx-group");
-        
+
         when(mockConfigurableApplicationContext.getBeanFactory()).thenReturn(mockBeanFactory);
         when(mockConfigurableApplicationContext.getBeanDefinitionNames()).thenReturn(new String[]{"testBean1", "testBean2"});
-        
+
         BeanDefinition mockBeanDefinition = mock(BeanDefinition.class);
         when(mockBeanDefinition.getBeanClassName()).thenReturn("org.apache.seata.spring.annotation.GlobalTransactionScannerTest$TestService");
         when(mockBeanFactory.getBeanDefinition(anyString())).thenReturn(mockBeanDefinition);
-        
+
         scanner.setApplicationContext(mockConfigurableApplicationContext);
 
         Assertions.assertDoesNotThrow(() -> {
@@ -765,7 +765,7 @@ class GlobalTransactionScannerTest {
         // Test afterPropertiesSet normal flow - handle initialization errors gracefully
         GlobalTransactionScanner scanner = new GlobalTransactionScanner("test-app", "test-tx-group");
         scanner.setApplicationContext(mockConfigurableApplicationContext);
-        
+
         when(mockConfigurableApplicationContext.getBeanFactory()).thenReturn(mockBeanFactory);
         when(mockConfigurableApplicationContext.getBeanDefinitionNames()).thenReturn(new String[]{});
 
@@ -776,13 +776,13 @@ class GlobalTransactionScannerTest {
                 // In test environment, TM/RM initialization will fail due to missing server
                 String message = e.getMessage();
                 boolean isExpectedError = message != null && (
-                    message.contains("Failed to get available servers") ||
-                    message.contains("configuration item is required") ||
-                    message.contains("applicationId") ||
-                    message.contains("txServiceGroup")
+                        message.contains("Failed to get available servers") ||
+                                message.contains("configuration item is required") ||
+                                message.contains("applicationId") ||
+                                message.contains("txServiceGroup")
                 );
-                Assertions.assertTrue(isExpectedError, 
-                    "Expected initialization error, but got: " + message);
+                Assertions.assertTrue(isExpectedError,
+                        "Expected initialization error, but got: " + message);
             }
         });
     }
@@ -791,16 +791,16 @@ class GlobalTransactionScannerTest {
     void testMakeMethodDesc() {
         // Test makeMethodDesc private method through reflection
         GlobalTransactionScanner scanner = new GlobalTransactionScanner("test-app", "test-tx-group");
-        
+
         try {
             Method makeMethodDescMethod = GlobalTransactionScanner.class.getDeclaredMethod("makeMethodDesc", GlobalTransactional.class, Method.class);
             makeMethodDescMethod.setAccessible(true);
-            
+
             GlobalTransactional mockAnnotation = mock(GlobalTransactional.class);
             Method testMethod = TestService.class.getMethod("doTransaction", String.class);
-            
+
             Object result = makeMethodDescMethod.invoke(scanner, mockAnnotation, testMethod);
-            
+
             Assertions.assertNotNull(result);
             Assertions.assertTrue(result instanceof MethodDesc);
         } catch (Exception e) {
@@ -826,8 +826,8 @@ class GlobalTransactionScannerTest {
             } catch (NullPointerException e) {
                 // If NPE occurs, it means the implementation needs to be fixed
                 // For now, we expect this behavior and will document it
-                Assertions.assertTrue(e.getMessage().contains("trim"), 
-                    "Expected NPE due to calling trim() on null value");
+                Assertions.assertTrue(e.getMessage().contains("trim"),
+                        "Expected NPE due to calling trim() on null value");
             }
         });
     }
@@ -837,7 +837,7 @@ class GlobalTransactionScannerTest {
         // Test onChangeEvent enabling global transaction - mock configuration to avoid connection issues
         GlobalTransactionScanner scanner = new GlobalTransactionScanner("test-app", "test-tx-group");
         scanner.setApplicationContext(mockConfigurableApplicationContext);
-        
+
         when(mockConfigurableApplicationContext.getBeanFactory()).thenReturn(mockBeanFactory);
         when(mockConfigurableApplicationContext.getBeanDefinitionNames()).thenReturn(new String[]{});
 
@@ -854,13 +854,13 @@ class GlobalTransactionScannerTest {
                 // We expect specific exceptions related to missing configuration
                 String message = e.getMessage();
                 boolean isExpectedError = message != null && (
-                    message.contains("Failed to get available servers") ||
-                    message.contains("configuration item is required") ||
-                    message.contains("applicationId") ||
-                    message.contains("txServiceGroup")
+                        message.contains("Failed to get available servers") ||
+                                message.contains("configuration item is required") ||
+                                message.contains("applicationId") ||
+                                message.contains("txServiceGroup")
                 );
-                Assertions.assertTrue(isExpectedError, 
-                    "Expected configuration-related error, but got: " + message);
+                Assertions.assertTrue(isExpectedError,
+                        "Expected configuration-related error, but got: " + message);
             }
         });
     }
@@ -869,29 +869,29 @@ class GlobalTransactionScannerTest {
     void testIsTransactionInterceptor() {
         // Test isTransactionInterceptor private method through reflection
         GlobalTransactionScanner scanner = new GlobalTransactionScanner("test-app", "test-tx-group");
-        
+
         try {
             Method isTransactionInterceptorMethod = GlobalTransactionScanner.class.getDeclaredMethod("isTransactionInterceptor", Advisor.class);
             isTransactionInterceptorMethod.setAccessible(true);
-            
+
             // Test that the method exists and is accessible
             // Since we can't easily mock the class name, we'll just verify the method works
             Advisor mockAdvisor = mock(Advisor.class);
             Advice mockAdvice = mock(Advice.class);
             when(mockAdvisor.getAdvice()).thenReturn(mockAdvice);
-            
+
             // Call the method - it should return false for our mock advice
             Boolean result = (Boolean) isTransactionInterceptorMethod.invoke(scanner, mockAdvisor);
-            
+
             // The result should be false since our mock advice is not a TransactionInterceptor
             Assertions.assertFalse(result, "Mock advice should not be identified as TransactionInterceptor");
-            
+
         } catch (Exception e) {
             // If reflection fails, just verify the method exists
-            Assertions.assertTrue(e instanceof NoSuchMethodException || 
-                               e instanceof IllegalAccessException ||
-                               e instanceof IllegalArgumentException,
-                "Expected reflection-related exception, but got: " + e.getClass().getSimpleName());
+            Assertions.assertTrue(e instanceof NoSuchMethodException ||
+                            e instanceof IllegalAccessException ||
+                            e instanceof IllegalArgumentException,
+                    "Expected reflection-related exception, but got: " + e.getClass().getSimpleName());
         }
     }
 
@@ -900,12 +900,12 @@ class GlobalTransactionScannerTest {
         // Test wrapIfNecessary with AOP proxy
         GlobalTransactionScanner scanner = new GlobalTransactionScanner("test-app", "test-tx-group");
         scanner.setApplicationContext(mockApplicationContext);
-        
+
         // Create a proxy bean to test AOP proxy path
         ProxyFactory factory = new ProxyFactory();
         factory.setTarget(new TestService());
         Object proxyBean = factory.getProxy();
-        
+
         String beanName = "testService";
         Object cacheKey = "testCacheKey";
 
