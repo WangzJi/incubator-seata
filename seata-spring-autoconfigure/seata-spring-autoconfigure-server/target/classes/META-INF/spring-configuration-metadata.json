@@ -1,0 +1,630 @@
+{
+  "groups": [
+    {
+      "name": "seata.metrics",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.MetricsProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.MetricsProperties"
+    },
+    {
+      "name": "seata.server",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerProperties"
+    },
+    {
+      "name": "seata.server.raft",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftProperties"
+    },
+    {
+      "name": "seata.server.raft.ssl",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftSSLProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftSSLProperties"
+    },
+    {
+      "name": "seata.server.raft.ssl.client.keystore",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftSSLClientProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftSSLClientProperties"
+    },
+    {
+      "name": "seata.server.raft.ssl.server.keystore",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftSSLServerProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftSSLServerProperties"
+    },
+    {
+      "name": "seata.server.ratelimit",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerRateLimitProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerRateLimitProperties"
+    },
+    {
+      "name": "seata.server.recovery",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerRecoveryProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerRecoveryProperties"
+    },
+    {
+      "name": "seata.server.session",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.session.SessionProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.session.SessionProperties"
+    },
+    {
+      "name": "seata.server.undo",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerUndoProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerUndoProperties"
+    },
+    {
+      "name": "seata.store",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreProperties"
+    },
+    {
+      "name": "seata.store.db",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreDBProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreDBProperties"
+    },
+    {
+      "name": "seata.store.db.dbcp",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.DbcpProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.DbcpProperties"
+    },
+    {
+      "name": "seata.store.db.druid",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.DruidProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.DruidProperties"
+    },
+    {
+      "name": "seata.store.db.hikari",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.HikariProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.HikariProperties"
+    },
+    {
+      "name": "seata.store.file",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreFileProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreFileProperties"
+    },
+    {
+      "name": "seata.store.lock",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreProperties$Lock",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreProperties$Lock"
+    },
+    {
+      "name": "seata.store.redis",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties"
+    },
+    {
+      "name": "seata.store.redis.sentinel",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties$Sentinel",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties$Sentinel"
+    },
+    {
+      "name": "seata.store.redis.single",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties$Single",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties$Single"
+    },
+    {
+      "name": "seata.store.session",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreProperties$Session",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreProperties$Session"
+    }
+  ],
+  "properties": [
+    {
+      "name": "seata.metrics.enabled",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.MetricsProperties"
+    },
+    {
+      "name": "seata.metrics.exporter-list",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.MetricsProperties"
+    },
+    {
+      "name": "seata.metrics.exporter-prometheus-port",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.MetricsProperties"
+    },
+    {
+      "name": "seata.metrics.registry-type",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.MetricsProperties"
+    },
+    {
+      "name": "seata.server.application-data-limit",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerProperties"
+    },
+    {
+      "name": "seata.server.application-data-limit-check",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerProperties"
+    },
+    {
+      "name": "seata.server.enable-check-auth",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerProperties"
+    },
+    {
+      "name": "seata.server.enable-parallel-handle-branch",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerProperties"
+    },
+    {
+      "name": "seata.server.enable-parallel-request-handle",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerProperties"
+    },
+    {
+      "name": "seata.server.max-commit-retry-timeout",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerProperties"
+    },
+    {
+      "name": "seata.server.max-end-status-retry-timeout",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerProperties"
+    },
+    {
+      "name": "seata.server.max-rollback-retry-timeout",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerProperties"
+    },
+    {
+      "name": "seata.server.raft.apply-batch",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftProperties"
+    },
+    {
+      "name": "seata.server.raft.auto-join",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftProperties"
+    },
+    {
+      "name": "seata.server.raft.compressor",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftProperties"
+    },
+    {
+      "name": "seata.server.raft.disruptor-buffer-size",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftProperties"
+    },
+    {
+      "name": "seata.server.raft.election-timeout-ms",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftProperties"
+    },
+    {
+      "name": "seata.server.raft.group",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftProperties"
+    },
+    {
+      "name": "seata.server.raft.max-append-buffer-size",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftProperties"
+    },
+    {
+      "name": "seata.server.raft.max-replicator-inflight-msgs",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftProperties"
+    },
+    {
+      "name": "seata.server.raft.reporter-enabled",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftProperties"
+    },
+    {
+      "name": "seata.server.raft.reporter-initial-delay",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftProperties"
+    },
+    {
+      "name": "seata.server.raft.serialization",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftProperties"
+    },
+    {
+      "name": "seata.server.raft.server-addr",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftProperties"
+    },
+    {
+      "name": "seata.server.raft.snapshot-interval",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftProperties"
+    },
+    {
+      "name": "seata.server.raft.ssl.client.keystore.password",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftSSLClientProperties"
+    },
+    {
+      "name": "seata.server.raft.ssl.client.keystore.path",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftSSLClientProperties"
+    },
+    {
+      "name": "seata.server.raft.ssl.client.keystore.type",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftSSLClientProperties"
+    },
+    {
+      "name": "seata.server.raft.ssl.enabled",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftSSLProperties"
+    },
+    {
+      "name": "seata.server.raft.ssl.kmf-algorithm",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftSSLProperties"
+    },
+    {
+      "name": "seata.server.raft.ssl.server.keystore.password",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftSSLServerProperties"
+    },
+    {
+      "name": "seata.server.raft.ssl.server.keystore.path",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftSSLServerProperties"
+    },
+    {
+      "name": "seata.server.raft.ssl.server.keystore.type",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftSSLServerProperties"
+    },
+    {
+      "name": "seata.server.raft.ssl.tmf-algorithm",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftSSLProperties"
+    },
+    {
+      "name": "seata.server.raft.sync",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.raft.ServerRaftProperties"
+    },
+    {
+      "name": "seata.server.ratelimit.bucket-token-initial-time",
+      "type": "java.lang.Integer",
+      "description": "limit token initial number of bucket",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerRateLimitProperties"
+    },
+    {
+      "name": "seata.server.ratelimit.bucket-token-max-num",
+      "type": "java.lang.Integer",
+      "description": "limit token max number of bucket",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerRateLimitProperties"
+    },
+    {
+      "name": "seata.server.ratelimit.bucket-token-num-per-second",
+      "type": "java.lang.Integer",
+      "description": "limit token number of bucket per second",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerRateLimitProperties"
+    },
+    {
+      "name": "seata.server.ratelimit.enable",
+      "type": "java.lang.Boolean",
+      "description": "whether enable server rate limit",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerRateLimitProperties"
+    },
+    {
+      "name": "seata.server.recovery.async-committing-retry-period",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerRecoveryProperties"
+    },
+    {
+      "name": "seata.server.recovery.committing-retry-period",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerRecoveryProperties"
+    },
+    {
+      "name": "seata.server.recovery.rollbacking-retry-period",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerRecoveryProperties"
+    },
+    {
+      "name": "seata.server.recovery.timeout-retry-period",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerRecoveryProperties"
+    },
+    {
+      "name": "seata.server.retry-dead-threshold",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerProperties"
+    },
+    {
+      "name": "seata.server.rollback-retry-timeout-unlock-enable",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerProperties"
+    },
+    {
+      "name": "seata.server.service-port",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerProperties"
+    },
+    {
+      "name": "seata.server.session.branch-async-queue-size",
+      "type": "java.lang.Integer",
+      "description": "branch async remove queue size",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.session.SessionProperties"
+    },
+    {
+      "name": "seata.server.session.enable-branch-async",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.session.SessionProperties"
+    },
+    {
+      "name": "seata.server.undo.log-delete-period",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerUndoProperties"
+    },
+    {
+      "name": "seata.server.undo.log-save-days",
+      "type": "java.lang.Short",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerUndoProperties"
+    },
+    {
+      "name": "seata.server.xaer-nota-retry-timeout",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.ServerProperties"
+    },
+    {
+      "name": "seata.store.db.branch-table",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreDBProperties"
+    },
+    {
+      "name": "seata.store.db.datasource",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreDBProperties"
+    },
+    {
+      "name": "seata.store.db.db-type",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreDBProperties"
+    },
+    {
+      "name": "seata.store.db.dbcp.min-evictable-idle-time-millis",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.DbcpProperties"
+    },
+    {
+      "name": "seata.store.db.dbcp.test-on-borrow",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.DbcpProperties"
+    },
+    {
+      "name": "seata.store.db.dbcp.test-while-idle",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.DbcpProperties"
+    },
+    {
+      "name": "seata.store.db.dbcp.time-between-eviction-runs-millis",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.DbcpProperties"
+    },
+    {
+      "name": "seata.store.db.distributed-lock-table",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreDBProperties"
+    },
+    {
+      "name": "seata.store.db.driver-class-name",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreDBProperties"
+    },
+    {
+      "name": "seata.store.db.druid.keep-alive",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.DruidProperties"
+    },
+    {
+      "name": "seata.store.db.druid.min-evictable-idle-time-millis",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.DruidProperties"
+    },
+    {
+      "name": "seata.store.db.druid.test-on-borrow",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.DruidProperties"
+    },
+    {
+      "name": "seata.store.db.druid.test-while-idle",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.DruidProperties"
+    },
+    {
+      "name": "seata.store.db.druid.time-between-eviction-runs-millis",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.DruidProperties"
+    },
+    {
+      "name": "seata.store.db.global-table",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreDBProperties"
+    },
+    {
+      "name": "seata.store.db.hikari.idle-timeout",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.HikariProperties"
+    },
+    {
+      "name": "seata.store.db.hikari.keepalive-time",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.HikariProperties"
+    },
+    {
+      "name": "seata.store.db.hikari.max-lifetime",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.HikariProperties"
+    },
+    {
+      "name": "seata.store.db.hikari.validation-timeout",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.HikariProperties"
+    },
+    {
+      "name": "seata.store.db.lock-table",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreDBProperties"
+    },
+    {
+      "name": "seata.store.db.max-conn",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreDBProperties"
+    },
+    {
+      "name": "seata.store.db.max-wait",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreDBProperties"
+    },
+    {
+      "name": "seata.store.db.min-conn",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreDBProperties"
+    },
+    {
+      "name": "seata.store.db.password",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreDBProperties"
+    },
+    {
+      "name": "seata.store.db.query-limit",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreDBProperties"
+    },
+    {
+      "name": "seata.store.db.url",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreDBProperties"
+    },
+    {
+      "name": "seata.store.db.user",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreDBProperties"
+    },
+    {
+      "name": "seata.store.db.vgroup-table",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreDBProperties"
+    },
+    {
+      "name": "seata.store.file.dir",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreFileProperties"
+    },
+    {
+      "name": "seata.store.file.file-write-buffer-cache-size",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreFileProperties"
+    },
+    {
+      "name": "seata.store.file.flush-disk-mode",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreFileProperties"
+    },
+    {
+      "name": "seata.store.file.max-branch-session-size",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreFileProperties"
+    },
+    {
+      "name": "seata.store.file.max-global-session-size",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreFileProperties"
+    },
+    {
+      "name": "seata.store.file.session-reload-read-size",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreFileProperties"
+    },
+    {
+      "name": "seata.store.lock.mode",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreProperties$Lock"
+    },
+    {
+      "name": "seata.store.mode",
+      "type": "java.lang.String",
+      "description": "file, db, redis",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreProperties"
+    },
+    {
+      "name": "seata.store.public-key",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreProperties"
+    },
+    {
+      "name": "seata.store.redis.database",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties"
+    },
+    {
+      "name": "seata.store.redis.max-conn",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties"
+    },
+    {
+      "name": "seata.store.redis.max-total",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties"
+    },
+    {
+      "name": "seata.store.redis.min-conn",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties"
+    },
+    {
+      "name": "seata.store.redis.mode",
+      "type": "java.lang.String",
+      "description": "single, sentinel",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties"
+    },
+    {
+      "name": "seata.store.redis.password",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties"
+    },
+    {
+      "name": "seata.store.redis.query-limit",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties"
+    },
+    {
+      "name": "seata.store.redis.sentinel.master-name",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties$Sentinel"
+    },
+    {
+      "name": "seata.store.redis.sentinel.sentinel-hosts",
+      "type": "java.lang.String",
+      "description": "such as \"10.28.235.65:26379,10.28.235.65:26380,10.28.235.65:26381\"",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties$Sentinel"
+    },
+    {
+      "name": "seata.store.redis.sentinel.sentinel-password",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties$Sentinel"
+    },
+    {
+      "name": "seata.store.redis.single.host",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties$Single"
+    },
+    {
+      "name": "seata.store.redis.single.port",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties$Single"
+    },
+    {
+      "name": "seata.store.redis.type",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreRedisProperties"
+    },
+    {
+      "name": "seata.store.session.mode",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.server.store.StoreProperties$Session"
+    }
+  ],
+  "hints": []
+}

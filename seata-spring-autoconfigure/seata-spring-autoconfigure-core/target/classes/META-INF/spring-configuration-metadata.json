@@ -1,0 +1,725 @@
+{
+  "groups": [
+    {
+      "name": "seata.config",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigProperties"
+    },
+    {
+      "name": "seata.config.apollo",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigApolloProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigApolloProperties"
+    },
+    {
+      "name": "seata.config.consul",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigConsulProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigConsulProperties"
+    },
+    {
+      "name": "seata.config.custom",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigCustomProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigCustomProperties"
+    },
+    {
+      "name": "seata.config.etcd3",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigEtcd3Properties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigEtcd3Properties"
+    },
+    {
+      "name": "seata.config.file",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigFileProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigFileProperties"
+    },
+    {
+      "name": "seata.config.nacos",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigNacosProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigNacosProperties"
+    },
+    {
+      "name": "seata.config.zk",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigZooKeeperProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigZooKeeperProperties"
+    },
+    {
+      "name": "seata.log",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.LogProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.LogProperties"
+    },
+    {
+      "name": "seata.registry",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryProperties"
+    },
+    {
+      "name": "seata.registry.consul",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryConsulProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryConsulProperties"
+    },
+    {
+      "name": "seata.registry.custom",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryCustomProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryCustomProperties"
+    },
+    {
+      "name": "seata.registry.etcd3",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryEtcd3Properties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryEtcd3Properties"
+    },
+    {
+      "name": "seata.registry.eureka",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryEurekaProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryEurekaProperties"
+    },
+    {
+      "name": "seata.registry.metadata",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryMetadataProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryMetadataProperties"
+    },
+    {
+      "name": "seata.registry.nacos",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNacosProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNacosProperties"
+    },
+    {
+      "name": "seata.registry.raft",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryRaftProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryRaftProperties"
+    },
+    {
+      "name": "seata.registry.redis",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryRedisProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryRedisProperties"
+    },
+    {
+      "name": "seata.registry.seata",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNamingServerProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNamingServerProperties"
+    },
+    {
+      "name": "seata.registry.sofa",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistrySofaProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistrySofaProperties"
+    },
+    {
+      "name": "seata.registry.zk",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryZooKeeperProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryZooKeeperProperties"
+    },
+    {
+      "name": "seata.transport",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.shutdown",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.ShutdownProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.ShutdownProperties"
+    },
+    {
+      "name": "seata.transport.thread-factory",
+      "type": "org.apache.seata.spring.boot.autoconfigure.properties.ThreadFactoryProperties",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.ThreadFactoryProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "seata.config.apollo.apollo-access-key-secret",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigApolloProperties"
+    },
+    {
+      "name": "seata.config.apollo.apollo-config-service",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigApolloProperties"
+    },
+    {
+      "name": "seata.config.apollo.apollo-meta",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigApolloProperties"
+    },
+    {
+      "name": "seata.config.apollo.app-id",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigApolloProperties"
+    },
+    {
+      "name": "seata.config.apollo.cluster",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigApolloProperties"
+    },
+    {
+      "name": "seata.config.apollo.namespace",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigApolloProperties"
+    },
+    {
+      "name": "seata.config.consul.acl-token",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigConsulProperties"
+    },
+    {
+      "name": "seata.config.consul.key",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigConsulProperties"
+    },
+    {
+      "name": "seata.config.consul.server-addr",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigConsulProperties"
+    },
+    {
+      "name": "seata.config.custom.name",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigCustomProperties"
+    },
+    {
+      "name": "seata.config.data-type",
+      "type": "java.lang.String",
+      "description": "properties,yaml(only type in nacos, zk, consul, etcd3)",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigProperties"
+    },
+    {
+      "name": "seata.config.etcd3.key",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigEtcd3Properties"
+    },
+    {
+      "name": "seata.config.etcd3.server-addr",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigEtcd3Properties"
+    },
+    {
+      "name": "seata.config.file.name",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigFileProperties"
+    },
+    {
+      "name": "seata.config.nacos.access-key",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigNacosProperties"
+    },
+    {
+      "name": "seata.config.nacos.context-path",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigNacosProperties"
+    },
+    {
+      "name": "seata.config.nacos.data-id",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigNacosProperties"
+    },
+    {
+      "name": "seata.config.nacos.group",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigNacosProperties"
+    },
+    {
+      "name": "seata.config.nacos.namespace",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigNacosProperties"
+    },
+    {
+      "name": "seata.config.nacos.password",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigNacosProperties"
+    },
+    {
+      "name": "seata.config.nacos.ram-role-name",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigNacosProperties"
+    },
+    {
+      "name": "seata.config.nacos.secret-key",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigNacosProperties"
+    },
+    {
+      "name": "seata.config.nacos.server-addr",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigNacosProperties"
+    },
+    {
+      "name": "seata.config.nacos.username",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigNacosProperties"
+    },
+    {
+      "name": "seata.config.type",
+      "type": "java.lang.String",
+      "description": "file, nacos, apollo, zk, consul, etcd3, springCloudConfig",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigProperties"
+    },
+    {
+      "name": "seata.config.zk.connect-timeout",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigZooKeeperProperties"
+    },
+    {
+      "name": "seata.config.zk.node-path",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigZooKeeperProperties"
+    },
+    {
+      "name": "seata.config.zk.password",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigZooKeeperProperties"
+    },
+    {
+      "name": "seata.config.zk.server-addr",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigZooKeeperProperties"
+    },
+    {
+      "name": "seata.config.zk.username",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.config.ConfigZooKeeperProperties"
+    },
+    {
+      "name": "seata.log.exception-rate",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.LogProperties"
+    },
+    {
+      "name": "seata.registry.consul.acl-token",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryConsulProperties"
+    },
+    {
+      "name": "seata.registry.consul.cluster",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryConsulProperties"
+    },
+    {
+      "name": "seata.registry.consul.server-addr",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryConsulProperties"
+    },
+    {
+      "name": "seata.registry.custom.name",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryCustomProperties"
+    },
+    {
+      "name": "seata.registry.etcd3.cluster",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryEtcd3Properties"
+    },
+    {
+      "name": "seata.registry.etcd3.server-addr",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryEtcd3Properties"
+    },
+    {
+      "name": "seata.registry.eureka.application",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryEurekaProperties"
+    },
+    {
+      "name": "seata.registry.eureka.service-url",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryEurekaProperties"
+    },
+    {
+      "name": "seata.registry.eureka.weight",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryEurekaProperties"
+    },
+    {
+      "name": "seata.registry.metadata.external",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryMetadataProperties"
+    },
+    {
+      "name": "seata.registry.nacos.access-key",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNacosProperties"
+    },
+    {
+      "name": "seata.registry.nacos.application",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNacosProperties"
+    },
+    {
+      "name": "seata.registry.nacos.client-application",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNacosProperties"
+    },
+    {
+      "name": "seata.registry.nacos.cluster",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNacosProperties"
+    },
+    {
+      "name": "seata.registry.nacos.context-path",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNacosProperties"
+    },
+    {
+      "name": "seata.registry.nacos.group",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNacosProperties"
+    },
+    {
+      "name": "seata.registry.nacos.namespace",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNacosProperties"
+    },
+    {
+      "name": "seata.registry.nacos.password",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNacosProperties"
+    },
+    {
+      "name": "seata.registry.nacos.ram-role-name",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNacosProperties"
+    },
+    {
+      "name": "seata.registry.nacos.secret-key",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNacosProperties"
+    },
+    {
+      "name": "seata.registry.nacos.server-addr",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNacosProperties"
+    },
+    {
+      "name": "seata.registry.nacos.slb-pattern",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNacosProperties"
+    },
+    {
+      "name": "seata.registry.nacos.username",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNacosProperties"
+    },
+    {
+      "name": "seata.registry.preferred-networks",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryProperties"
+    },
+    {
+      "name": "seata.registry.raft.metadata-max-age-ms",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryRaftProperties"
+    },
+    {
+      "name": "seata.registry.raft.password",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryRaftProperties"
+    },
+    {
+      "name": "seata.registry.raft.server-addr",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryRaftProperties"
+    },
+    {
+      "name": "seata.registry.raft.token-validity-in-milliseconds",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryRaftProperties"
+    },
+    {
+      "name": "seata.registry.raft.username",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryRaftProperties"
+    },
+    {
+      "name": "seata.registry.redis.cluster",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryRedisProperties"
+    },
+    {
+      "name": "seata.registry.redis.db",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryRedisProperties"
+    },
+    {
+      "name": "seata.registry.redis.password",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryRedisProperties"
+    },
+    {
+      "name": "seata.registry.redis.server-addr",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryRedisProperties"
+    },
+    {
+      "name": "seata.registry.redis.timeout",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryRedisProperties"
+    },
+    {
+      "name": "seata.registry.seata.cluster",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNamingServerProperties"
+    },
+    {
+      "name": "seata.registry.seata.heartbeat-period",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNamingServerProperties"
+    },
+    {
+      "name": "seata.registry.seata.metadata-max-age-ms",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNamingServerProperties"
+    },
+    {
+      "name": "seata.registry.seata.namespace",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNamingServerProperties"
+    },
+    {
+      "name": "seata.registry.seata.password",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNamingServerProperties"
+    },
+    {
+      "name": "seata.registry.seata.server-addr",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNamingServerProperties"
+    },
+    {
+      "name": "seata.registry.seata.token-validity-in-milliseconds",
+      "type": "java.lang.Long",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNamingServerProperties"
+    },
+    {
+      "name": "seata.registry.seata.username",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryNamingServerProperties"
+    },
+    {
+      "name": "seata.registry.sofa.address-wait-time",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistrySofaProperties"
+    },
+    {
+      "name": "seata.registry.sofa.application",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistrySofaProperties"
+    },
+    {
+      "name": "seata.registry.sofa.cluster",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistrySofaProperties"
+    },
+    {
+      "name": "seata.registry.sofa.datacenter",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistrySofaProperties"
+    },
+    {
+      "name": "seata.registry.sofa.group",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistrySofaProperties"
+    },
+    {
+      "name": "seata.registry.sofa.region",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistrySofaProperties"
+    },
+    {
+      "name": "seata.registry.sofa.server-addr",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistrySofaProperties"
+    },
+    {
+      "name": "seata.registry.type",
+      "type": "java.lang.String",
+      "description": "file, nacos, eureka, redis, zk, consul, etcd3, sofa",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryProperties"
+    },
+    {
+      "name": "seata.registry.zk.cluster",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryZooKeeperProperties"
+    },
+    {
+      "name": "seata.registry.zk.connect-timeout",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryZooKeeperProperties"
+    },
+    {
+      "name": "seata.registry.zk.password",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryZooKeeperProperties"
+    },
+    {
+      "name": "seata.registry.zk.server-addr",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryZooKeeperProperties"
+    },
+    {
+      "name": "seata.registry.zk.session-timeout",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryZooKeeperProperties"
+    },
+    {
+      "name": "seata.registry.zk.username",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.registry.RegistryZooKeeperProperties"
+    },
+    {
+      "name": "seata.transport.compressor",
+      "type": "java.lang.String",
+      "description": "compressor",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.enable-client-batch-send-request",
+      "type": "java.lang.Boolean",
+      "description": "enable client batch send request",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.enable-client-shared-event-loop",
+      "type": "java.lang.Boolean",
+      "description": "use shared event loop group",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.enable-rm-client-batch-send-request",
+      "type": "java.lang.Boolean",
+      "description": "enable RM client batch send request",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.enable-tc-server-batch-send-response",
+      "type": "java.lang.Boolean",
+      "description": "enable TC server batch send response",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.enable-tm-client-batch-send-request",
+      "type": "java.lang.Boolean",
+      "description": "enable TM client batch send request",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.heartbeat",
+      "type": "java.lang.Boolean",
+      "description": "enable heartbeat",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.http-pool-keep-alive-time",
+      "type": "java.lang.Integer",
+      "description": "HTTP pool keep alive time",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.max-http-pool-size",
+      "type": "java.lang.Integer",
+      "description": "maximum HTTP pool size",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.max-http-task-queue-size",
+      "type": "java.lang.Integer",
+      "description": "maximum HTTP task queue size",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.min-http-pool-size",
+      "type": "java.lang.Integer",
+      "description": "minimum HTTP pool size",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.protocol",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.rpc-rm-request-timeout",
+      "type": "java.lang.Long",
+      "description": "rpcRmRequestTimeout",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.rpc-tc-request-timeout",
+      "type": "java.lang.Long",
+      "description": "rpcTcRequestTimeout",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.rpc-tm-request-timeout",
+      "type": "java.lang.Long",
+      "description": "rpcRmRequestTimeout",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.serialization",
+      "type": "java.lang.String",
+      "description": "serialization",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.server",
+      "type": "java.lang.String",
+      "description": "NIO, NATIVE",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    },
+    {
+      "name": "seata.transport.shutdown.wait",
+      "type": "java.lang.Integer",
+      "description": "when destroy server, wait seconds",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.ShutdownProperties"
+    },
+    {
+      "name": "seata.transport.thread-factory.boss-thread-prefix",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.ThreadFactoryProperties"
+    },
+    {
+      "name": "seata.transport.thread-factory.boss-thread-size",
+      "type": "java.lang.Integer",
+      "description": "netty boss thread size",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.ThreadFactoryProperties"
+    },
+    {
+      "name": "seata.transport.thread-factory.client-selector-thread-prefix",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.ThreadFactoryProperties"
+    },
+    {
+      "name": "seata.transport.thread-factory.client-selector-thread-size",
+      "type": "java.lang.Integer",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.ThreadFactoryProperties"
+    },
+    {
+      "name": "seata.transport.thread-factory.client-worker-thread-prefix",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.ThreadFactoryProperties"
+    },
+    {
+      "name": "seata.transport.thread-factory.server-executor-thread-prefix",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.ThreadFactoryProperties"
+    },
+    {
+      "name": "seata.transport.thread-factory.share-boss-worker",
+      "type": "java.lang.Boolean",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.ThreadFactoryProperties"
+    },
+    {
+      "name": "seata.transport.thread-factory.worker-thread-prefix",
+      "type": "java.lang.String",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.ThreadFactoryProperties"
+    },
+    {
+      "name": "seata.transport.thread-factory.worker-thread-size",
+      "type": "java.lang.String",
+      "description": "auto default pin or 8",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.ThreadFactoryProperties"
+    },
+    {
+      "name": "seata.transport.type",
+      "type": "java.lang.String",
+      "description": "tcp, unix-domain-socket",
+      "sourceType": "org.apache.seata.spring.boot.autoconfigure.properties.TransportProperties"
+    }
+  ],
+  "hints": []
+}
