@@ -159,14 +159,14 @@
                                     <includeOptional>false</includeOptional>
                                     <useMissingFile>false</useMissingFile>
                                     <failOnMissing>false</failOnMissing>
+                                    <excludedScopes>test</excludedScopes>
+                                    <thirdPartyFilename>NOTICE-${project.artifactId}</thirdPartyFilename>
+                                    <fileTemplate>${session.executionRootDirectory}/distribution/NOTICE-template.ftl</fileTemplate>
+                                    <outputDirectory>${session.executionRootDirectory}/distribution/licenses</outputDirectory>
                                     <licenseMerges>
-                                        <licenseMerge>Apache License, Version 2.0|The Apache Software License, Version
-                                            2.0|ASF 2.0|Apache 2|Apache-2.0|Apache 2.0 License|Apache 2.0|Apache License v2.0|Apache License 2.0|The Apache License, Version 2.0|The Apache Software License, Version 2.0
-                                        </licenseMerge>
+                                        <licenseMerge>Apache License, Version 2.0|The Apache Software License, Version 2.0|ASF 2.0|Apache 2|Apache-2.0|Apache 2.0 License|Apache License v2.0|Apache License 2.0|The Apache License, Version 2.0</licenseMerge>
                                         <licenseMerge>The MIT License|MIT License</licenseMerge>
-                                        <licenseMerge>The 3-Clause BSD License|New BSD License|3-Clause BSD
-                                            License|BSD|3-Clause BSD License|The New BSD License
-                                        </licenseMerge>
+                                        <licenseMerge>The 3-Clause BSD License|New BSD License|BSD|The New BSD License</licenseMerge>
                                     </licenseMerges>
                                 </configuration>
                             </execution>
@@ -313,6 +313,7 @@
                 </plugins>
             </build>
         </profile>
+
         <!-- profile: spotless -->
         <profile>
             <id>jdk9-jdk11-spotless</id>

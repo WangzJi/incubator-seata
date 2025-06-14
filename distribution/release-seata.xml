@@ -48,14 +48,14 @@
             <includes>
                 <include>licenses/*</include>
             </includes>
-            <outputDirectory>seata-namingserver/</outputDirectory>
+            <outputDirectory>seata-namingserver/licenses/</outputDirectory>
         </fileSet>
 
         <fileSet>
             <includes>
                 <include>licenses/*</include>
             </includes>
-            <outputDirectory>seata-server/</outputDirectory>
+            <outputDirectory>seata-server/licenses/</outputDirectory>
         </fileSet>
 
         <fileSet>
@@ -135,13 +135,13 @@
         </file>
 
         <file>
-            <source>NOTICE</source>
+            <source>licenses/NOTICE-seata-server</source>
             <destName>NOTICE</destName>
             <outputDirectory>seata-server/</outputDirectory>
         </file>
 
         <file>
-            <source>NOTICE</source>
+            <source>licenses/NOTICE-seata-namingserver</source>
             <destName>NOTICE</destName>
             <outputDirectory>seata-namingserver/</outputDirectory>
         </file>
