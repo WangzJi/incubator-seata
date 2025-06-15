@@ -17,6 +17,7 @@
 package org.apache.seata.rm.tcc.remoting.parser;
 
 import org.apache.seata.common.exception.FrameworkException;
+import org.apache.seata.common.transaction.api.TransactionParticipant;
 import org.apache.seata.common.util.ReflectionUtil;
 import org.apache.seata.integration.tx.api.remoting.Protocols;
 import org.apache.seata.integration.tx.api.remoting.RemotingDesc;
@@ -44,7 +45,7 @@ public class LocalTCCRemotingParser extends AbstractedRemotingParser {
 
     @Override
     public boolean isService(Class<?> beanClass) throws FrameworkException {
-        return isLocalTCC(beanClass);
+        return isTransactionParticipant(beanClass);
     }
 
     @Override
@@ -57,17 +58,17 @@ public class LocalTCCRemotingParser extends AbstractedRemotingParser {
         remotingDesc.setService(this.isService(bean, beanName));
         remotingDesc.setProtocol(Protocols.IN_JVM);
         Class<?> classType = bean.getClass();
-        // check if LocalTCC annotation is marked on the implementation class
-        if (classType.isAnnotationPresent(LocalTCC.class)) {
+        // check if LocalTCC or TransactionParticipant annotation is marked on the implementation class
+        if (classType.isAnnotationPresent(LocalTCC.class) || classType.isAnnotationPresent(TransactionParticipant.class)) {
             remotingDesc.setServiceClass(AopProxyUtils.ultimateTargetClass(bean));
             remotingDesc.setServiceClassName(remotingDesc.getServiceClass().getName());
             remotingDesc.setTargetBean(bean);
             return remotingDesc;
         }
-        // check if LocalTCC annotation is marked on the interface
+        // check if LocalTCC or TransactionParticipant annotation is marked on the interface
         Set<Class<?>> interfaceClasses = ReflectionUtil.getInterfaces(classType);
         for (Class<?> interClass : interfaceClasses) {
-            if (interClass.isAnnotationPresent(LocalTCC.class)) {
+            if (interClass.isAnnotationPresent(LocalTCC.class) || interClass.isAnnotationPresent(TransactionParticipant.class)) {
                 remotingDesc.setServiceClassName(interClass.getName());
                 remotingDesc.setServiceClass(interClass);
                 remotingDesc.setTargetBean(bean);
@@ -83,22 +84,28 @@ public class LocalTCCRemotingParser extends AbstractedRemotingParser {
     }
 
     /**
-     * Determine whether there is an annotation on interface or impl {@link LocalTCC}
+     * Determine whether there is an annotation on interface or impl {@link LocalTCC} or {@link TransactionParticipant}
      * @param bean the bean
      * @return boolean
      */
     private boolean isLocalTCC(Object bean) {
         Class<?> classType = bean.getClass();
-        return isLocalTCC(classType);
+        return isTransactionParticipant(classType);
     }
 
-    private boolean isLocalTCC(Class<?> classType) {
+    /**
+     * Determine whether there is a transaction participant annotation ({@link LocalTCC} or {@link TransactionParticipant}) 
+     * on the given class or its interfaces
+     * @param classType the class type to check
+     * @return true if the class has either LocalTCC or TransactionParticipant annotation
+     */
+    private boolean isTransactionParticipant(Class<?> classType) {
         Set<Class<?>> interfaceClasses = ReflectionUtil.getInterfaces(classType);
         for (Class<?> interClass : interfaceClasses) {
-            if (interClass.isAnnotationPresent(LocalTCC.class)) {
+            if (interClass.isAnnotationPresent(LocalTCC.class) || interClass.isAnnotationPresent(TransactionParticipant.class)) {
                 return true;
             }
         }
-        return classType.isAnnotationPresent(LocalTCC.class);
+        return classType.isAnnotationPresent(LocalTCC.class) || classType.isAnnotationPresent(TransactionParticipant.class);
     }
 }

@@ -28,6 +28,12 @@ import org.apache.seata.rm.tcc.api.BusinessActionContext;
 /**
  * Saga annotation.
  * Define a saga interface, which added on the commit method, if occurs rollback, compensation will be called.
+ * <p>
+ * Note: When using this annotation for local (non-remote) services, you should also add @TransactionParticipant
+ * annotation on the interface or implementation class to enable proper proxy enhancement.
+ * This avoids the need to use @LocalTCC annotation in Saga scenarios, which can be confusing.
+ * 
+ * @see org.apache.seata.common.transaction.api.TransactionParticipant // Generic annotation for transaction participants
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
