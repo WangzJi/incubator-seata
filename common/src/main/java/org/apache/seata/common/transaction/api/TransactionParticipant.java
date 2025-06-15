@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.seata.rm.tcc.api;
-
-import org.apache.seata.rm.tcc.remoting.parser.LocalTCCRemotingParser;
+package org.apache.seata.common.transaction.api;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -25,17 +23,19 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Local TCC bean annotation, add on the TCC interface
+ * Transaction Participant annotation.
+ * A general annotation for marking beans that participate in distributed transactions.
+ * This annotation is designed to replace the specific usage of @LocalTCC in Saga scenarios
+ * to avoid confusion, while also being applicable to TCC and other transaction modes.
  * <p>
- * Note: For Saga scenarios, you can use the more generic @TransactionParticipant annotation instead
- * to avoid confusion, as @LocalTCC specifically indicates TCC mode.
- *
- * @see org.apache.seata.spring.annotation.GlobalTransactionScanner#wrapIfNecessary(Object, String, Object) // the scanner for TM, GlobalLock, and TCC mode
- * @see LocalTCCRemotingParser // the RemotingParser impl for LocalTCC
- * @see org.apache.seata.common.transaction.api.TransactionParticipant // the more generic annotation for transaction participants
+ * In distributed transaction terminology, a "participant" is any component that takes part
+ * in the transaction protocol, making this name semantically accurate across different
+ * transaction patterns (TCC, Saga, XA, etc.).
+ * 
+ * @see org.apache.seata.rm.tcc.api.LocalTCC // the original TCC-specific annotation, still supported for backward compatibility
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Inherited
-public @interface LocalTCC {
-}
+public @interface TransactionParticipant {
+} 
