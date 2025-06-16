@@ -1,5 +1,19 @@
-name-template: 'v$NEXT_PATCH_VERSION 🌟'
-tag-template: 'v$NEXT_PATCH_VERSION'
+# Release Drafter Configuration for Seata 2.x Development Branch
+# Current stable version: v2.3.0
+# Development version: v2.4.0+ (pre-release)
+# Tag format: v{major}.{minor}.{patch}
+
+name-template: 'v$RESOLVED_VERSION 🌟'
+tag-template: 'v$RESOLVED_VERSION'
+
+# Include all pull requests merged to 2.x branch
+include-paths:
+  - '*'
+
+# Exclude draft and pre-release PRs from automatic processing
+exclude-contributors:
+  - 'dependabot'
+  - 'dependabot[bot]'
 
 categories:
   - title: '🚀 New Features'
@@ -38,6 +52,26 @@ categories:
       - 'chore'
       - 'maintenance'
       - 'internal'
+  - title: '🔄 Core Components'
+    labels:
+      - 'core'
+      - 'tm'
+      - 'tc'
+      - 'rm'
+      - 'saga'
+      - 'tcc'
+      - 'at'
+      - 'xa'
+  - title: '🔌 Integrations'
+    labels:
+      - 'dubbo'
+      - 'spring'
+      - 'grpc'
+      - 'http'
+      - 'nacos'
+      - 'consul'
+      - 'etcd'
+      - 'zookeeper'
 
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 change-title-escapes: '\<*_&'
@@ -152,30 +186,60 @@ replacers:
   - search: '/^(feat|fix|docs|style|refactor|perf|test|chore|build|ci)(\(.+\))?\s*:\s*/i'
     replace: ''
 
+# Version resolution strategy for 2.x branch
+# Current stable: v2.3.0
+# Next versions: v2.4.0, v2.5.0, etc.
 version-resolver:
   major:
     labels:
       - 'major'
       - 'breaking'
+      - 'breaking-change'
   minor:
     labels:
       - 'minor'
       - 'feature'
       - 'enhancement'
+      - 'feat'
   patch:
     labels:
       - 'patch'
       - 'fix'
       - 'bugfix'
-  default: patch
+      - 'bug'
+      - 'hotfix'
+  default: minor  # Default to minor for 2.x development
+
+# Pre-release configuration
+prerelease: false
+prerelease-identifier: 'rc'
+
+# Draft configuration
+draft: true
 
 template: |
-  ## What's Changed
+  ## 🎉 What's Changed in v$RESOLVED_VERSION
 
   $CHANGES
   
-  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+  ## 📊 Release Statistics
   
-  Thank you to all contributors who made this release possible! 🙏
+  - **Total Changes**: $CHANGES_COUNT
+  - **Contributors**: $CONTRIBUTORS_COUNT
+  
+  ## 🔗 Links
+  
+  - **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+  - **Documentation**: https://seata.apache.org/
+  - **Download**: https://github.com/$OWNER/$REPOSITORY/releases/tag/v$RESOLVED_VERSION
+  
+  ## 🙏 Contributors
+  
+  Thank you to all contributors who made this release possible!
   
   $CONTRIBUTORS
+  
+  ---
+  
+  **Note**: This is a development release from the `2.x` branch. 
+  Current stable version is `v2.3.0`. Please test thoroughly before using in production.
