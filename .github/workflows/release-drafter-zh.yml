@@ -21,8 +21,8 @@ on:
   push:
     branches:
       - experiment/auto-changelog
-  pull_request:
-    types: [opened, reopened, synchronize]
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited]
     branches:
       - experiment/auto-changelog
 
@@ -36,6 +36,11 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
+      # Checkout repository first to access config files
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
       # Update draft release
       - uses: release-drafter/release-drafter@v5
         id: release-drafter
@@ -45,11 +50,6 @@ jobs:
           tag: 'v$RESOLVED_VERSION-test-zh'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      # Checkout repository to save changelog
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           
       # Install translation dependencies
       - name: Setup Translation Environment (TEST)
