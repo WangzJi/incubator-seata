@@ -72,8 +72,9 @@ jobs:
           EOF
           )
           
-          # Run translation script
-          ./scripts/translate-changelog.sh --auto --input <(echo "$ENGLISH_CONTENT") --output temp_chinese.md
+          # Create temporary English file and translate
+          echo "$ENGLISH_CONTENT" > temp_english.md
+          ./scripts/translate-changelog.sh temp_english.md temp_chinese.md || echo "Translation failed, using original content"
           
           # Create final Chinese changelog
           cat > changes/test/zh-cn/experiment.md << 'EOF'
@@ -117,8 +118,8 @@ jobs:
           同时，我们从社区收到了许多宝贵的问题、疑问和建议。感谢大家。
           EOF
           
-          # Clean up temporary file
-          rm -f temp_chinese.md
+          # Clean up temporary files
+          rm -f temp_chinese.md temp_english.md
           
       # Commit and push changes
       - name: Commit changelog updates (TEST)

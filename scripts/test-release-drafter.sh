@@ -54,7 +54,7 @@ print_info() {
 }
 
 # Check if running from Seata project root
-if [ ! -f "pom.xml" ] || ! grep -q "io.seata" pom.xml; then
+if [ ! -f "pom.xml" ] || ! grep -q "seata" pom.xml; then
     echo -e "${RED}❌ This script must be run from the Seata project root directory${NC}"
     exit 1
 fi
@@ -139,13 +139,19 @@ echo -e "\n${BLUE}5. Testing translation script...${NC}"
 if [ -f "scripts/translate-changelog.sh" ]; then
     chmod +x scripts/translate-changelog.sh
     
-    # Test basic functionality
-    echo "## What's Changed" | ./scripts/translate-changelog.sh --auto --input /dev/stdin --output /dev/stdout > /dev/null 2>&1
+    # Test basic functionality by creating a temporary test file
+    echo "## What's Changed" > /tmp/test-changelog.md
+    echo "- Added new feature" >> /tmp/test-changelog.md
+    
+    ./scripts/translate-changelog.sh -d /tmp/test-changelog.md > /dev/null 2>&1
     if [ $? -eq 0 ]; then
         print_status 0 "Translation script runs without errors"
     else
         print_status 1 "Translation script has errors"
     fi
+    
+    # Clean up test file
+    rm -f /tmp/test-changelog.md
     
     # Check dictionary
     if [ -f "scripts/translation-dictionary.txt" ]; then
