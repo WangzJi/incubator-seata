@@ -198,6 +198,31 @@ here](https://github.com/apache/incubator-seata/issues/1246) to tell us your sce
     <img alt='政采云' height='40'  src='https://img.alicdn.com/tfs/TB1DDiCorY1gK0jSZTEXXXDQVXa-440-114.jpg'  /img>
     <img alt='浙江公安厅' height='40'  src='https://img.alicdn.com/tfs/TB1SXGzoxn1gK0jSZKPXXXvUXXa-426-180.jpg'  /img>
     <img alt='特步' height='40'  src='https://img.alicdn.com/imgextra/i1/O1CN01qo6gfd1l7AK1LIF8t_!!6000000004771-2-tps-132-40.png'  /img>
+
+---
+
+## 🧪 Automated Changelog Testing
+
+This section is used for testing the automated bilingual changelog generation system.
+
+### Test Status: Active ✅
+
+- **Test Branch**: `experiment/auto-changelog`
+- **Automation Features**:
+  - ✅ Bilingual release drafter (English/Chinese)
+  - ✅ PR auto-labeling based on commit messages
+  - ✅ Automatic translation assistance
+  - ✅ GitHub Actions integration
+
+### Testing Configuration
+
+The project now includes:
+- Release drafter configurations for both languages
+- PR labeler rules matching CONTRIBUTING.md specifications
+- Translation scripts with Seata-specific terminology
+- Comprehensive test validation scripts
+
+For more details, see [automated changelog setup documentation](docs/automated-changelog-setup.md).
     <img alt='中通快递' height='40'  src='https://img.alicdn.com/tfs/TB1rCNSFxn1gK0jSZKPXXXvUXXa-172-31.png'  /img>
     <img alt='欧莱雅百库' height='40'  src='https://img.alicdn.com/tfs/TB1Xa3bZQL0gK0jSZFtXXXQCXXa-936-93.png'  /img> 
     <img alt='浙江烟草' height='40'  src='https://img.alicdn.com/tfs/TB1e7Wiovb2gK0jSZK9XXaEgFXa-1028-160.jpg'  /img>
