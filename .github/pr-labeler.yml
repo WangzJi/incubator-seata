@@ -21,10 +21,9 @@
 # Based on CONTRIBUTING.md commit message types
 
 # Features (feature: xxxx)
-'feature':
-  - head-branch: ['feature/*', 'feat/*']
-  - title: '/^feature(\(.+\))?\s*:.*$/i'
-  - title: '/^feat(\(.+\))?\s*:.*$/i'
+feature:
+  - head-branch: ['^feature', 'feature']
+  - title: ['^feature:', '^feat:']
 
 'type: feature':
   - head-branch: ['feature/*', 'feat/*']
@@ -37,10 +36,9 @@
   - title: '/^improve(\(.+\))?\s*:.*$/i'
 
 # Bug fixes (bugfix: xxxx)
-'bugfix':
-  - head-branch: ['bugfix/*', 'fix/*', 'hotfix/*']
-  - title: '/^bugfix(\(.+\))?\s*:.*$/i'
-  - title: '/^fix(\(.+\))?\s*:.*$/i'
+bug:
+  - head-branch: ['^bugfix', '^fix', 'bugfix', 'fix']
+  - title: ['^bugfix:', '^fix:', '^bug:']
 
 'type: bugfix':
   - head-branch: ['bugfix/*', 'fix/*', 'hotfix/*']
@@ -51,18 +49,10 @@
   - title: '/^bug(\(.+\))?\s*:.*$/i'
 
 # Documentation (docs: xxxx)
-'docs':
-  - changed-files:
-    - any-glob-to-any-file: 
-      - '**/*.md'
-      - 'docs/**/*'
-      - 'README*'
-      - 'CONTRIBUTING*'
-      - 'LICENSE*'
-      - 'NOTICE*'
-      - 'changes/**/*'
-  - head-branch: ['docs/*', 'doc/*', 'documentation/*']
-  - title: '/^docs(\(.+\))?\s*:.*$/i'
+docs:
+  - head-branch: ['^docs', 'docs']
+  - title: ['^docs:']
+  - any: ['docs/**/*', '*.md', 'README*']
 
 'type: docs':
   - changed-files:
@@ -81,24 +71,19 @@
   - title: '/^documentation(\(.+\))?\s*:.*$/i'
 
 # Refactoring (refactor: xxxx)
-'refactor':
-  - head-branch: ['refactor/*', 'refactoring/*']
-  - title: '/^refactor(\(.+\))?\s*:.*$/i'
+refactor:
+  - head-branch: ['^refactor', 'refactor']
+  - title: ['^refactor:']
 
 'type: refactor':
   - head-branch: ['refactor/*', 'refactoring/*']
   - title: '/^refactor(\(.+\))?\s*:.*$/i'
 
 # Testing (test: xxxx)
-'test':
-  - changed-files:
-    - any-glob-to-any-file: 
-      - '**/test/**/*'
-      - '**/*Test.java'
-      - '**/*Tests.java'
-      - '**/src/test/**/*'
-  - head-branch: ['test/*', 'tests/*']
-  - title: '/^test(\(.+\))?\s*:.*$/i'
+test:
+  - head-branch: ['^test', 'test']
+  - title: ['^test:']
+  - any: ['**/test/**/*', '**/*test*']
 
 'type: test':
   - changed-files:
@@ -139,10 +124,9 @@
   - title: '/^sec(\(.+\))?\s*:.*$/i'
 
 # Other improvements (catch-all for chore, maintenance, etc.)
-'chore':
-  - head-branch: ['chore/*', 'maintenance/*']
-  - title: '/^chore(\(.+\))?\s*:.*$/i'
-  - title: '/^maintenance(\(.+\))?\s*:.*$/i'
+chore:
+  - head-branch: ['^chore', 'chore']
+  - title: ['^chore:']
 
 'type: chore':
   - head-branch: ['chore/*', 'maintenance/*']

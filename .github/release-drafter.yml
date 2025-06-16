@@ -14,8 +14,8 @@
 # limitations under the License.
 
 # Simple Release Drafter Configuration for Fork Testing
-name-template: 'Apache Seata v$RESOLVED_VERSION (FORK-TEST)'
-tag-template: 'v$RESOLVED_VERSION-fork-test'
+name-template: 'v$NEXT_PATCH_VERSION 🌟'
+tag-template: 'v$NEXT_PATCH_VERSION'
 
 template: |
   # Apache Seata v$RESOLVED_VERSION (Fork Test)
@@ -29,32 +29,26 @@ template: |
   **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
 
 categories:
-  - title: '🚀 Features'
+  - title: '🚀 新功能'
     labels:
       - 'feature'
-      - 'enhancement'
-  - title: '🐛 Bug Fixes'
+  - title: '🐛 Bug 修复'
     labels:
-      - 'bugfix'
       - 'bug'
-  - title: '📖 Documentation'
+  - title: '📖 文档'
     labels:
       - 'docs'
-      - 'documentation'
-  - title: '🧪 Testing'
+  - title: '🧪 测试'
     labels:
       - 'test'
-      - 'testing'
-  - title: '♻️ Refactoring'
+  - title: '♻️ 重构'
     labels:
       - 'refactor'
-      - 'refactoring'
-  - title: '🔧 Other Changes'
+  - title: '🔧 其他变更'
     labels:
       - 'chore'
-      - 'maintenance'
 
-change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 change-title-escapes: '\<*_&'
 
 version-resolver:
