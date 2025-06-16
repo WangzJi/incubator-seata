@@ -42,13 +42,34 @@ categories:
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 change-title-escapes: '\<*_&'
 
-# Remove conventional commit prefixes from titles for cleaner changelog
-replacers:
-  - search: '/^(feat|fix|docs|style|refactor|perf|test|chore|build|ci)(\(.+\))?\s*:\s*/i'
-    replace: ''
-
-# Auto-labeling based on commit message patterns
+# Auto-labeling based on commit message patterns (MUST come before replacers)
 autolabeler:
+  # Commit type based labeling (check original title before prefix removal)
+  - label: 'feature'
+    title:
+      - '/^feat(\(.+\))?\s*:/i'
+  - label: 'fix'
+    title:
+      - '/^fix(\(.+\))?\s*:/i'
+  - label: 'documentation'
+    title:
+      - '/^docs(\(.+\))?\s*:/i'
+  - label: 'performance'
+    title:
+      - '/^perf(\(.+\))?\s*:/i'
+  - label: 'refactor'
+    title:
+      - '/^refactor(\(.+\))?\s*:/i'
+  - label: 'test'
+    title:
+      - '/^test(\(.+\))?\s*:/i'
+  - label: 'build'
+    title:
+      - '/^(build|ci)(\(.+\))?\s*:/i'
+  - label: 'chore'
+    title:
+      - '/^chore(\(.+\))?\s*:/i'
+
   # Core modules
   - label: 'core'
     title:
@@ -125,32 +146,11 @@ autolabeler:
   - label: 'compressor'
     title:
       - '/\b(compressor|compression)\b/i'
-  
-  # Commit type based labeling
-  - label: 'feature'
-    title:
-      - '/^feat(\(.+\))?\s*:/i'
-  - label: 'fix'
-    title:
-      - '/^fix(\(.+\))?\s*:/i'
-  - label: 'documentation'
-    title:
-      - '/^docs(\(.+\))?\s*:/i'
-  - label: 'performance'
-    title:
-      - '/^perf(\(.+\))?\s*:/i'
-  - label: 'refactor'
-    title:
-      - '/^refactor(\(.+\))?\s*:/i'
-  - label: 'test'
-    title:
-      - '/^test(\(.+\))?\s*:/i'
-  - label: 'build'
-    title:
-      - '/^(build|ci)(\(.+\))?\s*:/i'
-  - label: 'chore'
-    title:
-      - '/^chore(\(.+\))?\s*:/i'
+
+# Remove conventional commit prefixes from titles for cleaner changelog (MUST come after autolabeler)
+replacers:
+  - search: '/^(feat|fix|docs|style|refactor|perf|test|chore|build|ci)(\(.+\))?\s*:\s*/i'
+    replace: ''
 
 version-resolver:
   major:
