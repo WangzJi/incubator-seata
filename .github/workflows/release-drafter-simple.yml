@@ -13,27 +13,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: PR Labeler (Fork Test)
+name: Release Drafter (Simple Test)
 
 on:
+  push:
+    branches:
+      - experiment/auto-changelog
   pull_request_target:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, reopened, synchronize, edited]
     branches:
       - experiment/auto-changelog
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
-  pr-labeler:
+  update_release_draft:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           
-      - uses: actions/labeler@v4
+      - name: Run Release Drafter
+        uses: release-drafter/release-drafter@v5
         with:
-          repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          configuration-path: .github/pr-labeler.yml 
+          # Use simple inline configuration
+          config-name: release-drafter.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
