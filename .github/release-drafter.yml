@@ -1,22 +1,15 @@
-# Release Drafter Configuration for Seata 2.x Development Branch
-# Current stable version: v2.3.0
-# Development version: v2.4.0+ (pre-release)
-# Tag format: v{major}.{minor}.{patch}
-
 name-template: 'v$RESOLVED_VERSION 🌟'
 tag-template: 'v$RESOLVED_VERSION'
 
-# Include all pull requests merged to 2.x branch
 include-paths:
   - '*'
 
-# Exclude draft and pre-release PRs from automatic processing
 exclude-contributors:
   - 'dependabot'
   - 'dependabot[bot]'
 
 categories:
-  - title: '🚀 New Features'
+  - title: '🚀 Features'
     labels:
       - 'feature'
       - 'enhancement'
@@ -26,33 +19,32 @@ categories:
       - 'fix'
       - 'bugfix'
       - 'bug'
-  - title: '⚡ Performance Improvements'
-    labels:
-      - 'performance'
-      - 'perf'
-  - title: '📖 Documentation'
+  - title: '📚 Documentation'
     labels:
       - 'documentation'
       - 'docs'
-  - title: '🔧 Configuration & Build'
-    labels:
-      - 'build'
-      - 'config'
-      - 'dependencies'
-  - title: '🧪 Tests'
-    labels:
-      - 'test'
-      - 'testing'
-  - title: '♻️ Code Refactoring'
+  - title: '♻️ Refactor'
     labels:
       - 'refactor'
       - 'refactoring'
-  - title: '🛠️ Maintenance'
+  - title: '🧪 Tests'
     labels:
+      - 'test'
+  - title: '🔧 Build / CI / Config'
+    labels:
+      - 'build'
+      - 'ci'
+      - 'config'
       - 'chore'
-      - 'maintenance'
-      - 'internal'
-  - title: '🔄 Core Components'
+  - title: '🔌 Integrations'
+    labels:
+      - 'dubbo'
+      - 'grpc'
+      - 'spring'
+      - 'nacos'
+      - 'etcd'
+      - 'zookeeper'
+  - title: '🧱 Core Modules'
     labels:
       - 'core'
       - 'tm'
@@ -62,47 +54,35 @@ categories:
       - 'tcc'
       - 'at'
       - 'xa'
-  - title: '🔌 Integrations'
-    labels:
-      - 'dubbo'
-      - 'spring'
-      - 'grpc'
-      - 'http'
-      - 'nacos'
-      - 'consul'
-      - 'etcd'
-      - 'zookeeper'
 
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 change-title-escapes: '\<*_&'
 
-# Auto-labeling based on commit message patterns (MUST come before replacers)
 autolabeler:
-  # Commit type based labeling (check original title before prefix removal)
   - label: 'feature'
     title:
-      - '/^feat(\(.+\))?\s*:/i'
+      - '/^(feat|feature)(\(.+\))?:/i'
   - label: 'fix'
     title:
-      - '/^fix(\(.+\))?\s*:/i'
+      - '/^(fix|bugfix)(\(.+\))?:/i'
   - label: 'documentation'
     title:
-      - '/^docs(\(.+\))?\s*:/i'
-  - label: 'performance'
-    title:
-      - '/^perf(\(.+\))?\s*:/i'
+      - '/^docs(\(.+\))?:/i'
   - label: 'refactor'
     title:
-      - '/^refactor(\(.+\))?\s*:/i'
+      - '/^refactor(\(.+\))?:/i'
   - label: 'test'
     title:
-      - '/^test(\(.+\))?\s*:/i'
+      - '/^test(\(.+\))?:/i'
   - label: 'build'
     title:
-      - '/^(build|ci)(\(.+\))?\s*:/i'
+      - '/^build(\(.+\))?:/i'
+  - label: 'ci'
+    title:
+      - '/^ci(\(.+\))?:/i'
   - label: 'chore'
     title:
-      - '/^chore(\(.+\))?\s*:/i'
+      - '/^chore(\(.+\))?:/i'
 
   # Core modules
   - label: 'core'
@@ -110,13 +90,13 @@ autolabeler:
       - '/\b(core|common|base)\b/i'
   - label: 'tm'
     title:
-      - '/\b(tm|transaction.manager)\b/i'
+      - '/\b(tm|transaction\.manager)\b/i'
   - label: 'tc'
     title:
-      - '/\b(tc|transaction.coordinator)\b/i'
+      - '/\b(tc|transaction\.coordinator)\b/i'
   - label: 'rm'
     title:
-      - '/\b(rm|resource.manager)\b/i'
+      - '/\b(rm|resource\.manager)\b/i'
   - label: 'saga'
     title:
       - '/\bsaga\b/i'
@@ -129,66 +109,31 @@ autolabeler:
   - label: 'xa'
     title:
       - '/\bxa\b/i'
-  
-  # Configuration and discovery
-  - label: 'config'
+
+  # Integration
+  - label: 'dubbo'
     title:
-      - '/\b(config|configuration)\b/i'
-  - label: 'discovery'
+      - '/\bdubbo\b/i'
+  - label: 'grpc'
     title:
-      - '/\b(discovery|registry)\b/i'
+      - '/\bgrpc\b/i'
+  - label: 'spring'
+    title:
+      - '/\b(spring|springboot|boot)\b/i'
   - label: 'nacos'
     title:
       - '/\bnacos\b/i'
-  - label: 'consul'
-    title:
-      - '/\bconsul\b/i'
   - label: 'etcd'
     title:
       - '/\betcd\b/i'
   - label: 'zookeeper'
     title:
-      - '/\b(zookeeper|zk)\b/i'
-  
-  # Integration
-  - label: 'dubbo'
-    title:
-      - '/\bdubbo\b/i'
-  - label: 'spring'
-    title:
-      - '/\b(spring|boot)\b/i'
-  - label: 'grpc'
-    title:
-      - '/\bgrpc\b/i'
-  - label: 'http'
-    title:
-      - '/\bhttp\b/i'
-  
-  # Database and serialization
-  - label: 'mysql'
-    title:
-      - '/\bmysql\b/i'
-  - label: 'postgresql'
-    title:
-      - '/\b(postgresql|postgres)\b/i'
-  - label: 'oracle'
-    title:
-      - '/\boracle\b/i'
-  - label: 'serializer'
-    title:
-      - '/\b(serializer|serialization)\b/i'
-  - label: 'compressor'
-    title:
-      - '/\b(compressor|compression)\b/i'
+      - '/\bzookeeper\b/i'
 
-# Remove conventional commit prefixes from titles for cleaner changelog (MUST come after autolabeler)
 replacers:
-  - search: '/^(feat|fix|docs|style|refactor|perf|test|chore|build|ci)(\(.+\))?\s*:\s*/i'
+  - search: '/^(feat|feature|fix|bugfix|docs|style|refactor|perf|test|chore|build|ci)(\(.+\))?:\s*/i'
     replace: ''
 
-# Version resolution strategy for 2.x branch
-# Current stable: v2.3.0
-# Next versions: v2.4.0, v2.5.0, etc.
 version-resolver:
   major:
     labels:
@@ -208,38 +153,35 @@ version-resolver:
       - 'bugfix'
       - 'bug'
       - 'hotfix'
-  default: minor  # Default to minor for 2.x development
+  default: minor
 
-# Pre-release configuration
 prerelease: false
 prerelease-identifier: 'rc'
 
-# Draft configuration
 draft: true
 
 template: |
-  ## 🎉 What's Changed in v$RESOLVED_VERSION
+  ## Apache Seata(incubating) $RESOLVED_VERSION Released.
+
+  Apache Seata(incubating) is an easy-to-use, high-performance, open source distributed transaction solution.
+
+  The version is updated as follows:
+  
+  ## 🎉 What’s Changed
 
   $CHANGES
-  
-  ## 📊 Release Statistics
-  
-  - **Total Changes**: $CHANGES_COUNT
-  - **Contributors**: $CONTRIBUTORS_COUNT
-  
-  ## 🔗 Links
-  
-  - **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
-  - **Documentation**: https://seata.apache.org/
-  - **Download**: https://github.com/$OWNER/$REPOSITORY/releases/tag/v$RESOLVED_VERSION
-  
-  ## 🙏 Contributors
-  
-  Thank you to all contributors who made this release possible!
-  
+
+  ## 🧑‍💻 Contributors
+
   $CONTRIBUTORS
-  
+
+  ## 📦 Downloads
+
+  You can get the release from [GitHub Releases](https://github.com/$OWNER/$REPOSITORY/releases/tag/v$RESOLVED_VERSION)
+
+  ## 📄 Documentation
+
+  Also, we receive many valuable issues, questions and advices from our community. Thanks for you all.
   ---
-  
-  **Note**: This is a development release from the `2.x` branch. 
-  Current stable version is `v2.3.0`. Please test thoroughly before using in production.
+  For more details, please visit [Seata Documentation](https://seata.apache.org/)
+
