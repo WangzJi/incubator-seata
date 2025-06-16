@@ -41,11 +41,82 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           
+      # Create inline config for testing
+      - name: Create release drafter config (Chinese)
+        run: |
+          cat > .github/release-drafter-zh.yml << 'EOF'
+          name-template: 'Apache Seata v$RESOLVED_VERSION (测试-中文)'
+          tag-template: 'v$RESOLVED_VERSION-test-zh'
+          template: |
+            # Apache Seata v$RESOLVED_VERSION (测试版)
+            
+            我们很兴奋地宣布 Apache Seata v$RESOLVED_VERSION 发布！🎉
+            
+            ## 更新内容
+            
+            $CHANGES
+            
+            感谢这些贡献者的代码提交。如有遗漏请报告。
+            
+            $CONTRIBUTORS
+            
+            同时，我们从社区收到了许多宝贵的问题、疑问和建议。感谢大家。
+            
+            **完整更新日志**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+          categories:
+            - title: '🚀 新功能'
+              labels:
+                - 'feature'
+                - 'enhancement'
+            - title: '🐛 问题修复'
+              labels:
+                - 'bugfix'
+                - 'bug'
+            - title: '📖 文档'
+              labels:
+                - 'docs'
+                - 'documentation'
+            - title: '🧪 测试'
+              labels:
+                - 'test'
+                - 'testing'
+            - title: '♻️ 重构'
+              labels:
+                - 'refactor'
+                - 'refactoring'
+            - title: '🔧 维护'
+              labels:
+                - 'chore'
+                - 'maintenance'
+          change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
+          change-title-escapes: '\<*_&'
+          version-resolver:
+            major:
+              labels:
+                - 'major'
+                - 'breaking'
+            minor:
+              labels:
+                - 'minor'
+                - 'feature'
+                - 'enhancement'
+            patch:
+              labels:
+                - 'patch'
+                - 'bugfix'
+                - 'bug'
+                - 'docs'
+                - 'test'
+                - 'refactor'
+                - 'chore'
+            default: patch
+          EOF
+          
       # Update draft release
       - uses: release-drafter/release-drafter@v5
         id: release-drafter
         with:
-          config-name: release-drafter-zh.yml
+          config-name: .github/release-drafter-zh.yml
           name: 'Apache Seata v$RESOLVED_VERSION (测试-中文)'
           tag: 'v$RESOLVED_VERSION-test-zh'
         env:

@@ -41,11 +41,82 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           
+      # Create inline config for testing
+      - name: Create release drafter config
+        run: |
+          cat > .github/release-drafter-en.yml << 'EOF'
+          name-template: 'Apache Seata v$RESOLVED_VERSION (TEST-EN)'
+          tag-template: 'v$RESOLVED_VERSION-test-en'
+          template: |
+            # Apache Seata v$RESOLVED_VERSION (TEST)
+            
+            We are excited to announce the release of Apache Seata v$RESOLVED_VERSION! 🎉
+            
+            ## What's Changed
+            
+            $CHANGES
+            
+            Thanks to these contributors for their code commits. Please report an unintended omission.
+            
+            $CONTRIBUTORS
+            
+            Also, we receive many valuable issues, questions and advices from our community. Thanks for you all.
+            
+            **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+          categories:
+            - title: '🚀 New Features'
+              labels:
+                - 'feature'
+                - 'enhancement'
+            - title: '🐛 Bug Fixes'
+              labels:
+                - 'bugfix'
+                - 'bug'
+            - title: '📖 Documentation'
+              labels:
+                - 'docs'
+                - 'documentation'
+            - title: '🧪 Testing'
+              labels:
+                - 'test'
+                - 'testing'
+            - title: '♻️ Refactoring'
+              labels:
+                - 'refactor'
+                - 'refactoring'
+            - title: '🔧 Maintenance'
+              labels:
+                - 'chore'
+                - 'maintenance'
+          change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
+          change-title-escapes: '\<*_&'
+          version-resolver:
+            major:
+              labels:
+                - 'major'
+                - 'breaking'
+            minor:
+              labels:
+                - 'minor'
+                - 'feature'
+                - 'enhancement'
+            patch:
+              labels:
+                - 'patch'
+                - 'bugfix'
+                - 'bug'
+                - 'docs'
+                - 'test'
+                - 'refactor'
+                - 'chore'
+            default: patch
+          EOF
+          
       # Update draft release
       - uses: release-drafter/release-drafter@v5
         id: release-drafter
         with:
-          config-name: release-drafter-en.yml
+          config-name: .github/release-drafter-en.yml
           name: 'Apache Seata v$RESOLVED_VERSION (TEST-EN)'
           tag: 'v$RESOLVED_VERSION-test-en'
         env:
