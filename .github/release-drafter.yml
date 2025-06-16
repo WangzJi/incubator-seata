@@ -1,31 +1,181 @@
 name-template: 'v$NEXT_PATCH_VERSION 🌟'
 tag-template: 'v$NEXT_PATCH_VERSION'
+
 categories:
-  - title: '🚀 Features'
+  - title: '🚀 New Features'
     labels:
       - 'feature'
       - 'enhancement'
+      - 'feat'
   - title: '🐛 Bug Fixes'
     labels:
       - 'fix'
       - 'bugfix'
       - 'bug'
-  - title: '🧰 Maintenance'
-    label: 'chore'
+  - title: '⚡ Performance Improvements'
+    labels:
+      - 'performance'
+      - 'perf'
+  - title: '📖 Documentation'
+    labels:
+      - 'documentation'
+      - 'docs'
+  - title: '🔧 Configuration & Build'
+    labels:
+      - 'build'
+      - 'config'
+      - 'dependencies'
+  - title: '🧪 Tests'
+    labels:
+      - 'test'
+      - 'testing'
+  - title: '♻️ Code Refactoring'
+    labels:
+      - 'refactor'
+      - 'refactoring'
+  - title: '🛠️ Maintenance'
+    labels:
+      - 'chore'
+      - 'maintenance'
+      - 'internal'
+
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 change-title-escapes: '\<*_&'
+
+# Remove conventional commit prefixes from titles for cleaner changelog
+replacers:
+  - search: '/^(feat|fix|docs|style|refactor|perf|test|chore|build|ci)(\(.+\))?\s*:\s*/i'
+    replace: ''
+
+# Auto-labeling based on commit message patterns
+autolabeler:
+  # Core modules
+  - label: 'core'
+    title:
+      - '/\b(core|common|base)\b/i'
+  - label: 'tm'
+    title:
+      - '/\b(tm|transaction.manager)\b/i'
+  - label: 'tc'
+    title:
+      - '/\b(tc|transaction.coordinator)\b/i'
+  - label: 'rm'
+    title:
+      - '/\b(rm|resource.manager)\b/i'
+  - label: 'saga'
+    title:
+      - '/\bsaga\b/i'
+  - label: 'tcc'
+    title:
+      - '/\btcc\b/i'
+  - label: 'at'
+    title:
+      - '/\bat\b/i'
+  - label: 'xa'
+    title:
+      - '/\bxa\b/i'
+  
+  # Configuration and discovery
+  - label: 'config'
+    title:
+      - '/\b(config|configuration)\b/i'
+  - label: 'discovery'
+    title:
+      - '/\b(discovery|registry)\b/i'
+  - label: 'nacos'
+    title:
+      - '/\bnacos\b/i'
+  - label: 'consul'
+    title:
+      - '/\bconsul\b/i'
+  - label: 'etcd'
+    title:
+      - '/\betcd\b/i'
+  - label: 'zookeeper'
+    title:
+      - '/\b(zookeeper|zk)\b/i'
+  
+  # Integration
+  - label: 'dubbo'
+    title:
+      - '/\bdubbo\b/i'
+  - label: 'spring'
+    title:
+      - '/\b(spring|boot)\b/i'
+  - label: 'grpc'
+    title:
+      - '/\bgrpc\b/i'
+  - label: 'http'
+    title:
+      - '/\bhttp\b/i'
+  
+  # Database and serialization
+  - label: 'mysql'
+    title:
+      - '/\bmysql\b/i'
+  - label: 'postgresql'
+    title:
+      - '/\b(postgresql|postgres)\b/i'
+  - label: 'oracle'
+    title:
+      - '/\boracle\b/i'
+  - label: 'serializer'
+    title:
+      - '/\b(serializer|serialization)\b/i'
+  - label: 'compressor'
+    title:
+      - '/\b(compressor|compression)\b/i'
+  
+  # Commit type based labeling
+  - label: 'feature'
+    title:
+      - '/^feat(\(.+\))?\s*:/i'
+  - label: 'fix'
+    title:
+      - '/^fix(\(.+\))?\s*:/i'
+  - label: 'documentation'
+    title:
+      - '/^docs(\(.+\))?\s*:/i'
+  - label: 'performance'
+    title:
+      - '/^perf(\(.+\))?\s*:/i'
+  - label: 'refactor'
+    title:
+      - '/^refactor(\(.+\))?\s*:/i'
+  - label: 'test'
+    title:
+      - '/^test(\(.+\))?\s*:/i'
+  - label: 'build'
+    title:
+      - '/^(build|ci)(\(.+\))?\s*:/i'
+  - label: 'chore'
+    title:
+      - '/^chore(\(.+\))?\s*:/i'
+
 version-resolver:
   major:
     labels:
       - 'major'
+      - 'breaking'
   minor:
     labels:
       - 'minor'
+      - 'feature'
+      - 'enhancement'
   patch:
     labels:
       - 'patch'
+      - 'fix'
+      - 'bugfix'
   default: patch
-template: |
-  ## Changes
 
-  $CHANGES 
+template: |
+  ## What's Changed
+
+  $CHANGES
+  
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+  
+  Thank you to all contributors who made this release possible! 🙏
+  
+  $CONTRIBUTORS
