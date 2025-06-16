@@ -1,0 +1,214 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Seata Translation Dictionary
+# Format: English_Term=中文术语
+# 用于changelog翻译的标准术语对照表
+
+# === 核心概念 ===
+Seata=Seata
+AT_mode=AT模式
+TCC_mode=TCC模式
+SAGA_mode=SAGA模式
+XA_mode=XA模式
+global_transaction=全局事务
+local_transaction=本地事务
+distributed_transaction=分布式事务
+transaction_coordinator=事务协调器
+resource_manager=资源管理器
+transaction_manager=事务管理器
+branch_transaction=分支事务
+two_phase_commit=两阶段提交
+compensation=补偿
+rollback=回滚
+commit=提交
+
+# === 技术术语 ===
+database=数据库
+datasource=数据源
+connection_pool=连接池
+thread_pool=线程池
+configuration=配置
+registry=注册中心
+service_discovery=服务发现
+load_balancing=负载均衡
+failover=故障转移
+high_availability=高可用
+cluster=集群
+distributed=分布式
+concurrent=并发
+asynchronous=异步
+synchronous=同步
+serialization=序列化
+deserialization=反序列化
+encoding=编码
+decoding=解码
+compression=压缩
+decompression=解压缩
+
+# === 操作动词 ===
+add=添加
+fix=修复
+update=更新
+upgrade=升级
+optimize=优化
+refactor=重构
+remove=移除
+delete=删除
+enhance=增强
+improve=改进
+support=支持
+implement=实现
+introduce=引入
+deprecate=弃用
+replace=替换
+migrate=迁移
+configure=配置
+enable=启用
+disable=禁用
+
+# === 常见短语 ===
+Add_support_for=添加对...的支持
+Fix_issue_with=修复...的问题
+Fix_bug_in=修复...中的bug
+Optimize_performance=优化性能
+Improve_stability=提升稳定性
+Enhance_compatibility=增强兼容性
+Update_documentation=更新文档
+Upgrade_dependency=升级依赖
+Remove_deprecated=移除已弃用的
+Refactor_code=重构代码
+
+# === 数据库相关 ===
+MySQL=MySQL
+PostgreSQL=PostgreSQL
+Oracle=Oracle
+SQL_Server=SQL Server
+MariaDB=MariaDB
+H2=H2
+SQLite=SQLite
+JDBC=JDBC
+driver=驱动
+SQL=SQL
+DDL=DDL
+DML=DML
+table=表
+index=索引
+constraint=约束
+foreign_key=外键
+primary_key=主键
+
+# === 框架和工具 ===
+Spring=Spring
+Spring_Boot=Spring Boot
+Spring_Cloud=Spring Cloud
+Dubbo=Dubbo
+gRPC=gRPC
+Netty=Netty
+Redis=Redis
+Nacos=Nacos
+Consul=Consul
+Eureka=Eureka
+Zookeeper=Zookeeper
+Etcd=Etcd
+Docker=Docker
+Kubernetes=Kubernetes
+Maven=Maven
+Gradle=Gradle
+
+# === 状态和错误 ===
+timeout=超时
+retry=重试
+exception=异常
+error=错误
+failure=失败
+success=成功
+pending=待处理
+processing=处理中
+completed=已完成
+cancelled=已取消
+expired=已过期
+invalid=无效
+valid=有效
+available=可用
+unavailable=不可用
+
+# === 网络和通信 ===
+HTTP=HTTP
+HTTPS=HTTPS
+TCP=TCP
+UDP=UDP
+RPC=RPC
+REST=REST
+API=API
+endpoint=端点
+request=请求
+response=响应
+client=客户端
+server=服务端
+protocol=协议
+message=消息
+communication=通信
+
+# === 监控和运维 ===
+metrics=指标
+monitoring=监控
+logging=日志
+tracing=链路追踪
+performance=性能
+latency=延迟
+throughput=吞吐量
+memory=内存
+CPU=CPU
+disk=磁盘
+network=网络
+health_check=健康检查
+alert=告警
+dashboard=仪表板
+
+# === 测试相关 ===
+unit_test=单元测试
+integration_test=集成测试
+test_case=测试用例
+mock=模拟
+coverage=覆盖率
+benchmark=基准测试
+stress_test=压力测试
+regression_test=回归测试
+
+# === 版本和发布 ===
+version=版本
+release=发布
+patch=补丁
+hotfix=热修复
+milestone=里程碑
+snapshot=快照
+stable=稳定
+beta=测试版
+alpha=内测版
+deprecated=已弃用
+experimental=实验性
+
+# === 文档类型 ===
+README=README
+documentation=文档
+guide=指南
+tutorial=教程
+example=示例
+demo=演示
+quickstart=快速开始
+installation=安装
+configuration=配置
+troubleshooting=故障排除 

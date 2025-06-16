@@ -1,0 +1,129 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Release Drafter Configuration (English)
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+
+template: |
+  # Apache Seata $RESOLVED_VERSION
+  
+  We are excited to announce the release of Apache Seata $RESOLVED_VERSION! 🎉
+  
+  ## What's Changed
+  
+  $CHANGES
+  
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+  
+  ## Contributors
+  Thanks to all the contributors who made this release possible! 🙏
+  
+  $CONTRIBUTORS
+
+categories:
+  - title: '🚀 New Features'
+    labels:
+      - 'feature'
+      - 'type: feature'
+      - 'enhancement'
+      - 'type: enhancement'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'bugfix'
+      - 'type: bugfix'
+      - 'bug'
+      - 'type: bug'
+      - 'fix'
+      - 'type: fix'
+  - title: '📚 Documentation'
+    labels:
+      - 'docs'
+      - 'type: docs'
+      - 'documentation'
+      - 'type: documentation'
+  - title: '🔧 Refactoring'
+    labels:
+      - 'refactor'
+      - 'type: refactor'
+      - 'refactoring'
+      - 'type: refactoring'
+  - title: '🧪 Testing'
+    labels:
+      - 'test'
+      - 'type: test'
+      - 'testing'
+      - 'type: testing'
+  - title: '⚡ Performance & Optimization'
+    labels:
+      - 'optimize'
+      - 'type: optimize'
+      - 'performance'
+      - 'type: performance'
+  - title: '🔒 Security'
+    labels:
+      - 'security'
+      - 'type: security'
+  - title: '🔧 Other Improvements'
+    labels:
+      - 'chore'
+      - 'type: chore'
+      - 'maintenance'
+      - 'type: maintenance'
+
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+change-title-escapes: '\<*_&'  # Escape markdown characters
+
+# Exclude certain types of PRs from the changelog
+exclude-labels:
+  - 'dependencies'
+  - 'skip-changelog'
+  - 'invalid'
+  - 'duplicate'
+  - 'wontfix'
+
+# Version incrementation rules (based on CONTRIBUTING.md)
+version-resolver:
+  major:
+    labels:
+      - 'major'
+      - 'type: breaking'
+      - 'breaking-change'
+  minor:
+    labels:
+      - 'minor'
+      - 'feature'
+      - 'type: feature'
+      - 'enhancement'
+      - 'type: enhancement'
+  patch:
+    labels:
+      - 'patch'
+      - 'bugfix'
+      - 'type: bugfix'
+      - 'bug'
+      - 'type: bug'
+      - 'fix'
+      - 'type: fix'
+  default: patch
+
+# Sort pull requests by merge order
+sort-by: merged_at
+sort-direction: descending
+
+# Include pre-releases
+include-pre-releases: false 

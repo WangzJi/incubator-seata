@@ -1,0 +1,197 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# PR Labeler Configuration
+# This configuration helps automatically label PRs based on file changes and patterns
+
+# Based on CONTRIBUTING.md commit message types
+
+# Features (feature: xxxx)
+'feature':
+  - head-branch: ['feature/*', 'feat/*']
+  - title: '/^feature(\(.+\))?\s*:.*$/i'
+  - title: '/^feat(\(.+\))?\s*:.*$/i'
+
+'type: feature':
+  - head-branch: ['feature/*', 'feat/*']
+  - title: '/^feature(\(.+\))?\s*:.*$/i'
+  - title: '/^feat(\(.+\))?\s*:.*$/i'
+
+'enhancement':
+  - head-branch: ['enhancement/*', 'improve/*']
+  - title: '/^enhance(\(.+\))?\s*:.*$/i'
+  - title: '/^improve(\(.+\))?\s*:.*$/i'
+
+# Bug fixes (bugfix: xxxx)
+'bugfix':
+  - head-branch: ['bugfix/*', 'fix/*', 'hotfix/*']
+  - title: '/^bugfix(\(.+\))?\s*:.*$/i'
+  - title: '/^fix(\(.+\))?\s*:.*$/i'
+
+'type: bugfix':
+  - head-branch: ['bugfix/*', 'fix/*', 'hotfix/*']
+  - title: '/^bugfix(\(.+\))?\s*:.*$/i'
+  - title: '/^fix(\(.+\))?\s*:.*$/i'
+
+'bug':
+  - title: '/^bug(\(.+\))?\s*:.*$/i'
+
+# Documentation (docs: xxxx)
+'docs':
+  - changed-files:
+    - any-glob-to-any-file: 
+      - '**/*.md'
+      - 'docs/**/*'
+      - 'README*'
+      - 'CONTRIBUTING*'
+      - 'LICENSE*'
+      - 'NOTICE*'
+      - 'changes/**/*'
+  - head-branch: ['docs/*', 'doc/*', 'documentation/*']
+  - title: '/^docs(\(.+\))?\s*:.*$/i'
+
+'type: docs':
+  - changed-files:
+    - any-glob-to-any-file: 
+      - '**/*.md'
+      - 'docs/**/*'
+      - 'README*'
+      - 'CONTRIBUTING*'
+      - 'LICENSE*'
+      - 'NOTICE*'
+      - 'changes/**/*'
+  - head-branch: ['docs/*', 'doc/*', 'documentation/*']
+  - title: '/^docs(\(.+\))?\s*:.*$/i'
+
+'documentation':
+  - title: '/^documentation(\(.+\))?\s*:.*$/i'
+
+# Refactoring (refactor: xxxx)
+'refactor':
+  - head-branch: ['refactor/*', 'refactoring/*']
+  - title: '/^refactor(\(.+\))?\s*:.*$/i'
+
+'type: refactor':
+  - head-branch: ['refactor/*', 'refactoring/*']
+  - title: '/^refactor(\(.+\))?\s*:.*$/i'
+
+# Testing (test: xxxx)
+'test':
+  - changed-files:
+    - any-glob-to-any-file: 
+      - '**/test/**/*'
+      - '**/*Test.java'
+      - '**/*Tests.java'
+      - '**/src/test/**/*'
+  - head-branch: ['test/*', 'tests/*']
+  - title: '/^test(\(.+\))?\s*:.*$/i'
+
+'type: test':
+  - changed-files:
+    - any-glob-to-any-file: 
+      - '**/test/**/*'
+      - '**/*Test.java'
+      - '**/*Tests.java'
+      - '**/src/test/**/*'
+  - head-branch: ['test/*', 'tests/*']
+  - title: '/^test(\(.+\))?\s*:.*$/i'
+
+'testing':
+  - title: '/^testing(\(.+\))?\s*:.*$/i'
+
+# Performance & Optimization
+'optimize':
+  - head-branch: ['optimize/*', 'perf/*', 'performance/*']
+  - title: '/^optimize(\(.+\))?\s*:.*$/i'
+  - title: '/^perf(\(.+\))?\s*:.*$/i'
+
+'type: optimize':
+  - head-branch: ['optimize/*', 'perf/*', 'performance/*']
+  - title: '/^optimize(\(.+\))?\s*:.*$/i'
+  - title: '/^perf(\(.+\))?\s*:.*$/i'
+
+'performance':
+  - title: '/^performance(\(.+\))?\s*:.*$/i'
+
+# Security
+'security':
+  - head-branch: ['security/*']
+  - title: '/^security(\(.+\))?\s*:.*$/i'
+  - title: '/^sec(\(.+\))?\s*:.*$/i'
+
+'type: security':
+  - head-branch: ['security/*']
+  - title: '/^security(\(.+\))?\s*:.*$/i'
+  - title: '/^sec(\(.+\))?\s*:.*$/i'
+
+# Other improvements (catch-all for chore, maintenance, etc.)
+'chore':
+  - head-branch: ['chore/*', 'maintenance/*']
+  - title: '/^chore(\(.+\))?\s*:.*$/i'
+  - title: '/^maintenance(\(.+\))?\s*:.*$/i'
+
+'type: chore':
+  - head-branch: ['chore/*', 'maintenance/*']
+  - title: '/^chore(\(.+\))?\s*:.*$/i'
+  - title: '/^maintenance(\(.+\))?\s*:.*$/i'
+
+# Breaking changes
+'type: breaking':
+  - title: '/^.*!(\(.+\))?\s*:.*$/i'
+  - title: '/^breaking(\(.+\))?\s*:.*$/i'
+
+'breaking-change':
+  - body: '/BREAKING CHANGE/i'
+
+# Module-specific labels
+'module: core':
+  - changed-files:
+    - any-glob-to-any-file: 'core/**/*'
+
+'module: server':
+  - changed-files:
+    - any-glob-to-any-file: 'server/**/*'
+
+'module: client':
+  - changed-files:
+    - any-glob-to-any-file: 'tm/**/*'
+
+'module: config':
+  - changed-files:
+    - any-glob-to-any-file: 'config/**/*'
+
+'module: discovery':
+  - changed-files:
+    - any-glob-to-any-file: 'discovery/**/*'
+
+'module: saga':
+  - changed-files:
+    - any-glob-to-any-file: 'saga/**/*'
+
+'module: console':
+  - changed-files:
+    - any-glob-to-any-file: 'console/**/*'
+
+# Dependencies
+'dependencies':
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/pom.xml'
+      - 'pom.xml'
+      - '**/package.json'
+      - '**/package-lock.json'
+      - '**/yarn.lock' 
