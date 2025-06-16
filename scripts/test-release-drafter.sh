@@ -16,167 +16,241 @@
 # limitations under the License.
 #
 
-# Test script for Release Drafter configuration
-# This script validates the YAML configuration files
+# Test Release Drafter Configuration for Seata Project
+# This script validates the automated changelog generation setup
 
 set -e
 
-echo "🔍 Testing Release Drafter Configuration..."
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-# Check if required files exist
-CONFIG_DIR=".github"
-CONFIGS=("release-drafter-en.yml" "release-drafter-zh.yml" "pr-labeler.yml")
-WORKFLOWS=("workflows/release-drafter-en.yml" "workflows/release-drafter-zh.yml")
+# Test branch configuration
+TEST_BRANCH="experiment/auto-changelog"
 
-echo "📁 Checking configuration files..."
-for config in "${CONFIGS[@]}"; do
-    if [[ -f "$CONFIG_DIR/$config" ]]; then
-        echo "✅ $CONFIG_DIR/$config exists"
+echo -e "${BLUE}🧪 Testing Release Drafter Configuration for Seata Project${NC}"
+echo -e "${BLUE}Testing against branch: ${TEST_BRANCH}${NC}"
+echo "=================================================="
+
+# Function to print test status
+print_status() {
+    if [ $1 -eq 0 ]; then
+        echo -e "${GREEN}✅ $2${NC}"
     else
-        echo "❌ $CONFIG_DIR/$config is missing"
+        echo -e "${RED}❌ $2${NC}"
         exit 1
     fi
-done
+}
 
-echo "📁 Checking workflow files..."
-for workflow in "${WORKFLOWS[@]}"; do
-    if [[ -f "$CONFIG_DIR/$workflow" ]]; then
-        echo "✅ $CONFIG_DIR/$workflow exists"
-    else
-        echo "❌ $CONFIG_DIR/$workflow is missing"
-        exit 1
-    fi
-done
+print_warning() {
+    echo -e "${YELLOW}⚠️  $1${NC}"
+}
 
-# Validate YAML syntax if yq is available
-if command -v yq &> /dev/null; then
-    echo "🔧 Validating YAML syntax..."
-    
-    for config in "${CONFIGS[@]}"; do
-        if yq eval '.' "$CONFIG_DIR/$config" > /dev/null 2>&1; then
-            echo "✅ $CONFIG_DIR/$config has valid YAML syntax"
-        else
-            echo "❌ $CONFIG_DIR/$config has invalid YAML syntax"
-            exit 1
-        fi
-    done
-    
-    for workflow in "${WORKFLOWS[@]}"; do
-        if yq eval '.' "$CONFIG_DIR/$workflow" > /dev/null 2>&1; then
-            echo "✅ $CONFIG_DIR/$workflow has valid YAML syntax"
-        else
-            echo "❌ $CONFIG_DIR/$workflow has invalid YAML syntax"
-            exit 1
-        fi
-    done
-else
-    echo "⚠️  yq not found, skipping YAML syntax validation"
+print_info() {
+    echo -e "${BLUE}ℹ️  $1${NC}"
+}
+
+# Check if running from Seata project root
+if [ ! -f "pom.xml" ] || ! grep -q "io.seata" pom.xml; then
+    echo -e "${RED}❌ This script must be run from the Seata project root directory${NC}"
+    exit 1
 fi
 
-# Check template consistency
-echo "🔄 Checking template consistency..."
+echo -e "${GREEN}✅ Running from Seata project root${NC}"
 
-EN_CATEGORIES=$(yq eval '.categories[].title' $CONFIG_DIR/release-drafter-en.yml | wc -l)
-ZH_CATEGORIES=$(yq eval '.categories[].title' $CONFIG_DIR/release-drafter-zh.yml | wc -l)
+# 1. Validate configuration files exist
+echo -e "\n${BLUE}1. Checking configuration files...${NC}"
 
-if [[ "$EN_CATEGORIES" -eq "$ZH_CATEGORIES" ]]; then
-    echo "✅ English and Chinese configurations have same number of categories ($EN_CATEGORIES)"
-else
-    echo "⚠️  Category count mismatch: EN=$EN_CATEGORIES, ZH=$ZH_CATEGORIES"
-fi
-
-# Test common PR title patterns
-echo "🧪 Testing PR title patterns..."
-
-TEST_TITLES=(
-    "feature: add new transaction mode"
-    "bugfix: resolve connection pool leak" 
-    "docs: update installation guide"
-    "test: add unit test coverage"
-    "refactor: restructure config module"
-    "security: fix SQL injection vulnerability"
+files=(
+    ".github/release-drafter-en.yml"
+    ".github/release-drafter-zh.yml"
+    ".github/workflows/release-drafter-en.yml"
+    ".github/workflows/release-drafter-zh.yml"
+    ".github/pr-labeler.yml"
+    "scripts/translate-changelog.sh"
+    "scripts/translation-dictionary.txt"
 )
 
-echo "Testing these PR title patterns:"
-for title in "${TEST_TITLES[@]}"; do
-    echo "  - $title"
+for file in "${files[@]}"; do
+    if [ -f "$file" ]; then
+        print_status 0 "$file exists"
+    else
+        print_status 1 "$file missing"
+    fi
 done
 
-# Check if directories exist
-echo "📂 Checking target directories..."
-if [[ -d "changes/en-us" ]]; then
-    echo "✅ changes/en-us directory exists"
+# 2. Validate YAML syntax
+echo -e "\n${BLUE}2. Validating YAML syntax...${NC}"
+
+# Check if yq is available
+if command -v yq &> /dev/null; then
+    for file in .github/*.yml .github/workflows/*.yml; do
+        if [ -f "$file" ]; then
+            if yq eval '.' "$file" > /dev/null 2>&1; then
+                print_status 0 "$file has valid YAML syntax"
+            else
+                print_status 1 "$file has invalid YAML syntax"
+            fi
+        fi
+    done
 else
-    echo "❌ changes/en-us directory is missing"
-    exit 1
+    print_warning "yq not found, skipping YAML validation"
+    print_info "Install yq with: brew install yq (macOS) or apt-get install yq (Ubuntu)"
 fi
 
-if [[ -d "changes/zh-cn" ]]; then
-    echo "✅ changes/zh-cn directory exists"
+# 3. Check workflow branch configuration
+echo -e "\n${BLUE}3. Checking workflow branch configuration...${NC}"
+
+for workflow in .github/workflows/release-drafter-*.yml; do
+    if grep -q "experiment/auto-changelog" "$workflow"; then
+        print_status 0 "$workflow configured for test branch"
+    else
+        print_status 1 "$workflow not configured for test branch"
+    fi
+done
+
+# 4. Validate release drafter configurations
+echo -e "\n${BLUE}4. Validating release drafter configurations...${NC}"
+
+# Check English config
+if [ -f ".github/release-drafter-en.yml" ]; then
+    if grep -q "template:" .github/release-drafter-en.yml && grep -q "categories:" .github/release-drafter-en.yml; then
+        print_status 0 "English config has required sections"
+    else
+        print_status 1 "English config missing required sections"
+    fi
+fi
+
+# Check Chinese config
+if [ -f ".github/release-drafter-zh.yml" ]; then
+    if grep -q "template:" .github/release-drafter-zh.yml && grep -q "categories:" .github/release-drafter-zh.yml; then
+        print_status 0 "Chinese config has required sections"
+    else
+        print_status 1 "Chinese config missing required sections"
+    fi
+fi
+
+# 5. Test translation script
+echo -e "\n${BLUE}5. Testing translation script...${NC}"
+
+if [ -f "scripts/translate-changelog.sh" ]; then
+    chmod +x scripts/translate-changelog.sh
+    
+    # Test basic functionality
+    echo "## What's Changed" | ./scripts/translate-changelog.sh --auto --input /dev/stdin --output /dev/stdout > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        print_status 0 "Translation script runs without errors"
+    else
+        print_status 1 "Translation script has errors"
+    fi
+    
+    # Check dictionary
+    if [ -f "scripts/translation-dictionary.txt" ]; then
+        dict_lines=$(wc -l < scripts/translation-dictionary.txt)
+        if [ "$dict_lines" -gt 10 ]; then
+            print_status 0 "Translation dictionary has $dict_lines entries"
+        else
+            print_warning "Translation dictionary has only $dict_lines entries"
+        fi
+    fi
+fi
+
+# 6. Check current branch and remote setup
+echo -e "\n${BLUE}6. Checking Git setup...${NC}"
+
+current_branch=$(git branch --show-current)
+print_info "Current branch: $current_branch"
+
+if git remote -v | grep -q origin; then
+    print_status 0 "Remote 'origin' configured"
+    
+    # Check if test branch exists on remote
+    if git branch -r | grep -q "origin/$TEST_BRANCH"; then
+        print_status 0 "Test branch '$TEST_BRANCH' exists on remote"
+    else
+        print_warning "Test branch '$TEST_BRANCH' not found on remote"
+        print_info "You may need to push the branch: git push origin $current_branch:$TEST_BRANCH"
+    fi
 else
-    echo "❌ changes/zh-cn directory is missing"
-    exit 1
+    print_status 1 "Remote 'origin' not configured"
 fi
 
-# Create sample changelog entry
-echo "📝 Creating sample changelog entries..."
+# 7. Simulate PR labeler rules
+echo -e "\n${BLUE}7. Testing PR labeler rules...${NC}"
 
-SAMPLE_VERSION="2.5.0"
-SAMPLE_EN_CONTENT="# Apache Seata v$SAMPLE_VERSION (TEST)
+test_cases=(
+    "feature: add new functionality"
+    "bugfix: resolve issue with connection"
+    "docs: update README"
+    "refactor: improve code structure"
+    "test: add unit tests"
+)
 
-We are excited to announce the release of Apache Seata v$SAMPLE_VERSION! 🎉
+for test_case in "${test_cases[@]}"; do
+    # Extract type from commit message
+    type=$(echo "$test_case" | cut -d: -f1)
+    
+    # Check if there's a corresponding label rule
+    if grep -q "$type" .github/pr-labeler.yml; then
+        print_status 0 "Label rule exists for: $test_case"
+    else
+        print_warning "No label rule for: $test_case"
+    fi
+done
 
-## What's Changed
+# 8. Check test output directories
+echo -e "\n${BLUE}8. Checking test output setup...${NC}"
 
-### 🚀 New Features
-- Add distributed lock mechanism (#1234)
-- Support for PostgreSQL in AT mode (#1235)
-
-### 🐛 Bug Fixes
-- Fix connection pool leak issue (#1236)
-- Resolve transaction timeout problem (#1237)
-
-**Full Changelog**: https://github.com/apache/incubator-seata/compare/v2.4.0...v$SAMPLE_VERSION"
-
-SAMPLE_ZH_CONTENT="# Apache Seata v$SAMPLE_VERSION (测试)
-
-我们很兴奋地宣布 Apache Seata v$SAMPLE_VERSION 发布！🎉
-
-## 更新内容
-
-### 🚀 新功能
-- 添加分布式锁机制 (#1234)
-- 支持PostgreSQL AT模式 (#1235)
-
-### 🐛 问题修复
-- 修复连接池泄漏问题 (#1236)
-- 解决事务超时问题 (#1237)
-
-**完整更新日志**: https://github.com/apache/incubator-seata/compare/v2.4.0...v$SAMPLE_VERSION"
-
-echo "$SAMPLE_EN_CONTENT" > "changes/en-us/$SAMPLE_VERSION-test.md"
-echo "$SAMPLE_ZH_CONTENT" > "changes/zh-cn/$SAMPLE_VERSION-test.md"
-
-echo "✅ Sample changelog entries created"
-echo "  - changes/en-us/$SAMPLE_VERSION-test.md"
-echo "  - changes/zh-cn/$SAMPLE_VERSION-test.md"
-
-# Cleanup
-read -p "🗑️  Remove test files? (y/n): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    rm -f "changes/en-us/$SAMPLE_VERSION-test.md"
-    rm -f "changes/zh-cn/$SAMPLE_VERSION-test.md"
-    echo "✅ Test files removed"
+if [ ! -d "changes/test" ]; then
+    print_info "Creating test output directory: changes/test"
+    mkdir -p changes/test/{en-us,zh-cn}
+    print_status 0 "Test directories created"
+else
+    print_status 0 "Test directories exist"
 fi
 
+# 9. Final recommendations
+echo -e "\n${BLUE}9. Test Execution Recommendations...${NC}"
+echo "=================================================="
+print_info "To test the automation system:"
 echo ""
-echo "🎉 Release Drafter configuration test completed successfully!"
+echo "1. Create a test PR targeting '$TEST_BRANCH':"
+echo "   - Title: 'feature: test automated changelog generation'"
+echo "   - Make any small change (e.g., update docs/README.md)"
 echo ""
-echo "📋 Next steps:"
-echo "1. Create a test PR with proper labels"
-echo "2. Check if GitHub Actions triggers correctly"
-echo "3. Review the generated draft release"
-echo "4. Adjust configuration as needed"
+echo "2. Check GitHub Actions execution:"
+echo "   - Go to Actions tab in your repository"
+echo "   - Look for 'Release Drafter (English) - TEST' workflow"
+echo "   - Look for 'Release Drafter (Chinese) - TEST' workflow"
 echo ""
-echo "💡 For more information, see docs/automated-changelog-setup.md" 
+echo "3. Verify automated outputs:"
+echo "   - Check if PR gets labeled automatically"
+echo "   - Check if draft releases are created"
+echo "   - Check if changelog files are updated in changes/test/"
+echo ""
+echo "4. Review generated content:"
+echo "   - English changelog: changes/test/en-us/experiment.md"
+echo "   - Chinese changelog: changes/test/zh-cn/experiment.md"
+echo ""
+
+# 10. Current status summary
+echo -e "\n${BLUE}10. Configuration Status Summary${NC}"
+echo "=================================================="
+echo -e "${GREEN}✅ Bilingual release drafter configured${NC}"
+echo -e "${GREEN}✅ PR auto-labeling rules defined${NC}"
+echo -e "${GREEN}✅ Translation system ready${NC}"
+echo -e "${GREEN}✅ GitHub Actions workflows prepared${NC}"
+echo -e "${YELLOW}⚠️  Configured for TEST BRANCH: $TEST_BRANCH${NC}"
+echo ""
+echo -e "${BLUE}Ready for testing! 🚀${NC}"
+
+# Show next steps based on current branch
+if [ "$current_branch" = "$TEST_BRANCH" ]; then
+    echo -e "\n${GREEN}You're on the test branch. Ready to create PR and test!${NC}"
+else
+    echo -e "\n${YELLOW}Switch to test branch or create PR targeting '$TEST_BRANCH'${NC}"
+    echo "git checkout $TEST_BRANCH"
+fi 
