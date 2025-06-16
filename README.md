@@ -18,158 +18,138 @@
 <img src="https://img.alicdn.com/imgextra/i1/O1CN011z0JfQ2723QgDiWuH_!!6000000007738-2-tps-1497-401.png"  height="100" width="426"/>
 </div>
 
-# Seata: Simple Extensible Autonomous Transaction Architecture
+# Seata
+Apache Seata is an easy-to-use, high-performance, open source distributed transaction solution.
 
-[![build](https://github.com/apache/incubator-seata/actions/workflows/build.yml/badge.svg)](https://github.com/apache/incubator-seata/actions/workflows/build.yml)
-[![codecov](https://codecov.io/gh/apache/incubator-seata/graph/badge.svg?token=tbmHt2ZfxO)](https://codecov.io/gh/apache/incubator-seata)
-[![license](https://img.shields.io/github/license/apache/incubator-seata.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
-[![maven](https://img.shields.io/maven-central/v/org.apache.seata/seata-all?versionSuffix=2.3.0)](https://central.sonatype.com/search?q=org.apache.seata%3Aseata-all)
+## 🚀 Release Drafter Test
+
+This line added to test the automated release notes generation.
+
+The term **Seata** is an abbreviation of **S**imple **E**xtensible **A**utonomous **T**ransaction **A**rchitecture. The pronunciation of Seata is */ˈsiːtə/*.
 
 ## What is Seata?
 
-A **distributed transaction solution** with high performance and ease of use for **microservices** architecture.
-### Distributed Transaction Problem in Microservices
+A **one-stop solution** for distributed transaction problems.
 
-Let's imagine a traditional monolithic application. Its business is built up with 3 modules. They use a single local data source.
+Seata provides AT, TCC, SAGA and XA transaction modes to create a one-stop distributed transaction solution for users.
 
-Naturally, data consistency will be guaranteed by the local transaction.
+![](https://cdn.nlark.com/yuque/0/2019/png/226702/1558676605632-029ceee6-9fc6-4696-9d74-46b9d9ddb985.png)
 
-![Monolithic App](https://img.alicdn.com/imgextra/i3/O1CN01FTtjyG1H4vvVh1sNY_!!6000000000705-0-tps-1106-678.jpg) 
+## AT Mode
 
-Things have changed in a microservices architecture. The 3 modules mentioned above are designed to be 3 services on top of 3 different data sources ([Pattern: Database per service](http://microservices.io/patterns/data/database-per-service.html)). Data consistency within every single service is naturally guaranteed by the local transaction. 
+#### Prerequisites
 
-**But how about the whole business logic scope?**
+- Based on the support for local ACID transactions of relational databases.
+- Java applications, through JDBC to access the database.
 
-![Microservices Problem](https://img.alicdn.com/imgextra/i1/O1CN01DXkc3o1te9mnJcHOr_!!6000000005926-0-tps-1268-804.jpg) 
+#### Overall mechanism
 
-### How Seata do?
+Evolution from the two phases commit protocol:
 
-Seata is just a solution to the problem mentioned above. 
+- Phase 1：commit business data and rollback log in the same local transaction, then release local locks and connection resources.
+- Phase 2：
+  - for commit case, do nothing since the business data already committed in phase 1.
+  - for rollback case, do compensate by backward-rolling operations with rollback log.
 
-![Seata solution](https://img.alicdn.com/imgextra/i1/O1CN01FheliH1k5VHIRob3p_!!6000000004632-0-tps-1534-908.jpg)
+#### Write isolation
 
-Firstly, how to define a **Distributed Transaction**?
+- The **global lock** must be acquired before committing the business data in phase 1.
+- If the **global lock** is not acquired, the current local transaction should be rollback.
+- The **global lock** is released till the end of second phase.
+- The **global lock** is the third party address in the same record in memory, not in the database. So the performance impact is minimal.
 
-We say, a **Distributed Transaction** is a **Global Transaction** which is made up with a batch of **Branch Transaction**, and normally **Branch Transaction** is just **Local Transaction**.
+#### Read isolation
 
-![Global & Branch](https://cdn.nlark.com/lark/0/2018/png/18862/1545015454979-a18e16f6-ed41-44f1-9c7a-bd82c4d5ff99.png) 
+The isolation level of global transaction is **read committed**, but we can achieve **read uncommitted** by SELECT FOR UPDATE statement.
 
-There are three roles in Seata Framework: 
+## TCC Mode
 
-- **Transaction Coordinator(TC):** Maintain status of global and branch transactions, drive the global commit or rollback.
-- **Transaction Manager(TM):** Define the scope of global transaction: begin a global transaction, commit or rollback a global transaction.
-- **Resource Manager(RM):** Manage resources that branch transactions working on, talk to TC for registering branch transactions and reporting status of branch transactions, and drive the branch transaction commit or rollback.
+Try-Confirm-Cancel pattern.
 
-![Model](https://cdn.nlark.com/lark/0/2018/png/18862/1545013915286-4a90f0df-5fda-41e1-91e0-2aa3d331c035.png) 
+![Overview of a global transaction](https://seata.io/img/architecture.png)
 
-A typical lifecycle of Seata managed distributed transaction:
+#### Write isolation
 
-1. TM asks TC to begin a new global transaction. TC generates an XID representing the global transaction.
-2. XID is propagated through microservices' invoke chain.
-3. RM registers local transaction as a branch of the corresponding global transaction of XID to TC. 
-4. TM asks TC for committing or rollbacking the corresponding global transaction of XID.
-5. TC drives all branch transactions under the corresponding global transaction of XID to finish branch committing or rollbacking.
+Similar to the AT mode's global lock.
 
-![Typical Process](https://cdn.nlark.com/lark/0/2018/png/18862/1545296917881-26fabeb9-71fa-4f3e-8a7a-fc317d3389f4.png) 
+#### Read isolation
 
-For more details about principle and design, please go to [Seata wiki page](https://github.com/apache/incubator-seata/wiki). 
+Through lock-select (select for update)、lock-update、lock-delete and lock-insert.
 
-### History
+## Saga Mode
 
-##### Alibaba
+Saga pattern is a failure management pattern, that provides a way to let distributed transaction cross multiple microservices to have eventual consistency.
 
-- **TXC**: Taobao Transaction Constructor. Alibaba middleware team started this project since 2014 to meet the distributed transaction problems caused by application architecture change from monolithic to microservices.
-- **GTS**: Global Transaction Service. TXC as an Aliyun middleware product with new name GTS was published since 2016.
-- **Fescar**: we started the open source project Fescar based on TXC/GTS since 2019 to work closely with the community in the future.
+#### Difference compared to TCC  
 
+- No need to implement the three phases of TCC (try/confirm/cancel), it only need to provide a reverse action (compensate) for each forward action.
+- The forward action and compensation action is at the same participant.
+- No need to consider the isolation of resources, but relax the isolation requirements, accept the eventual consistency.
 
-##### Ant Financial
+#### Advantage compared to TCC  
 
-- **XTS**: Extended Transaction Service. Ant Financial middleware team developed the distributed transaction middleware since 2007, which is widely used in Ant Financial and solves the problems of data consistency across databases and services.
+- One phase commit locally, no lock is held for long time, and better performance.
+- Participants of saga transactions don't need to supply the three phases APIs of TCC, just supply a reverse action to each forward action, development costs are reduced.
+- Don't need to consider the isolation of resources, accept the eventual consistency, undoubtedly decreases the difficulty to implement complex business logic.
 
-- **DTX**: Distributed Transaction Extended. Since 2013, XTS has been published on the Ant Financial Cloud, with the name of DTX .
+## XA Mode
 
+The XA protocol is the X/Open CAE Specification (Distributed Transaction Processing).
 
-##### Seata Community
+Seata's XA mode: support for XA protocol
 
-- **Seata** :Simple Extensible Autonomous Transaction Architecture. Ant Financial joins Fescar, which make it to be a more neutral and open community for distributed transaction, and Fescar be renamed to Seata.
+![](https://img.alicdn.com/tfs/TB1hSpccIVl614jSZKPXXaGjpXa-1330-924.png)
 
+## Maven
 
-
-## Maven dependency
-
-Depending on the scenario, choose one of the two dependencies: `org.apache.seata:seata-all` or `org.apache.seata:seata-spring-boot-starter`.
 ```xml
-<properties>
-  <seata.version>2.3.0</seata.version>
-</properties>
+<seata.version>latest version</seata.version>
 
-<dependencies>
-<!--dependencies for non-SpringBoot application framework-->
-  <dependency>
-    <groupId>org.apache.seata</groupId>
-    <artifactId>seata-all</artifactId>
-    <version>${seata.version}</version>
-  </dependency>
-
-<!--If your project base on `Spring Boot`, you can directly use the following dependencies-->
-<!--Notice: `seata-spring-boot-starter` has already included `seata-all` dependency-->
-  <dependency>
-    <groupId>org.apache.seata</groupId>
+<dependency>
+    <groupId>io.seata</groupId>
     <artifactId>seata-spring-boot-starter</artifactId>
     <version>${seata.version}</version>
-  </dependency>
-</dependencies>
+</dependency>
 ```
 
 ## Quick Start
 
-[Quick Start](https://seata.apache.org/zh-cn/docs/ops/deploy-guide-beginner)
+[Quick Start](https://seata.io/en-us/docs/user/quickstart.html)
 
 ## Documentation
 
-
-You can view the full documentation from Seata Official Website: [Seata Website page](https://seata.apache.org/zh-cn/docs/overview/what-is-seata).
+You can view the full documentation from the wiki: [Seata wiki](https://github.com/seata/seata/wiki).
 
 ## Reporting bugs
 
-Please follow the [template](./.github/ISSUE_TEMPLATE/BUG_REPORT.yml) for reporting any issues.
-
-## Security
-
-Please do not use our public issue tracker but refer to our [security policy](./SECURITY.md)
+Please follow the [template](https://github.com/seata/seata/blob/develop/.github/ISSUE_TEMPLATE/BUG_REPORT.md) for reporting any issues.
 
 ## Contributing
 
-Contributors are welcomed to join the Seata project. Please check [CONTRIBUTING](./CONTRIBUTING.md) and [CONTRIBUTING-CN](./CONTRIBUTING_CN.md) about how to contribute to this project.
-
+Contributors are welcomed to join the Seata project. Please check [CONTRIBUTING](./CONTRIBUTING.md) about how to contribute to this project.
 
 ## Contact
 
+* [Twitter](https://twitter.com/seatadocs): Follow along for latest Seata news on Twitter.
 * Mailing list: 
-  * dev@seata.apache.org , for dev/user discussion. [subscribe](mailto:dev-subscribe@seata.apache.org), [unsubscribe](mailto:dev-unsubscribe@seata.apache.org), [archive](https://lists.apache.org/list.html?dev@seata.apache.org)
-* Online chat: 
+  * dev-seata@googlegroups.com , for developers.
+  * users-seata@googlegroups.com , for users.
+* Blogs: http://seata.io/en-us/blog/index.html
+* Gitter: https://gitter.im/seata/seata
+* Slack: https://join.slack.com/t/seatacommunity/shared_invite/zt-1l3rqcx6e-uKUhVqOdB5dPZKs_HS_Oug
 
-|                                                       Dingtalk group                                                        |                                                   Wechat official account                                                    |                                                       QQ group                                                        |                                                  Wechat assistant                                                   |
-|:---------------------------------------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------------:|
-| <img src="https://seata.apache.org/zh-cn/assets/images/dingtalk-group-67f42c9466fb2268b6927bb16b549d6c.jpg"  width="150" /> | <img src="https://seata.apache.org/zh-cn/assets/images/wechat-official-467d10305f5449e6b2096e65d23a9d02.jpg"  width="150" /> | <img src="https://seata.apache.org/zh-cn/assets/images/qq-group-8d8a89699cdb9ba8818364069475ba96.jpg"  width="150" /> | <img src="https://seata.apache.org/zh-cn/assets/images/wechat-f8a87a96973942b826e32d1aed9bc8d9.jpg"  width="150" /> |
+#### Seata ecosystem
 
-## Seata ecosystem
-
-* [Seata Website](https://github.com/apache/incubator-seata.github.io) - Seata official website
-* [Seata GoLang](https://github.com/apache/incubator-seata-go) - Seata GoLang client and server
-* [Seata Samples](https://github.com/apache/incubator-seata-samples) - Samples for Seata
-* [Seata GoLang Samples](https://github.com/apache/incubator-seata-go-samples) - Samples for Seata GoLang
-* [Seata K8s](https://github.com/apache/incubator-seata-k8s) - Seata integration with k8s
-* [Seata CLI](https://github.com/apache/incubator-seata-ctl) - CLI tool for Seata
-
-## Contributors
-
-This project exists thanks to all the people who contribute. [[Contributors](https://github.com/apache/incubator-seata/graphs/contributors)].
+* [Seata Website](https://github.com/seata/seata.github.io) - Apache Seata official website
+* [Seata Samples](https://github.com/seata/seata-samples) - Seata Examples
+* [Seata Docker](https://github.com/seata/seata-docker) - Seata integration with docker
+* [Seata K8s](https://github.com/seata/seata-k8s) - Seata integration with k8s
+* [Awesome Seata](https://github.com/seata/awesome-seata) - Description of Seata related projects
+* [Seata Website](https://github.com/seata/seata.github.io) - Seata official website
 
 ## License
 
-Seata is under the Apache 2.0 license. See the [LICENSE](https://github.com/apache/incubator-seata/blob/master/LICENSE) file for details.
+Seata is under the Apache 2.0 license. See the [LICENSE](https://github.com/seata/seata/blob/master/LICENSE) file for details.
 
 ## Who is using
 
