@@ -28,12 +28,35 @@ import org.apache.seata.rm.tcc.api.BusinessActionContext;
 /**
  * Saga annotation.
  * Define a saga interface, which added on the commit method, if occurs rollback, compensation will be called.
- * <p>
- * Note: When using this annotation for local (non-remote) services, you should also add @LocalTransactional
+ * 
+ * When using this annotation for local (non-remote) services, you should also add @LocalTransactional
  * annotation on the interface or implementation class to enable proper proxy enhancement.
  * This avoids the need to use @LocalTCC annotation in Saga scenarios, which can be confusing.
  * 
- * @see org.apache.seata.common.transaction.api.LocalTransactional // Generic annotation for transaction participants
+ * Recommended Usage Pattern:
+ * 
+ * @LocalTransactional  // Use this instead of @LocalTCC for Saga scenarios
+ * public interface PaymentSagaService {
+ *     
+ *     @CompensationBusinessAction(compensationMethod = "compensatePayment")
+ *     boolean processPayment(BusinessActionContext context, String orderId, double amount);
+ *     
+ *     boolean compensatePayment(BusinessActionContext context);
+ * }
+ * 
+ * Why Use @LocalTransactional with Saga:
+ * - Semantic clarity: @LocalTransactional indicates general transaction participation
+ * - Avoids confusion: @LocalTCC specifically implies TCC mode semantics
+ * - Future compatibility: Works with multiple transaction modes
+ * - Better maintainability: Clear intent for Saga compensation patterns
+ * 
+ * Legacy Support:
+ * While @LocalTCC still works with Saga scenarios for backward compatibility,
+ * @LocalTransactional is the recommended approach for new implementations.
+ * 
+ * @see org.apache.seata.common.transaction.api.LocalTransactional Recommended annotation for Saga scenarios
+ * @see org.apache.seata.rm.tcc.api.LocalTCC Legacy annotation (still supported but not recommended for Saga)
+ * @see org.apache.seata.rm.tcc.api.BusinessActionContext Context parameter type
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})

@@ -196,13 +196,7 @@ public class LocalTCCRemotingParserTest {
         LocalTCCOnlyService service = new LocalTCCOnlyService();
         RemotingDesc desc = parser.getServiceDesc(service, "localTCCService");
         
-        assertNotNull(desc);
-        assertTrue(desc.isReference());
-        assertTrue(desc.isService());
-        assertEquals(Protocols.IN_JVM, desc.getProtocol());
-        assertEquals(LocalTCCOnlyService.class, desc.getServiceClass());
-        assertEquals(LocalTCCOnlyService.class.getName(), desc.getServiceClassName());
-        assertEquals(service, desc.getTargetBean());
+        assertRemotingDescWithServiceClass(desc, service, LocalTCCOnlyService.class);
     }
 
     @Test
@@ -210,13 +204,7 @@ public class LocalTCCRemotingParserTest {
         LocalTransactionalOnlyService service = new LocalTransactionalOnlyService();
         RemotingDesc desc = parser.getServiceDesc(service, "localTransactionalService");
         
-        assertNotNull(desc);
-        assertTrue(desc.isReference());
-        assertTrue(desc.isService());
-        assertEquals(Protocols.IN_JVM, desc.getProtocol());
-        assertEquals(LocalTransactionalOnlyService.class, desc.getServiceClass());
-        assertEquals(LocalTransactionalOnlyService.class.getName(), desc.getServiceClassName());
-        assertEquals(service, desc.getTargetBean());
+        assertRemotingDescWithServiceClass(desc, service, LocalTransactionalOnlyService.class);
     }
 
     @Test
@@ -224,13 +212,7 @@ public class LocalTCCRemotingParserTest {
         LocalTCCInterfaceImpl service = new LocalTCCInterfaceImpl();
         RemotingDesc desc = parser.getServiceDesc(service, "localTCCInterfaceImpl");
         
-        assertNotNull(desc);
-        assertTrue(desc.isReference());
-        assertTrue(desc.isService());
-        assertEquals(Protocols.IN_JVM, desc.getProtocol());
-        assertEquals(LocalTCCInterface.class, desc.getServiceClass());
-        assertEquals(LocalTCCInterface.class.getName(), desc.getServiceClassName());
-        assertEquals(service, desc.getTargetBean());
+        assertRemotingDescWithServiceClass(desc, service, LocalTCCInterface.class);
     }
 
     @Test
@@ -238,13 +220,7 @@ public class LocalTCCRemotingParserTest {
         LocalTransactionalInterfaceImpl service = new LocalTransactionalInterfaceImpl();
         RemotingDesc desc = parser.getServiceDesc(service, "localTransactionalInterfaceImpl");
         
-        assertNotNull(desc);
-        assertTrue(desc.isReference());
-        assertTrue(desc.isService());
-        assertEquals(Protocols.IN_JVM, desc.getProtocol());
-        assertEquals(LocalTransactionalInterface.class, desc.getServiceClass());
-        assertEquals(LocalTransactionalInterface.class.getName(), desc.getServiceClassName());
-        assertEquals(service, desc.getTargetBean());
+        assertRemotingDescWithServiceClass(desc, service, LocalTransactionalInterface.class);
     }
 
     @Test
@@ -252,13 +228,7 @@ public class LocalTCCRemotingParserTest {
         BothAnnotationsInterfaceImpl service = new BothAnnotationsInterfaceImpl();
         RemotingDesc desc = parser.getServiceDesc(service, "bothAnnotationsInterfaceImpl");
         
-        assertNotNull(desc);
-        assertTrue(desc.isReference());
-        assertTrue(desc.isService());
-        assertEquals(Protocols.IN_JVM, desc.getProtocol());
-        assertEquals(BothAnnotationsInterface.class, desc.getServiceClass());
-        assertEquals(BothAnnotationsInterface.class.getName(), desc.getServiceClassName());
-        assertEquals(service, desc.getTargetBean());
+        assertRemotingDescWithServiceClass(desc, service, BothAnnotationsInterface.class);
     }
 
     @Test
@@ -289,11 +259,8 @@ public class LocalTCCRemotingParserTest {
         BothAnnotationsService service = new BothAnnotationsService();
         RemotingDesc desc = parser.getServiceDesc(service, "bothAnnotationsService");
         
-        assertNotNull(desc);
-        assertEquals(BothAnnotationsService.class, desc.getServiceClass());
         // Should handle both annotations gracefully
-        assertTrue(desc.isService());
-        assertTrue(desc.isReference());
+        assertRemotingDescWithServiceClass(desc, service, BothAnnotationsService.class);
     }
 
     // Edge case: Class implements multiple interfaces with different annotations
@@ -307,12 +274,39 @@ public class LocalTCCRemotingParserTest {
         MultipleInterfaceImpl service = new MultipleInterfaceImpl();
         RemotingDesc desc = parser.getServiceDesc(service, "multipleInterfaceImpl");
         
-        assertNotNull(desc);
         // Should detect at least one annotation and work properly
-        assertTrue(desc.isService());
-        assertTrue(desc.isReference());
-        // The first interface found with annotation should be used
-        assertTrue(desc.getServiceClass() == LocalTCCInterface.class || 
-                  desc.getServiceClass() == LocalTransactionalInterface.class);
+        assertValidRemotingDesc(desc, service);
+        
+        // Verify that one of the annotated interfaces is selected as the service class
+        Class<?> serviceClass = desc.getServiceClass();
+        assertTrue(isAnnotatedInterface(serviceClass), 
+                   "Service class should be one of the annotated interfaces, but was: " + serviceClass.getSimpleName());
+    }
+    
+    /**
+     * Helper method to check if a class is one of our supported annotated interfaces
+     */
+    private boolean isAnnotatedInterface(Class<?> clazz) {
+        return clazz == LocalTCCInterface.class || clazz == LocalTransactionalInterface.class;
+    }
+    
+    /**
+     * Helper method to verify common RemotingDesc properties
+     */
+    private void assertValidRemotingDesc(RemotingDesc desc, Object expectedTargetBean) {
+        assertNotNull(desc, "RemotingDesc should not be null");
+        assertTrue(desc.isReference(), "Should be a reference");
+        assertTrue(desc.isService(), "Should be a service");
+        assertEquals(Protocols.IN_JVM, desc.getProtocol(), "Should use IN_JVM protocol");
+        assertEquals(expectedTargetBean, desc.getTargetBean(), "Target bean should match");
+    }
+    
+    /**
+     * Helper method to verify RemotingDesc with expected service class
+     */
+    private void assertRemotingDescWithServiceClass(RemotingDesc desc, Object targetBean, Class<?> expectedServiceClass) {
+        assertValidRemotingDesc(desc, targetBean);
+        assertEquals(expectedServiceClass, desc.getServiceClass(), "Service class should match");
+        assertEquals(expectedServiceClass.getName(), desc.getServiceClassName(), "Service class name should match");
     }
 }

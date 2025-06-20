@@ -32,22 +32,45 @@ import java.util.Set;
  * 
  * This parser supports both @LocalTCC (for backward compatibility) and @LocalTransactional 
  * annotations, providing a unified approach for transaction participant service detection.
+ * 
+ * Supported Annotations:
+ * - LocalTCC - TCC-specific annotation, maintained for backward compatibility
+ * - LocalTransactional - Generic transaction participant annotation (recommended for Saga)
+ * 
+ * Detection Priority:
+ * 1. Interface annotations (higher priority)
+ * 2. Implementation class annotations (fallback)
+ * 
+ * Mixed Usage Support:
+ * The parser handles scenarios where both annotations are present, allowing for:
+ * - Gradual migration from @LocalTCC to @LocalTransactional
+ * - Mixed codebases with different annotation strategies
+ * - Backward compatibility with existing @LocalTCC usage
+ * 
+ * Performance Considerations:
+ * Annotation detection is performed using reflection and should be cached appropriately
+ * in high-throughput scenarios.
+ * 
+ * @see LocalTCC TCC-specific annotation
+ * @see LocalTransactional Generic transaction participant annotation
+ * @see org.apache.seata.integration.tx.api.remoting.parser.AbstractedRemotingParser Base class
+ * @since 1.0.0 (dual annotation support added in 2.5.0)
  */
 public class LocalTCCRemotingParser extends AbstractedRemotingParser {
 
     @Override
     public boolean isReference(Object bean, String beanName) {
-        return isTransactionParticipantBean(bean);
+        return isLocalTransactional(bean);
     }
 
     @Override
     public boolean isService(Object bean, String beanName) {
-        return isTransactionParticipantBean(bean);
+        return isLocalTransactional(bean);
     }
 
     @Override
     public boolean isService(Class<?> beanClass) throws FrameworkException {
-        return isTransactionParticipant(beanClass);
+        return isLocalTransactional(beanClass);
     }
 
     @Override
@@ -61,26 +84,25 @@ public class LocalTCCRemotingParser extends AbstractedRemotingParser {
         remotingDesc.setProtocol(Protocols.IN_JVM);
         Class<?> classType = bean.getClass();
         
-        // First priority: check if annotations are present on the implementation class
-        // If found, use the implementation class as the service class
-        // This preserves backward compatibility with existing @LocalTCC usage while supporting @LocalTransactional
-        if (isTransactionParticipant(classType)) {
-            remotingDesc.setServiceClass(AopProxyUtils.ultimateTargetClass(bean));
-            remotingDesc.setServiceClassName(remotingDesc.getServiceClass().getName());
-            remotingDesc.setTargetBean(bean);
-            return remotingDesc;
-        }
-        
-        // Second priority: check if annotations are present on any implemented interfaces
-        // If implementation class has no annotations, fall back to interface annotations
+        // First priority: check if annotations are present on any implemented interfaces
+        // Interface annotations take precedence for service definition
         Set<Class<?>> interfaceClasses = ReflectionUtil.getInterfaces(classType);
         for (Class<?> interClass : interfaceClasses) {
-            if (isTransactionParticipant(interClass)) {
+            if (isLocalTransactional(interClass)) {
                 remotingDesc.setServiceClassName(interClass.getName());
                 remotingDesc.setServiceClass(interClass);
                 remotingDesc.setTargetBean(bean);
                 return remotingDesc;
             }
+        }
+        
+        // Second priority: check if annotations are present on the implementation class
+        // Fall back to implementation class if no interface annotations found
+        if (isLocalTransactional(classType)) {
+            remotingDesc.setServiceClass(AopProxyUtils.ultimateTargetClass(bean));
+            remotingDesc.setServiceClassName(remotingDesc.getServiceClass().getName());
+            remotingDesc.setTargetBean(bean);
+            return remotingDesc;
         }
         throw new FrameworkException("Couldn't parser any Remoting info");
     }
@@ -91,31 +113,41 @@ public class LocalTCCRemotingParser extends AbstractedRemotingParser {
     }
 
     /**
-     * Determine whether there is a transaction participant annotation on the bean
+     * Check if the given bean is annotated with local transaction participant annotations
      * Supports both {@link LocalTCC} and {@link LocalTransactional} annotations
      * 
      * @param bean the bean to check
      * @return true if the bean or its interfaces have either LocalTCC or LocalTransactional annotation
      */
-    private boolean isTransactionParticipantBean(Object bean) {
-        Class<?> classType = bean.getClass();
-        return isTransactionParticipant(classType);
+    private boolean isLocalTransactional(Object bean) {
+        return isLocalTransactional(bean.getClass());
     }
 
     /**
-     * Determine whether there is a transaction participant annotation ({@link LocalTCC} or {@link LocalTransactional}) 
-     * on the given class or its interfaces
+     * Check if the given class or its interfaces are annotated with local transaction participant annotations
+     * Supports both {@link LocalTCC} and {@link LocalTransactional} annotations
      * 
      * @param classType the class type to check
      * @return true if the class has either LocalTCC or LocalTransactional annotation
      */
-    private boolean isTransactionParticipant(Class<?> classType) {
-        Set<Class<?>> interfaceClasses = ReflectionUtil.getInterfaces(classType);
-        for (Class<?> interClass : interfaceClasses) {
-            if (interClass.isAnnotationPresent(LocalTCC.class) || interClass.isAnnotationPresent(LocalTransactional.class)) {
-                return true;
-            }
+    private boolean isLocalTransactional(Class<?> classType) {
+        // Check the class itself first for better performance
+        if (hasLocalTransactionalAnnotation(classType)) {
+            return true;
         }
-        return classType.isAnnotationPresent(LocalTCC.class) || classType.isAnnotationPresent(LocalTransactional.class);
+        
+        // Check all interfaces
+        Set<Class<?>> interfaceClasses = ReflectionUtil.getInterfaces(classType);
+        return interfaceClasses.stream().anyMatch(this::hasLocalTransactionalAnnotation);
+    }
+
+    /**
+     * Check if a class has either LocalTCC or LocalTransactional annotation
+     * 
+     * @param clazz the class to check
+     * @return true if the class has either annotation
+     */
+    private boolean hasLocalTransactionalAnnotation(Class<?> clazz) {
+        return clazz.isAnnotationPresent(LocalTCC.class) || clazz.isAnnotationPresent(LocalTransactional.class);
     }
 }
