@@ -23,19 +23,19 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Transaction Participant annotation.
- * A general annotation for marking beans that participate in distributed transactions.
+ * Local Transactional annotation.
+ * A general annotation for marking beans that participate in local transaction processing.
  * This annotation is designed to replace the specific usage of @LocalTCC in Saga scenarios
  * to avoid confusion, while also being applicable to TCC and other transaction modes.
  * <p>
- * In distributed transaction terminology, a "participant" is any component that takes part
- * in the transaction protocol, making this name semantically accurate across different
- * transaction patterns (TCC, Saga, XA, etc.).
+ * The "Local" prefix indicates this is for local (non-remote) transaction resources,
+ * and "Transactional" clearly indicates its purpose for transaction processing.
+ * This annotation can enable local transaction features like connection reuse and unified commit.
  * 
  * @see org.apache.seata.rm.tcc.api.LocalTCC // the original TCC-specific annotation, still supported for backward compatibility
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Inherited
-public @interface TransactionParticipant {
+public @interface LocalTransactional {
 } 

@@ -16,17 +16,17 @@
  */
 package org.apache.seata.saga.annotation;
 
-import org.apache.seata.common.transaction.api.TransactionParticipant;
+import org.apache.seata.common.transaction.api.LocalTransactional;
 import org.apache.seata.rm.tcc.api.BusinessActionContext;
 
 import java.util.List;
 
 /**
- * The interface Saga action using the new @TransactionParticipant annotation.
+ * The interface Saga action using the new @LocalTransactional annotation.
  * This demonstrates the new way to avoid using @LocalTCC in Saga scenarios.
  */
-@TransactionParticipant
-public interface TransactionParticipantSagaAnnotationAction {
+@LocalTransactional
+public interface LocalTransactionalSagaAnnotationAction {
 
     /**
      * Commit transaction

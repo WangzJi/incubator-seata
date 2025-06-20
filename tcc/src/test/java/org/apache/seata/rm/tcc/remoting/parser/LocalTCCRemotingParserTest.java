@@ -17,7 +17,7 @@
 package org.apache.seata.rm.tcc.remoting.parser;
 
 import org.apache.seata.common.exception.FrameworkException;
-import org.apache.seata.common.transaction.api.TransactionParticipant;
+import org.apache.seata.common.transaction.api.LocalTransactional;
 import org.apache.seata.integration.tx.api.remoting.Protocols;
 import org.apache.seata.integration.tx.api.remoting.RemotingDesc;
 import org.apache.seata.rm.tcc.api.LocalTCC;
@@ -34,14 +34,14 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
  * Unit tests for LocalTCCRemotingParser
- * Tests the dual annotation support (@LocalTCC and @TransactionParticipant)
+ * Tests the dual annotation support (@LocalTCC and @LocalTransactional)
  * 
  * Test scenarios covered:
  * 1. Single @LocalTCC annotation on implementation class
- * 2. Single @TransactionParticipant annotation on implementation class  
+ * 2. Single @LocalTransactional annotation on implementation class  
  * 3. Both annotations on implementation class (edge case)
  * 4. Single @LocalTCC annotation on interface with implementation
- * 5. Single @TransactionParticipant annotation on interface with implementation
+ * 5. Single @LocalTransactional annotation on interface with implementation
  * 6. Both annotations on interface with implementation (edge case)
  * 7. No annotations (negative test cases)
  * 8. Multiple interfaces with different annotations
@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
  * - Service/reference identification
  * - RemotingDesc generation correctness
  * - Backward compatibility with existing @LocalTCC usage
- * - Forward compatibility with new @TransactionParticipant usage
+ * - Forward compatibility with new @LocalTransactional usage
  */
 public class LocalTCCRemotingParserTest {
 
@@ -63,13 +63,13 @@ public class LocalTCCRemotingParserTest {
         public String doSomething() { return "local-tcc"; }
     }
 
-    @TransactionParticipant
-    public static class TransactionParticipantOnlyService {
+    @LocalTransactional
+    public static class LocalTransactionalOnlyService {
         public String doSomething() { return "transaction-participant"; }
     }
 
     @LocalTCC
-    @TransactionParticipant
+    @LocalTransactional
     public static class BothAnnotationsService {
         public String doSomething() { return "both"; }
     }
@@ -83,13 +83,13 @@ public class LocalTCCRemotingParserTest {
         String doSomething();
     }
 
-    @TransactionParticipant
-    public interface TransactionParticipantInterface {
+    @LocalTransactional
+    public interface LocalTransactionalInterface {
         String doSomething();
     }
 
     @LocalTCC
-    @TransactionParticipant
+    @LocalTransactional
     public interface BothAnnotationsInterface {
         String doSomething();
     }
@@ -103,9 +103,9 @@ public class LocalTCCRemotingParserTest {
         public String doSomething() { return "impl-local-tcc"; }
     }
 
-    public static class TransactionParticipantInterfaceImpl implements TransactionParticipantInterface {
+    public static class LocalTransactionalInterfaceImpl implements LocalTransactionalInterface {
         @Override
-        public String doSomething() { return "impl-transaction-participant"; }
+        public String doSomething() { return "impl-local-transactional"; }
     }
 
     public static class BothAnnotationsInterfaceImpl implements BothAnnotationsInterface {
@@ -130,9 +130,9 @@ public class LocalTCCRemotingParserTest {
     }
 
     @Test
-    public void testIsReference_TransactionParticipantOnly() {
-        TransactionParticipantOnlyService service = new TransactionParticipantOnlyService();
-        assertTrue(parser.isReference(service, "transactionParticipantService"));
+    public void testIsReference_LocalTransactionalOnly() {
+        LocalTransactionalOnlyService service = new LocalTransactionalOnlyService();
+        assertTrue(parser.isReference(service, "localTransactionalService"));
     }
 
     @Test
@@ -154,9 +154,9 @@ public class LocalTCCRemotingParserTest {
     }
 
     @Test
-    public void testIsService_TransactionParticipantOnly() {
-        TransactionParticipantOnlyService service = new TransactionParticipantOnlyService();
-        assertTrue(parser.isService(service, "transactionParticipantService"));
+    public void testIsService_LocalTransactionalOnly() {
+        LocalTransactionalOnlyService service = new LocalTransactionalOnlyService();
+        assertTrue(parser.isService(service, "localTransactionalService"));
     }
 
     @Test
@@ -177,8 +177,8 @@ public class LocalTCCRemotingParserTest {
     }
 
     @Test
-    public void testIsService_Class_TransactionParticipantOnly() throws FrameworkException {
-        assertTrue(parser.isService(TransactionParticipantOnlyService.class));
+    public void testIsService_Class_LocalTransactionalOnly() throws FrameworkException {
+        assertTrue(parser.isService(LocalTransactionalOnlyService.class));
     }
 
     @Test
@@ -206,16 +206,16 @@ public class LocalTCCRemotingParserTest {
     }
 
     @Test
-    public void testGetServiceDesc_TransactionParticipantOnImplementation() throws FrameworkException {
-        TransactionParticipantOnlyService service = new TransactionParticipantOnlyService();
-        RemotingDesc desc = parser.getServiceDesc(service, "transactionParticipantService");
+    public void testGetServiceDesc_LocalTransactionalOnImplementation() throws FrameworkException {
+        LocalTransactionalOnlyService service = new LocalTransactionalOnlyService();
+        RemotingDesc desc = parser.getServiceDesc(service, "localTransactionalService");
         
         assertNotNull(desc);
         assertTrue(desc.isReference());
         assertTrue(desc.isService());
         assertEquals(Protocols.IN_JVM, desc.getProtocol());
-        assertEquals(TransactionParticipantOnlyService.class, desc.getServiceClass());
-        assertEquals(TransactionParticipantOnlyService.class.getName(), desc.getServiceClassName());
+        assertEquals(LocalTransactionalOnlyService.class, desc.getServiceClass());
+        assertEquals(LocalTransactionalOnlyService.class.getName(), desc.getServiceClassName());
         assertEquals(service, desc.getTargetBean());
     }
 
@@ -234,16 +234,16 @@ public class LocalTCCRemotingParserTest {
     }
 
     @Test
-    public void testGetServiceDesc_TransactionParticipantOnInterface() throws FrameworkException {
-        TransactionParticipantInterfaceImpl service = new TransactionParticipantInterfaceImpl();
-        RemotingDesc desc = parser.getServiceDesc(service, "transactionParticipantInterfaceImpl");
+    public void testGetServiceDesc_LocalTransactionalOnInterface() throws FrameworkException {
+        LocalTransactionalInterfaceImpl service = new LocalTransactionalInterfaceImpl();
+        RemotingDesc desc = parser.getServiceDesc(service, "localTransactionalInterfaceImpl");
         
         assertNotNull(desc);
         assertTrue(desc.isReference());
         assertTrue(desc.isService());
         assertEquals(Protocols.IN_JVM, desc.getProtocol());
-        assertEquals(TransactionParticipantInterface.class, desc.getServiceClass());
-        assertEquals(TransactionParticipantInterface.class.getName(), desc.getServiceClassName());
+        assertEquals(LocalTransactionalInterface.class, desc.getServiceClass());
+        assertEquals(LocalTransactionalInterface.class.getName(), desc.getServiceClassName());
         assertEquals(service, desc.getTargetBean());
     }
 
@@ -297,7 +297,7 @@ public class LocalTCCRemotingParserTest {
     }
 
     // Edge case: Class implements multiple interfaces with different annotations
-    public static class MultipleInterfaceImpl implements LocalTCCInterface, TransactionParticipantInterface {
+    public static class MultipleInterfaceImpl implements LocalTCCInterface, LocalTransactionalInterface {
         @Override
         public String doSomething() { return "multiple"; }
     }
@@ -313,6 +313,6 @@ public class LocalTCCRemotingParserTest {
         assertTrue(desc.isReference());
         // The first interface found with annotation should be used
         assertTrue(desc.getServiceClass() == LocalTCCInterface.class || 
-                  desc.getServiceClass() == TransactionParticipantInterface.class);
+                  desc.getServiceClass() == LocalTransactionalInterface.class);
     }
 }

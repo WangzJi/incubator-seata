@@ -17,7 +17,7 @@
 package org.apache.seata.saga.annotation;
 
 import org.apache.seata.common.exception.FrameworkException;
-import org.apache.seata.common.transaction.api.TransactionParticipant;
+import org.apache.seata.common.transaction.api.LocalTransactional;
 import org.apache.seata.integration.tx.api.remoting.RemotingDesc;
 import org.apache.seata.rm.tcc.api.LocalTCC;
 import org.apache.seata.rm.tcc.remoting.parser.LocalTCCRemotingParser;
@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
  * Boundary and edge case tests for annotation conflicts and complex scenarios
  * 
  * This test suite validates the parser behavior in challenging scenarios involving
- * @LocalTCC and @TransactionParticipant annotations:
+ * @LocalTCC and @LocalTransactional annotations:
  * 
  * Edge cases covered:
  * 1. Annotation conflicts (both annotations on same class/interface)
@@ -58,13 +58,13 @@ public class AnnotationConflictTest {
 
     // Conflict scenarios: both annotations present
     @LocalTCC
-    @TransactionParticipant
+    @LocalTransactional
     public static class ConflictOnClassService {
         public boolean doSomething() { return true; }
     }
 
     @LocalTCC
-    @TransactionParticipant
+    @LocalTransactional
     public interface ConflictOnInterfaceService {
         boolean doSomething();
     }
@@ -80,19 +80,19 @@ public class AnnotationConflictTest {
         boolean doSomething();
     }
 
-    @TransactionParticipant
-    public static class TransactionParticipantImpl implements LocalTCCInterface {
+    @LocalTransactional
+    public static class LocalTransactionalImpl implements LocalTCCInterface {
         @Override
         public boolean doSomething() { return true; }
     }
 
-    @TransactionParticipant
-    public interface TransactionParticipantInterface {
+    @LocalTransactional
+    public interface LocalTransactionalInterface {
         boolean doSomething();
     }
 
     @LocalTCC
-    public static class LocalTCCImpl implements TransactionParticipantInterface {
+    public static class LocalTCCImpl implements LocalTransactionalInterface {
         @Override
         public boolean doSomething() { return true; }
     }
@@ -103,7 +103,7 @@ public class AnnotationConflictTest {
         boolean firstMethod();
     }
 
-    @TransactionParticipant
+    @LocalTransactional
     public interface SecondInterface {
         boolean secondMethod();
     }
@@ -122,7 +122,7 @@ public class AnnotationConflictTest {
         public boolean baseMethod() { return true; }
     }
 
-    @TransactionParticipant
+    @LocalTransactional
     public static class ExtendedService extends BaseService {
         public boolean extendedMethod() { return true; }
     }
@@ -184,10 +184,10 @@ public class AnnotationConflictTest {
     }
 
     @Test
-    public void testMixedAnnotations_LocalTCCInterfaceTransactionParticipantImpl() {
-        TransactionParticipantImpl service = new TransactionParticipantImpl();
+    public void testMixedAnnotations_LocalTCCInterfaceLocalTransactionalImpl() {
+        LocalTransactionalImpl service = new LocalTransactionalImpl();
         
-        // Should be recognized (impl has @TransactionParticipant, interface has @LocalTCC)
+        // Should be recognized (impl has @LocalTransactional, interface has @LocalTCC)
         assertTrue(parser.isService(service, "mixedService1"));
         
         RemotingDesc desc = parser.getServiceDesc(service, "mixedService1");
@@ -195,13 +195,13 @@ public class AnnotationConflictTest {
         
         // Either implementation class or interface should be used (depending on parser logic)
         // Both are valid as long as the service is recognized
-        assertTrue(desc.getServiceClass() == TransactionParticipantImpl.class || 
+        assertTrue(desc.getServiceClass() == LocalTransactionalImpl.class || 
                    desc.getServiceClass() == LocalTCCInterface.class,
                    "Service class should be either implementation or interface");
     }
 
     @Test
-    public void testMixedAnnotations_TransactionParticipantInterfaceLocalTCCImpl() {
+    public void testMixedAnnotations_LocalTransactionalInterfaceLocalTCCImpl() {
         LocalTCCImpl service = new LocalTCCImpl();
         
         // Should be recognized (both interface and impl have annotations)
@@ -241,10 +241,10 @@ public class AnnotationConflictTest {
     }
 
     @Test
-    public void testInheritanceChain_ExtendedWithTransactionParticipant() {
+    public void testInheritanceChain_ExtendedWithLocalTransactional() {
         ExtendedService service = new ExtendedService();
         
-        // Should be recognized (has @TransactionParticipant, inherits from @LocalTCC)
+        // Should be recognized (has @LocalTransactional, inherits from @LocalTCC)
         assertTrue(parser.isService(service, "extendedService"));
         
         RemotingDesc desc = parser.getServiceDesc(service, "extendedService");
@@ -256,7 +256,7 @@ public class AnnotationConflictTest {
     public void testInheritanceChain_DeeplyExtended() {
         DeeplyExtendedService service = new DeeplyExtendedService();
         
-        // Should inherit @TransactionParticipant from ExtendedService
+        // Should inherit @LocalTransactional from ExtendedService
         assertTrue(parser.isService(service, "deeplyExtendedService"));
         
         RemotingDesc desc = parser.getServiceDesc(service, "deeplyExtendedService");
@@ -372,7 +372,7 @@ public class AnnotationConflictTest {
     // Test class hierarchy with mixed annotations
     @Test
     public void testComplexInheritanceHierarchy() {
-        @TransactionParticipant
+        @LocalTransactional
         class Level1 {
             public boolean level1Method() { return true; }
         }

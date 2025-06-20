@@ -19,7 +19,6 @@ package io.seata.rm.tcc.remoting.parser;
 import java.util.Set;
 
 import io.seata.rm.tcc.api.LocalTCC;
-import org.apache.seata.common.transaction.api.TransactionParticipant;
 import org.apache.seata.common.exception.FrameworkException;
 import org.apache.seata.common.util.ReflectionUtil;
 import org.apache.seata.integration.tx.api.remoting.Protocols;
@@ -27,11 +26,11 @@ import org.apache.seata.integration.tx.api.remoting.RemotingDesc;
 import org.springframework.aop.framework.AopProxyUtils;
 
 /**
- * Parser for transaction participant beans with @LocalTCC or @TransactionParticipant annotations
- * 
- * This parser supports both @LocalTCC (for backward compatibility) and @TransactionParticipant 
- * annotations, providing a unified approach for transaction participant service detection.
+ * The type Local tcc remoting parser.
+ * Compatible module maintains backward compatibility with Seata versions prior to 2.1.
+ * Only supports @LocalTCC annotation.
  */
+@Deprecated
 public class LocalTCCRemotingParser extends org.apache.seata.rm.tcc.remoting.parser.LocalTCCRemotingParser {
 
     @Override
@@ -44,17 +43,17 @@ public class LocalTCCRemotingParser extends org.apache.seata.rm.tcc.remoting.par
         remotingDesc.setService(this.isService(bean, beanName));
         remotingDesc.setProtocol(Protocols.IN_JVM);
         Class<?> classType = bean.getClass();
-        // check if LocalTCC or TransactionParticipant annotation is marked on the implementation class
-        if (classType.isAnnotationPresent(LocalTCC.class) || classType.isAnnotationPresent(TransactionParticipant.class)) {
+        // check if LocalTCC annotation is marked on the implementation class
+        if (classType.isAnnotationPresent(LocalTCC.class)) {
             remotingDesc.setServiceClass(AopProxyUtils.ultimateTargetClass(bean));
             remotingDesc.setServiceClassName(remotingDesc.getServiceClass().getName());
             remotingDesc.setTargetBean(bean);
             return remotingDesc;
         }
-        // check if LocalTCC or TransactionParticipant annotation is marked on the interface
+        // check if LocalTCC annotation is marked on the interface
         Set<Class<?>> interfaceClasses = ReflectionUtil.getInterfaces(classType);
         for (Class<?> interClass : interfaceClasses) {
-            if (interClass.isAnnotationPresent(LocalTCC.class) || interClass.isAnnotationPresent(TransactionParticipant.class)) {
+            if (interClass.isAnnotationPresent(LocalTCC.class)) {
                 remotingDesc.setServiceClassName(interClass.getName());
                 remotingDesc.setServiceClass(interClass);
                 remotingDesc.setTargetBean(bean);
@@ -66,7 +65,7 @@ public class LocalTCCRemotingParser extends org.apache.seata.rm.tcc.remoting.par
 
     @Override
     public boolean isService(Class<?> beanClass) throws FrameworkException {
-        return isTransactionParticipant(beanClass);
+        return isLocalTCC(beanClass);
     }
 
     @Override
@@ -74,29 +73,18 @@ public class LocalTCCRemotingParser extends org.apache.seata.rm.tcc.remoting.par
         return isLocalTCC(bean);
     }
 
-    /**
-     * Determine whether there is an annotation on interface or impl {@link LocalTCC} or {@link TransactionParticipant}
-     * @param bean the bean
-     * @return boolean
-     */
     private boolean isLocalTCC(Object bean) {
         Class<?> classType = bean.getClass();
-        return isTransactionParticipant(classType);
+        return isLocalTCC(classType);
     }
 
-    /**
-     * Determine whether there is a transaction participant annotation ({@link LocalTCC} or {@link TransactionParticipant}) 
-     * on the given class or its interfaces
-     * @param classType the class type to check
-     * @return true if the class has either LocalTCC or TransactionParticipant annotation
-     */
-    private boolean isTransactionParticipant(Class<?> classType) {
+    private boolean isLocalTCC(Class<?> classType) {
         Set<Class<?>> interfaceClasses = ReflectionUtil.getInterfaces(classType);
         for (Class<?> interClass : interfaceClasses) {
-            if (interClass.isAnnotationPresent(LocalTCC.class) || interClass.isAnnotationPresent(TransactionParticipant.class)) {
+            if (interClass.isAnnotationPresent(LocalTCC.class)) {
                 return true;
             }
         }
-        return classType.isAnnotationPresent(LocalTCC.class) || classType.isAnnotationPresent(TransactionParticipant.class);
+        return classType.isAnnotationPresent(LocalTCC.class);
     }
 }

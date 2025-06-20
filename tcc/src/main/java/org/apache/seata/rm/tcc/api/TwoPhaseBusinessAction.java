@@ -27,12 +27,12 @@ import java.lang.annotation.Target;
 /**
  * TCC annotation.
  * Define a TCC interface, which added on the try method.
- * Must be used with `@LocalTCC` or `@TransactionParticipant`.
- * For new implementations, especially in Saga scenarios, `@TransactionParticipant` is recommended 
+ * Must be used with `@LocalTCC` or `@LocalTransactional`.
+ * For new implementations, especially in Saga scenarios, `@LocalTransactional` is recommended 
  * to avoid confusion about the transaction mode.
  *
  * @see org.apache.seata.rm.tcc.api.LocalTCC // TCC annotation, which added on the TCC interface. It can't be left out.
- * @see org.apache.seata.common.transaction.api.TransactionParticipant // Generic transaction participant annotation for both TCC and Saga
+ * @see org.apache.seata.common.transaction.api.LocalTransactional // Generic transaction participant annotation for both TCC and Saga
  * @see org.apache.seata.spring.annotation.GlobalTransactionScanner#wrapIfNecessary(Object, String, Object) // the scanner for TM, GlobalLock, and TCC mode
  * @see TccActionInterceptorHandler // the interceptor of TCC mode
  * @see BusinessActionContext

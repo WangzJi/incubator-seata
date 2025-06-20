@@ -16,7 +16,7 @@
  */
 package org.apache.seata.integration.tx.api.remoting.parser;
 
-import org.apache.seata.common.transaction.api.TransactionParticipant;
+import org.apache.seata.common.transaction.api.LocalTransactional;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -30,9 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Integration tests for @TransactionParticipant annotation
+ * Integration tests for @LocalTransactional annotation
  * 
- * This test suite validates the runtime behavior and properties of the @TransactionParticipant annotation:
+ * This test suite validates the runtime behavior and properties of the @LocalTransactional annotation:
  * 
  * Key test areas:
  * 1. Annotation presence detection at runtime
@@ -43,13 +43,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 6. Complex inheritance hierarchies
  * 7. Multiple interface scenarios
  * 
- * These tests ensure that @TransactionParticipant behaves correctly in real runtime environments
+ * These tests ensure that @LocalTransactional behaves correctly in real runtime environments
  * and maintains compatibility with existing transaction processing frameworks.
  */
-public class TransactionParticipantIntegrationTest {
+public class LocalTransactionalIntegrationTest {
 
     // Test classes for integration testing
-    @TransactionParticipant
+    @LocalTransactional
     public static class AccountService {
         public boolean debit(String accountId, double amount) {
             return amount > 0;
@@ -60,7 +60,7 @@ public class TransactionParticipantIntegrationTest {
         }
     }
 
-    @TransactionParticipant
+    @LocalTransactional
     public interface PaymentService {
         boolean processPayment(String orderId, double amount);
         boolean refundPayment(String orderId, double amount);
@@ -83,20 +83,20 @@ public class TransactionParticipantIntegrationTest {
     }
 
     @Test
-    public void testTransactionParticipantAnnotationExists() {
+    public void testLocalTransactionalAnnotationExists() {
         // Verify the annotation exists and can be used
-        assertTrue(AccountService.class.isAnnotationPresent(TransactionParticipant.class));
-        assertTrue(PaymentService.class.isAnnotationPresent(TransactionParticipant.class));
-        assertFalse(NoAnnotationService.class.isAnnotationPresent(TransactionParticipant.class));
+        assertTrue(AccountService.class.isAnnotationPresent(LocalTransactional.class));
+        assertTrue(PaymentService.class.isAnnotationPresent(LocalTransactional.class));
+        assertFalse(NoAnnotationService.class.isAnnotationPresent(LocalTransactional.class));
     }
 
     @Test
-    public void testTransactionParticipantAnnotationProperties() throws Exception {
-        TransactionParticipant annotation = AccountService.class.getAnnotation(TransactionParticipant.class);
+    public void testLocalTransactionalAnnotationProperties() throws Exception {
+        LocalTransactional annotation = AccountService.class.getAnnotation(LocalTransactional.class);
         assertNotNull(annotation);
         
         // Verify annotation type
-        assertEquals(TransactionParticipant.class, annotation.annotationType());
+        assertEquals(LocalTransactional.class, annotation.annotationType());
     }
 
     @Test
@@ -108,8 +108,8 @@ public class TransactionParticipantIntegrationTest {
         
         InheritedService inheritedService = new InheritedService();
         
-        // Should inherit the @TransactionParticipant annotation
-        assertTrue(inheritedService.getClass().isAnnotationPresent(TransactionParticipant.class));
+        // Should inherit the @LocalTransactional annotation
+        assertTrue(inheritedService.getClass().isAnnotationPresent(LocalTransactional.class));
     }
 
     @Test
@@ -117,12 +117,12 @@ public class TransactionParticipantIntegrationTest {
         PaymentServiceImpl implementation = new PaymentServiceImpl();
         
         // Check that the interface has the annotation
-        assertTrue(PaymentService.class.isAnnotationPresent(TransactionParticipant.class));
+        assertTrue(PaymentService.class.isAnnotationPresent(LocalTransactional.class));
         
         // Check that implementation can access interface annotation
         for (Class<?> interfaceClass : implementation.getClass().getInterfaces()) {
             if (interfaceClass == PaymentService.class) {
-                assertTrue(interfaceClass.isAnnotationPresent(TransactionParticipant.class));
+                assertTrue(interfaceClass.isAnnotationPresent(LocalTransactional.class));
             }
         }
     }
@@ -130,13 +130,13 @@ public class TransactionParticipantIntegrationTest {
     @Test
     public void testAnnotationRetentionPolicy() throws Exception {
         // Verify annotation is retained at runtime
-        TransactionParticipant annotation = AccountService.class.getAnnotation(TransactionParticipant.class);
+        LocalTransactional annotation = AccountService.class.getAnnotation(LocalTransactional.class);
         assertNotNull(annotation);
         
         // Verify it's available through reflection
         boolean foundAnnotation = false;
         for (java.lang.annotation.Annotation ann : AccountService.class.getAnnotations()) {
-            if (ann instanceof TransactionParticipant) {
+            if (ann instanceof LocalTransactional) {
                 foundAnnotation = true;
                 break;
             }
@@ -147,8 +147,8 @@ public class TransactionParticipantIntegrationTest {
     @Test
     public void testAnnotationTarget() {
         // Verify annotation can be applied to types (classes and interfaces)
-        assertTrue(AccountService.class.isAnnotationPresent(TransactionParticipant.class));
-        assertTrue(PaymentService.class.isAnnotationPresent(TransactionParticipant.class));
+        assertTrue(AccountService.class.isAnnotationPresent(LocalTransactional.class));
+        assertTrue(PaymentService.class.isAnnotationPresent(LocalTransactional.class));
     }
 
     @Test
@@ -161,13 +161,13 @@ public class TransactionParticipantIntegrationTest {
         testClasses.add(NoAnnotationService.class);
         
         for (Class<?> clazz : testClasses) {
-            if (clazz.isAnnotationPresent(TransactionParticipant.class)) {
+            if (clazz.isAnnotationPresent(LocalTransactional.class)) {
                 annotatedClasses.add(clazz);
             }
             
             // Also check interfaces
             for (Class<?> interfaceClass : clazz.getInterfaces()) {
-                if (interfaceClass.isAnnotationPresent(TransactionParticipant.class)) {
+                if (interfaceClass.isAnnotationPresent(LocalTransactional.class)) {
                     annotatedClasses.add(interfaceClass);
                 }
             }
@@ -201,13 +201,13 @@ public class TransactionParticipantIntegrationTest {
         assertNotNull(serviceClass.getMethod("credit", String.class, double.class));
         
         // Verify annotation is accessible through reflection
-        assertTrue(serviceClass.isAnnotationPresent(TransactionParticipant.class));
+        assertTrue(serviceClass.isAnnotationPresent(LocalTransactional.class));
     }
 
     @Test
     public void testClassHierarchyAnnotationDetection() {
         // Test complex inheritance scenario
-        @TransactionParticipant
+        @LocalTransactional
         class BaseService {
             public void baseMethod() {}
         }
@@ -223,6 +223,6 @@ public class TransactionParticipantIntegrationTest {
         FinalService finalService = new FinalService();
         
         // Should inherit annotation from base class
-        assertTrue(finalService.getClass().isAnnotationPresent(TransactionParticipant.class));
+        assertTrue(finalService.getClass().isAnnotationPresent(LocalTransactional.class));
     }
 } 

@@ -27,12 +27,12 @@ import java.lang.annotation.Target;
 /**
  * Local TCC bean annotation, add on the TCC interface
  * <p>
- * Note: For Saga scenarios, you can use the more generic @TransactionParticipant annotation instead
+ * Note: For Saga scenarios, you can use the more generic @LocalTransactional annotation instead
  * to avoid confusion, as @LocalTCC specifically indicates TCC mode.
  *
  * @see org.apache.seata.spring.annotation.GlobalTransactionScanner#wrapIfNecessary(Object, String, Object) // the scanner for TM, GlobalLock, and TCC mode
  * @see LocalTCCRemotingParser // the RemotingParser impl for LocalTCC
- * @see org.apache.seata.common.transaction.api.TransactionParticipant // the more generic annotation for transaction participants
+ * @see org.apache.seata.common.transaction.api.LocalTransactional // the more generic annotation for transaction participants
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
