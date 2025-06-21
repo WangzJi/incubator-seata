@@ -21,7 +21,6 @@ import org.apache.seata.common.SagaCostPrint;
 import org.apache.seata.common.exception.FrameworkErrorCode;
 import org.apache.seata.common.exception.StoreException;
 import org.apache.seata.common.loader.EnhancedServiceLoader;
-import org.apache.seata.config.ConfigurationCache;
 import org.apache.seata.core.context.RootContext;
 import org.apache.seata.core.exception.TransactionException;
 import org.apache.seata.core.model.GlobalStatus;
@@ -43,7 +42,6 @@ import org.apache.seata.tm.TransactionManagerHolder;
 import org.apache.seata.tm.api.GlobalTransaction;
 import org.apache.seata.tm.api.GlobalTransactionContext;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -73,6 +71,9 @@ public class StateMachineDBTests extends AbstractServerTest {
     @BeforeAll
     public static void initApplicationContext() throws InterruptedException {
         TransactionManagerHolder.set(EnhancedServiceLoader.load(TransactionManager.class));
+        startSeataServer();
+        TmNettyRemotingClient.getInstance().destroy();
+        RmNettyRemotingClient.getInstance().destroy();
         ApplicationContext applicationContext =
                 new ClassPathXmlApplicationContext("classpath:saga/spring/statemachine_engine_db_test.xml");
         stateMachineEngine = applicationContext.getBean("stateMachineEngine", StateMachineEngine.class);
@@ -81,24 +82,9 @@ public class StateMachineDBTests extends AbstractServerTest {
 
     @AfterAll
     public static void destory() throws InterruptedException {
-        // No server cleanup needed in mock mode
-    }
-
-    @AfterEach
-    public void cleanup() {
-        // Clear configuration cache to prevent test interference
-        ConfigurationCache.clear();
-        // Destroy client instances to prevent interference between tests
-        try {
-            if (TmNettyRemotingClient.getInstance() != null) {
-                TmNettyRemotingClient.getInstance().destroy();
-            }
-            if (RmNettyRemotingClient.getInstance() != null) {
-                RmNettyRemotingClient.getInstance().destroy();
-            }
-        } catch (Exception e) {
-            // Ignore cleanup errors
-        }
+        stopSeataServer();
+        TmNettyRemotingClient.getInstance().destroy();
+        RmNettyRemotingClient.getInstance().destroy();
     }
 
     private GlobalTransaction getGlobalTransaction(StateMachineInstance instance) {

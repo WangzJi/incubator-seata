@@ -79,9 +79,10 @@ public class MsgVersionHelperTest {
     @Test
     public void testSendMsgWithResponse() throws Exception {
         int dynamicPort = getDynamicPort();
-        ThreadPoolExecutor workingThreads = initMessageExecutor();
         NettyServerConfig serverConfig = new NettyServerConfig();
         serverConfig.setServerListenPort(dynamicPort);
+
+        ThreadPoolExecutor workingThreads = initMessageExecutor();
         NettyRemotingServer nettyRemotingServer = new NettyRemotingServer(workingThreads, serverConfig);
         new Thread(() -> {
                     SessionHolder.init(null);

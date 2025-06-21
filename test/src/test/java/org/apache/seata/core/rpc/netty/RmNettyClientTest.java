@@ -106,6 +106,7 @@ public class RmNettyClientTest extends AbstractServerTest {
                 RmNettyRemotingClient.getInstance(applicationId, transactionServiceGroup);
         rmNettyRemotingClient.setResourceManager(new TCCResourceManager());
         rmNettyRemotingClient.init();
+        rmNettyRemotingClient.getClientChannelManager().initReconnect(transactionServiceGroup, true);
         String serverAddress = "127.0.0.1:" + dynamicPort;
         Channel channel =
                 RmNettyRemotingClient.getInstance().getClientChannelManager().acquireChannel(serverAddress);

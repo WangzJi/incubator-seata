@@ -22,7 +22,7 @@ import org.apache.seata.common.ConfigurationTestHelper;
 import org.apache.seata.common.XID;
 import org.apache.seata.common.util.NetUtil;
 import org.apache.seata.common.util.UUIDGenerator;
-import org.apache.seata.core.protocol.ResultCode;
+import org.apache.seata.core.model.GlobalStatus;
 import org.apache.seata.core.protocol.transaction.GlobalCommitRequest;
 import org.apache.seata.core.protocol.transaction.GlobalCommitResponse;
 import org.apache.seata.saga.engine.db.AbstractServerTest;
@@ -36,11 +36,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.net.ServerSocket;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  */
@@ -78,22 +80,43 @@ public class TmNettyClientTest extends AbstractServerTest {
     @Test
     public void testDoConnect() throws Exception {
         int dynamicPort = getDynamicPort();
-        ThreadPoolExecutor workingThreads = initMessageExecutor();
         NettyServerConfig serverConfig = new NettyServerConfig();
         serverConfig.setServerListenPort(dynamicPort);
+        ThreadPoolExecutor workingThreads = initMessageExecutor();
         NettyRemotingServer nettyRemotingServer = new NettyRemotingServer(workingThreads, serverConfig);
-        new Thread(() -> {
-                    SessionHolder.init(null);
-                    nettyRemotingServer.setHandler(DefaultCoordinator.getInstance(nettyRemotingServer));
-                    // set registry
-                    XID.setIpAddress(NetUtil.getLocalIp());
-                    XID.setPort(dynamicPort);
-                    // init snowflake for transactionId, branchId
-                    UUIDGenerator.init(1L);
-                    nettyRemotingServer.init();
-                })
-                .start();
-        Thread.sleep(3000);
+        // start services server first
+        AtomicBoolean serverStatus = new AtomicBoolean();
+        Thread thread = new Thread(() -> {
+            try {
+                nettyRemotingServer.setHandler(DefaultCoordinator.getInstance(nettyRemotingServer));
+                // set registry
+                XID.setIpAddress(NetUtil.getLocalIp());
+                XID.setPort(dynamicPort);
+                // init snowflake for transactionId, branchId
+                UUIDGenerator.init(1L);
+                System.out.println(
+                        "pid info: " + ManagementFactory.getRuntimeMXBean().getName());
+                nettyRemotingServer.init();
+                serverStatus.set(true);
+            } catch (Throwable t) {
+                serverStatus.set(false);
+                LOGGER.error("The seata-server failed to start", t);
+            }
+        });
+        thread.start();
+
+        // Wait for the seata-server to start.
+        long start = System.nanoTime();
+        long maxWaitNanoTime = 10 * 1000 * 1000 * 1000L; // 10s
+        while (System.nanoTime() - start < maxWaitNanoTime) {
+            Thread.sleep(100);
+            if (serverStatus.get()) {
+                break;
+            }
+        }
+        if (!serverStatus.get()) {
+            throw new RuntimeException("Waiting for a while, but the seata-server did not start successfully.");
+        }
 
         // Configure client to use dynamic port
         ConfigurationTestHelper.putConfig("service.default.grouplist", "127.0.0.1:" + dynamicPort);
@@ -101,7 +124,7 @@ public class TmNettyClientTest extends AbstractServerTest {
 
         // then test client
         String applicationId = "app 1";
-        String transactionServiceGroup = "default_tx_group";
+        String transactionServiceGroup = "group A";
         TmNettyRemotingClient tmNettyRemotingClient =
                 TmNettyRemotingClient.getInstance(applicationId, transactionServiceGroup);
 
@@ -127,9 +150,10 @@ public class TmNettyClientTest extends AbstractServerTest {
     @Test
     public void testReconnect() throws Exception {
         int dynamicPort = getDynamicPort();
-        ThreadPoolExecutor workingThreads = initMessageExecutor();
+
         NettyServerConfig serverConfig = new NettyServerConfig();
         serverConfig.setServerListenPort(dynamicPort);
+        ThreadPoolExecutor workingThreads = initMessageExecutor();
         NettyRemotingServer nettyRemotingServer = new NettyRemotingServer(workingThreads, serverConfig);
         // start services server first
         Thread thread = new Thread(() -> {
@@ -170,9 +194,10 @@ public class TmNettyClientTest extends AbstractServerTest {
     @Test
     public void testSendMsgWithResponse() throws Exception {
         int dynamicPort = getDynamicPort();
-        ThreadPoolExecutor workingThreads = initMessageExecutor();
         NettyServerConfig serverConfig = new NettyServerConfig();
         serverConfig.setServerListenPort(dynamicPort);
+
+        ThreadPoolExecutor workingThreads = initMessageExecutor();
         NettyRemotingServer nettyRemotingServer = new NettyRemotingServer(workingThreads, serverConfig);
         new Thread(() -> {
                     SessionHolder.init(null);
@@ -207,23 +232,10 @@ public class TmNettyClientTest extends AbstractServerTest {
         try {
             globalCommitResponse = (GlobalCommitResponse) tmNettyRemotingClient.sendSyncRequest(request);
         } catch (TimeoutException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         Assertions.assertNotNull(globalCommitResponse);
-        // Update assertion - if the server now returns Success for non-existent transactions, we need to adjust the
-        // test
-        // Let's check what the actual response is and adjust accordingly
-        LOGGER.info(
-                "Response result code: {}, message: {}",
-                globalCommitResponse.getResultCode(),
-                globalCommitResponse.getMsg());
-        Assertions.assertTrue(globalCommitResponse.getResultCode() == ResultCode.Success
-                || globalCommitResponse.getResultCode() == ResultCode.Failed);
-
-        // Clean up configuration
-        ConfigurationTestHelper.removeConfig("service.default.grouplist");
-        ConfigurationTestHelper.removeConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL);
-
+        Assertions.assertEquals(GlobalStatus.Finished, globalCommitResponse.getGlobalStatus());
         nettyRemotingServer.destroy();
         tmNettyRemotingClient.destroy();
     }
