@@ -16,23 +16,23 @@
  */
 package org.apache.seata.saga.engine.db;
 
+import org.apache.seata.common.XID;
+import org.apache.seata.common.util.NetUtil;
+import org.apache.seata.common.util.UUIDGenerator;
+import org.apache.seata.core.rpc.ShutdownHook;
+import org.apache.seata.core.rpc.netty.NettyRemotingServer;
+import org.apache.seata.core.rpc.netty.NettyServerConfig;
+import org.apache.seata.server.ParameterParser;
+import org.apache.seata.server.coordinator.DefaultCoordinator;
+import org.apache.seata.server.metrics.MetricsManager;
+import org.apache.seata.server.session.SessionHolder;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.seata.common.XID;
-import org.apache.seata.common.util.NetUtil;
-import org.apache.seata.core.rpc.ShutdownHook;
-import org.apache.seata.core.rpc.netty.NettyRemotingServer;
-import org.apache.seata.core.rpc.netty.NettyServerConfig;
-import org.apache.seata.server.ParameterParser;
-import org.apache.seata.common.util.UUIDGenerator;
-import org.apache.seata.server.coordinator.DefaultCoordinator;
-import org.apache.seata.server.metrics.MetricsManager;
-import org.apache.seata.server.session.SessionHolder;
 
 /**
  * Abstract Server Test

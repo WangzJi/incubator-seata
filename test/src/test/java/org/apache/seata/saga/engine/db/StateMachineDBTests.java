@@ -21,6 +21,7 @@ import org.apache.seata.common.SagaCostPrint;
 import org.apache.seata.common.exception.FrameworkErrorCode;
 import org.apache.seata.common.exception.StoreException;
 import org.apache.seata.common.loader.EnhancedServiceLoader;
+import org.apache.seata.config.ConfigurationCache;
 import org.apache.seata.core.context.RootContext;
 import org.apache.seata.core.exception.TransactionException;
 import org.apache.seata.core.model.GlobalStatus;
@@ -49,7 +50,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.apache.seata.config.ConfigurationCache;
 
 import java.util.ArrayList;
 import java.util.HashMap;

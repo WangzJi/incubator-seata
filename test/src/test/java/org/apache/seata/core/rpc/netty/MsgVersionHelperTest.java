@@ -50,7 +50,7 @@ public class MsgVersionHelperTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(MsgVersionHelperTest.class);
 
     @BeforeAll
-    public static void init(){
+    public static void init() {
         // Remove hardcoded port configuration to support dynamic port allocation
         // ConfigurationTestHelper.putConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL, "8091");
     }
@@ -84,15 +84,16 @@ public class MsgVersionHelperTest {
         serverConfig.setServerListenPort(dynamicPort);
         NettyRemotingServer nettyRemotingServer = new NettyRemotingServer(workingThreads, serverConfig);
         new Thread(() -> {
-            SessionHolder.init(null);
-            nettyRemotingServer.setHandler(DefaultCoordinator.getInstance(nettyRemotingServer));
-            // set registry
-            XID.setIpAddress(NetUtil.getLocalIp());
-            XID.setPort(dynamicPort);
-            // init snowflake for transactionId, branchId
-            UUIDGenerator.init(1L);
-            nettyRemotingServer.init();
-        }).start();
+                    SessionHolder.init(null);
+                    nettyRemotingServer.setHandler(DefaultCoordinator.getInstance(nettyRemotingServer));
+                    // set registry
+                    XID.setIpAddress(NetUtil.getLocalIp());
+                    XID.setPort(dynamicPort);
+                    // init snowflake for transactionId, branchId
+                    UUIDGenerator.init(1L);
+                    nettyRemotingServer.init();
+                })
+                .start();
         Thread.sleep(3000);
 
         // Configure client to use dynamic port
@@ -106,7 +107,8 @@ public class MsgVersionHelperTest {
         tmNettyRemotingClient.init();
 
         String serverAddress = "127.0.0.1:" + dynamicPort;
-        Channel channel = TmNettyRemotingClient.getInstance().getClientChannelManager().acquireChannel(serverAddress);
+        Channel channel =
+                TmNettyRemotingClient.getInstance().getClientChannelManager().acquireChannel(serverAddress);
 
         RpcMessage rpcMessage = buildUndoLogDeleteMsg(ProtocolConstants.MSGTYPE_RESQUEST_ONEWAY);
         Assertions.assertFalse(MsgVersionHelper.versionNotSupport(channel, rpcMessage));

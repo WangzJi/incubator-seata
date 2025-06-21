@@ -22,7 +22,6 @@ import org.apache.seata.common.ConfigurationTestHelper;
 import org.apache.seata.common.XID;
 import org.apache.seata.common.util.NetUtil;
 import org.apache.seata.common.util.UUIDGenerator;
-import org.apache.seata.core.model.GlobalStatus;
 import org.apache.seata.core.protocol.ResultCode;
 import org.apache.seata.core.protocol.transaction.GlobalCommitRequest;
 import org.apache.seata.core.protocol.transaction.GlobalCommitResponse;
@@ -36,16 +35,12 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.management.ManagementFactory;
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.io.IOException;
-import java.net.ServerSocket;
-
-
 
 /**
  */
@@ -88,15 +83,16 @@ public class TmNettyClientTest extends AbstractServerTest {
         serverConfig.setServerListenPort(dynamicPort);
         NettyRemotingServer nettyRemotingServer = new NettyRemotingServer(workingThreads, serverConfig);
         new Thread(() -> {
-            SessionHolder.init(null);
-            nettyRemotingServer.setHandler(DefaultCoordinator.getInstance(nettyRemotingServer));
-            // set registry
-            XID.setIpAddress(NetUtil.getLocalIp());
-            XID.setPort(dynamicPort);
-            // init snowflake for transactionId, branchId
-            UUIDGenerator.init(1L);
-            nettyRemotingServer.init();
-        }).start();
+                    SessionHolder.init(null);
+                    nettyRemotingServer.setHandler(DefaultCoordinator.getInstance(nettyRemotingServer));
+                    // set registry
+                    XID.setIpAddress(NetUtil.getLocalIp());
+                    XID.setPort(dynamicPort);
+                    // init snowflake for transactionId, branchId
+                    UUIDGenerator.init(1L);
+                    nettyRemotingServer.init();
+                })
+                .start();
         Thread.sleep(3000);
 
         // Configure client to use dynamic port
@@ -135,7 +131,7 @@ public class TmNettyClientTest extends AbstractServerTest {
         NettyServerConfig serverConfig = new NettyServerConfig();
         serverConfig.setServerListenPort(dynamicPort);
         NettyRemotingServer nettyRemotingServer = new NettyRemotingServer(workingThreads, serverConfig);
-        //start services server first
+        // start services server first
         Thread thread = new Thread(() -> {
             nettyRemotingServer.setHandler(DefaultCoordinator.getInstance(nettyRemotingServer));
             // set registry
@@ -214,10 +210,15 @@ public class TmNettyClientTest extends AbstractServerTest {
             e.printStackTrace();
         }
         Assertions.assertNotNull(globalCommitResponse);
-        // Update assertion - if the server now returns Success for non-existent transactions, we need to adjust the test
+        // Update assertion - if the server now returns Success for non-existent transactions, we need to adjust the
+        // test
         // Let's check what the actual response is and adjust accordingly
-        LOGGER.info("Response result code: {}, message: {}", globalCommitResponse.getResultCode(), globalCommitResponse.getMsg());
-        Assertions.assertTrue(globalCommitResponse.getResultCode() == ResultCode.Success || globalCommitResponse.getResultCode() == ResultCode.Failed);
+        LOGGER.info(
+                "Response result code: {}, message: {}",
+                globalCommitResponse.getResultCode(),
+                globalCommitResponse.getMsg());
+        Assertions.assertTrue(globalCommitResponse.getResultCode() == ResultCode.Success
+                || globalCommitResponse.getResultCode() == ResultCode.Failed);
 
         // Clean up configuration
         ConfigurationTestHelper.removeConfig("service.default.grouplist");
@@ -226,6 +227,4 @@ public class TmNettyClientTest extends AbstractServerTest {
         nettyRemotingServer.destroy();
         tmNettyRemotingClient.destroy();
     }
-
-
 }

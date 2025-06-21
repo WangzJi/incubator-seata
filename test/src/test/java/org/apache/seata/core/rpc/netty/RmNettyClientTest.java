@@ -84,15 +84,16 @@ public class RmNettyClientTest extends AbstractServerTest {
         serverConfig.setServerListenPort(dynamicPort);
         NettyRemotingServer nettyRemotingServer = new NettyRemotingServer(workingThreads, serverConfig);
         new Thread(() -> {
-            SessionHolder.init(null);
-            nettyRemotingServer.setHandler(DefaultCoordinator.getInstance(nettyRemotingServer));
-            // set registry
-            XID.setIpAddress(NetUtil.getLocalIp());
-            XID.setPort(dynamicPort);
-            // init snowflake for transactionId, branchId
-            UUIDGenerator.init(1L);
-            nettyRemotingServer.init();
-        }).start();
+                    SessionHolder.init(null);
+                    nettyRemotingServer.setHandler(DefaultCoordinator.getInstance(nettyRemotingServer));
+                    // set registry
+                    XID.setIpAddress(NetUtil.getLocalIp());
+                    XID.setPort(dynamicPort);
+                    // init snowflake for transactionId, branchId
+                    UUIDGenerator.init(1L);
+                    nettyRemotingServer.init();
+                })
+                .start();
         Thread.sleep(3000);
 
         // Configure client to use dynamic port
@@ -126,7 +127,8 @@ public class RmNettyClientTest extends AbstractServerTest {
                 Assertions.assertNotNull(branchRegisterResponse);
                 Assertions.assertEquals(ResultCode.Failed, branchRegisterResponse.getResultCode());
                 Assertions.assertEquals(
-                        "TransactionException[Could not found global transaction xid = 127.0.0.1:" + dynamicPort + ":1249853, may be has finished.]",
+                        "TransactionException[Could not found global transaction xid = 127.0.0.1:" + dynamicPort
+                                + ":1249853, may be has finished.]",
                         branchRegisterResponse.getMsg());
                 latch.countDown();
             });
