@@ -38,8 +38,8 @@ import java.util.Set;
  * - LocalTransactional - Generic transaction participant annotation (recommended for Saga)
  * 
  * Detection Priority:
- * 1. Interface annotations (higher priority)
- * 2. Implementation class annotations (fallback)
+ * 1. Implementation class annotations (higher priority)
+ * 2. Interface annotations (fallback)
  * 
  * Mixed Usage Support:
  * The parser handles scenarios where both annotations are present, allowing for:
@@ -84,25 +84,25 @@ public class LocalTCCRemotingParser extends AbstractedRemotingParser {
         remotingDesc.setProtocol(Protocols.IN_JVM);
         Class<?> classType = bean.getClass();
         
-        // First priority: check if annotations are present on any implemented interfaces
-        // Interface annotations take precedence for service definition
+        // First priority: check if annotations are present on the implementation class itself
+        // Implementation class annotations take precedence over interface annotations
+        if (hasLocalTransactionalAnnotation(classType)) {
+            remotingDesc.setServiceClass(AopProxyUtils.ultimateTargetClass(bean));
+            remotingDesc.setServiceClassName(remotingDesc.getServiceClass().getName());
+            remotingDesc.setTargetBean(bean);
+            return remotingDesc;
+        }
+        
+        // Second priority: check if annotations are present on any implemented interfaces
+        // Fall back to interface annotations if no implementation class annotations found
         Set<Class<?>> interfaceClasses = ReflectionUtil.getInterfaces(classType);
         for (Class<?> interClass : interfaceClasses) {
-            if (isLocalTransactional(interClass)) {
+            if (hasLocalTransactionalAnnotation(interClass)) {
                 remotingDesc.setServiceClassName(interClass.getName());
                 remotingDesc.setServiceClass(interClass);
                 remotingDesc.setTargetBean(bean);
                 return remotingDesc;
             }
-        }
-        
-        // Second priority: check if annotations are present on the implementation class
-        // Fall back to implementation class if no interface annotations found
-        if (isLocalTransactional(classType)) {
-            remotingDesc.setServiceClass(AopProxyUtils.ultimateTargetClass(bean));
-            remotingDesc.setServiceClassName(remotingDesc.getServiceClass().getName());
-            remotingDesc.setTargetBean(bean);
-            return remotingDesc;
         }
         throw new FrameworkException("Couldn't parser any Remoting info");
     }
