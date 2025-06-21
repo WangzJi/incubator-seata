@@ -37,6 +37,8 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +58,12 @@ public class MsgVersionHelperTest {
     public static void after() {
         // ConfigurationTestHelper.removeConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL);
     }
+    
+    private static int getDynamicPort() throws IOException {
+        try (ServerSocket serverSocket = new ServerSocket(0)) {
+            return serverSocket.getLocalPort();
+        }
+    }
 
     public static ThreadPoolExecutor initMessageExecutor() {
         return new ThreadPoolExecutor(5, 5, 500, TimeUnit.SECONDS,
@@ -63,26 +71,33 @@ public class MsgVersionHelperTest {
     }
     @Test
     public void testSendMsgWithResponse() throws Exception {
+        int dynamicPort = getDynamicPort();
         ThreadPoolExecutor workingThreads = initMessageExecutor();
-        NettyRemotingServer nettyRemotingServer = new NettyRemotingServer(workingThreads);
+        NettyServerConfig serverConfig = new NettyServerConfig();
+        serverConfig.setServerListenPort(dynamicPort);
+        NettyRemotingServer nettyRemotingServer = new NettyRemotingServer(workingThreads, serverConfig);
         new Thread(() -> {
             SessionHolder.init(null);
             nettyRemotingServer.setHandler(DefaultCoordinator.getInstance(nettyRemotingServer));
             // set registry
             XID.setIpAddress(NetUtil.getLocalIp());
-            XID.setPort(8091);
+            XID.setPort(dynamicPort);
             // init snowflake for transactionId, branchId
             UUIDGenerator.init(1L);
             nettyRemotingServer.init();
         }).start();
         Thread.sleep(3000);
 
+        // Configure client to use dynamic port
+        ConfigurationTestHelper.putConfig("service.default.grouplist", "127.0.0.1:" + dynamicPort);
+        ConfigurationTestHelper.putConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL, String.valueOf(dynamicPort));
+
         String applicationId = "app 1";
         String transactionServiceGroup = "default_tx_group";
         TmNettyRemotingClient tmNettyRemotingClient = TmNettyRemotingClient.getInstance(applicationId, transactionServiceGroup);
         tmNettyRemotingClient.init();
 
-        String serverAddress = "0.0.0.0:8091";
+        String serverAddress = "127.0.0.1:" + dynamicPort;
         Channel channel = TmNettyRemotingClient.getInstance().getClientChannelManager().acquireChannel(serverAddress);
 
         RpcMessage rpcMessage = buildUndoLogDeleteMsg(ProtocolConstants.MSGTYPE_RESQUEST_ONEWAY);
@@ -95,6 +110,10 @@ public class MsgVersionHelperTest {
         TmNettyRemotingClient.getInstance().sendAsync(channel,rpcMessage);
         Object response = TmNettyRemotingClient.getInstance().sendSync(channel, rpcMessage, 100);
         Assertions.assertTrue(response instanceof VersionNotSupportMessage);
+
+        // Clean up configuration
+        ConfigurationTestHelper.removeConfig("service.default.grouplist");
+        ConfigurationTestHelper.removeConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL);
 
         nettyRemotingServer.destroy();
         tmNettyRemotingClient.destroy();

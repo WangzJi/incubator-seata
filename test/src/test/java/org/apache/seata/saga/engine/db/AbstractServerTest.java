@@ -17,6 +17,8 @@
 package org.apache.seata.saga.engine.db;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -57,7 +59,14 @@ public abstract class AbstractServerTest {
                 MetricsManager.get().init();
 
                 NettyServerConfig nettyServerConfig = new NettyServerConfig();
-                nettyServerConfig.setServerListenPort(8091);
+                // Use dynamic port allocation instead of hardcoded port
+                int dynamicPort = 0;
+                try (ServerSocket serverSocket = new ServerSocket(0)) {
+                    dynamicPort = serverSocket.getLocalPort();
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to get dynamic port", e);
+                }
+                nettyServerConfig.setServerListenPort(dynamicPort);
                 nettyServer = new NettyRemotingServer(workingThreads, nettyServerConfig);
                 UUIDGenerator.init(parameterParser.getServerNode());
                 //log store mode : file、db

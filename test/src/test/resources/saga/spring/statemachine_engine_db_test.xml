@@ -53,6 +53,7 @@
 		<property name="sagaJsonParser" value="jackson"/>
 		<property name="sagaRetryPersistModeUpdate" value="false" />
 		<property name="sagaCompensatePersistModeUpdate" value="false" />
+		<property name="sagaTransactionalTemplate" ref="mockSagaTransactionTemplate"/>
 	</bean>
 
 	<bean id="threadExecutor"
@@ -69,4 +70,6 @@
 
 
 	<bean id="demoService" class="org.apache.seata.saga.engine.mock.DemoService"/>
+
+	<bean id="mockSagaTransactionTemplate" class="org.apache.seata.saga.engine.mock.MockSagaTransactionTemplate"/>
 </beans>
