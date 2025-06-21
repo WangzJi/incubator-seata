@@ -17,116 +17,52 @@
 package org.apache.seata.core.rpc.netty;
 
 import io.netty.channel.Channel;
-import org.apache.seata.common.ConfigurationKeys;
-import org.apache.seata.common.ConfigurationTestHelper;
-import org.apache.seata.common.XID;
-import org.apache.seata.common.util.NetUtil;
-import org.apache.seata.common.util.UUIDGenerator;
 import org.apache.seata.core.protocol.ProtocolConstants;
 import org.apache.seata.core.protocol.RpcMessage;
 import org.apache.seata.core.protocol.Version;
 import org.apache.seata.core.protocol.VersionNotSupportMessage;
 import org.apache.seata.core.protocol.transaction.UndoLogDeleteRequest;
 import org.apache.seata.core.rpc.MsgVersionHelper;
-import org.apache.seata.server.coordinator.DefaultCoordinator;
-import org.apache.seata.server.session.SessionHolder;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
- * MsgVersionHelper Test
- **/
-public class MsgVersionHelperTest {
-    private static final Logger LOGGER = LoggerFactory.getLogger(MsgVersionHelperTest.class);
-
-    @BeforeAll
-    public static void init() {
-        // Remove hardcoded port configuration to support dynamic port allocation
-        // ConfigurationTestHelper.putConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL, "8091");
-    }
-
-    @AfterAll
-    public static void after() {
-        // ConfigurationTestHelper.removeConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL);
-    }
-
-    private static int getDynamicPort() throws IOException {
-        try (ServerSocket serverSocket = new ServerSocket(0)) {
-            return serverSocket.getLocalPort();
-        }
-    }
-
-    public static ThreadPoolExecutor initMessageExecutor() {
-        return new ThreadPoolExecutor(
-                5,
-                5,
-                500,
-                TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(20000),
-                new ThreadPoolExecutor.CallerRunsPolicy());
-    }
+ * MsgVersionHelper Test - Refactored to use BaseNettyClientTest
+ */
+public class MsgVersionHelperTest extends BaseNettyClientTest {
 
     @Test
     public void testSendMsgWithResponse() throws Exception {
         int dynamicPort = getDynamicPort();
-        NettyServerConfig serverConfig = new NettyServerConfig();
-        serverConfig.setServerListenPort(dynamicPort);
+        ServerInstance serverInstance = startServerSimple(dynamicPort);
 
-        ThreadPoolExecutor workingThreads = initMessageExecutor();
-        NettyRemotingServer nettyRemotingServer = new NettyRemotingServer(workingThreads, serverConfig);
-        new Thread(() -> {
-                    SessionHolder.init(null);
-                    nettyRemotingServer.setHandler(DefaultCoordinator.getInstance(nettyRemotingServer));
-                    // set registry
-                    XID.setIpAddress(NetUtil.getLocalIp());
-                    XID.setPort(dynamicPort);
-                    // init snowflake for transactionId, branchId
-                    UUIDGenerator.init(1L);
-                    nettyRemotingServer.init();
-                })
-                .start();
-        Thread.sleep(3000);
+        try {
+            configureClient(dynamicPort);
 
-        // Configure client to use dynamic port
-        ConfigurationTestHelper.putConfig("service.default.grouplist", "127.0.0.1:" + dynamicPort);
-        ConfigurationTestHelper.putConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL, String.valueOf(dynamicPort));
+            String applicationId = "app 1";
+            String transactionServiceGroup = "default_tx_group";
+            TmNettyRemotingClient tmNettyRemotingClient =
+                    TmNettyRemotingClient.getInstance(applicationId, transactionServiceGroup);
+            tmNettyRemotingClient.init();
 
-        String applicationId = "app 1";
-        String transactionServiceGroup = "default_tx_group";
-        TmNettyRemotingClient tmNettyRemotingClient =
-                TmNettyRemotingClient.getInstance(applicationId, transactionServiceGroup);
-        tmNettyRemotingClient.init();
+            Channel channel = TmNettyRemotingClient.getInstance()
+                    .getClientChannelManager()
+                    .acquireChannel(serverInstance.getAddress());
 
-        String serverAddress = "127.0.0.1:" + dynamicPort;
-        Channel channel =
-                TmNettyRemotingClient.getInstance().getClientChannelManager().acquireChannel(serverAddress);
+            RpcMessage rpcMessage = buildUndoLogDeleteMsg(ProtocolConstants.MSGTYPE_RESQUEST_ONEWAY);
+            Assertions.assertFalse(MsgVersionHelper.versionNotSupport(channel, rpcMessage));
+            TmNettyRemotingClient.getInstance().sendAsync(channel, rpcMessage);
 
-        RpcMessage rpcMessage = buildUndoLogDeleteMsg(ProtocolConstants.MSGTYPE_RESQUEST_ONEWAY);
-        Assertions.assertFalse(MsgVersionHelper.versionNotSupport(channel, rpcMessage));
-        TmNettyRemotingClient.getInstance().sendAsync(channel, rpcMessage);
+            Version.putChannelVersion(channel, "0.7.0");
+            Assertions.assertTrue(MsgVersionHelper.versionNotSupport(channel, rpcMessage));
+            TmNettyRemotingClient.getInstance().sendAsync(channel, rpcMessage);
+            Object response = TmNettyRemotingClient.getInstance().sendSync(channel, rpcMessage, 100);
+            Assertions.assertTrue(response instanceof VersionNotSupportMessage);
 
-        Version.putChannelVersion(channel, "0.7.0");
-        Assertions.assertTrue(MsgVersionHelper.versionNotSupport(channel, rpcMessage));
-        TmNettyRemotingClient.getInstance().sendAsync(channel, rpcMessage);
-        Object response = TmNettyRemotingClient.getInstance().sendSync(channel, rpcMessage, 100);
-        Assertions.assertTrue(response instanceof VersionNotSupportMessage);
-
-        // Clean up configuration
-        ConfigurationTestHelper.removeConfig("service.default.grouplist");
-        ConfigurationTestHelper.removeConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL);
-
-        nettyRemotingServer.destroy();
-        tmNettyRemotingClient.destroy();
+            tmNettyRemotingClient.destroy();
+        } finally {
+            serverInstance.destroy();
+        }
     }
 
     private RpcMessage buildUndoLogDeleteMsg(byte messageType) {
