@@ -54,11 +54,12 @@ public class MsgVersionHelperTest {
         // Remove hardcoded port configuration to support dynamic port allocation
         // ConfigurationTestHelper.putConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL, "8091");
     }
+
     @AfterAll
     public static void after() {
         // ConfigurationTestHelper.removeConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL);
     }
-    
+
     private static int getDynamicPort() throws IOException {
         try (ServerSocket serverSocket = new ServerSocket(0)) {
             return serverSocket.getLocalPort();
@@ -66,9 +67,15 @@ public class MsgVersionHelperTest {
     }
 
     public static ThreadPoolExecutor initMessageExecutor() {
-        return new ThreadPoolExecutor(5, 5, 500, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(20000), new ThreadPoolExecutor.CallerRunsPolicy());
+        return new ThreadPoolExecutor(
+                5,
+                5,
+                500,
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(20000),
+                new ThreadPoolExecutor.CallerRunsPolicy());
     }
+
     @Test
     public void testSendMsgWithResponse() throws Exception {
         int dynamicPort = getDynamicPort();
@@ -94,7 +101,8 @@ public class MsgVersionHelperTest {
 
         String applicationId = "app 1";
         String transactionServiceGroup = "default_tx_group";
-        TmNettyRemotingClient tmNettyRemotingClient = TmNettyRemotingClient.getInstance(applicationId, transactionServiceGroup);
+        TmNettyRemotingClient tmNettyRemotingClient =
+                TmNettyRemotingClient.getInstance(applicationId, transactionServiceGroup);
         tmNettyRemotingClient.init();
 
         String serverAddress = "127.0.0.1:" + dynamicPort;
@@ -102,12 +110,11 @@ public class MsgVersionHelperTest {
 
         RpcMessage rpcMessage = buildUndoLogDeleteMsg(ProtocolConstants.MSGTYPE_RESQUEST_ONEWAY);
         Assertions.assertFalse(MsgVersionHelper.versionNotSupport(channel, rpcMessage));
-        TmNettyRemotingClient.getInstance().sendAsync(channel,rpcMessage);
+        TmNettyRemotingClient.getInstance().sendAsync(channel, rpcMessage);
 
-
-        Version.putChannelVersion(channel,"0.7.0");
+        Version.putChannelVersion(channel, "0.7.0");
         Assertions.assertTrue(MsgVersionHelper.versionNotSupport(channel, rpcMessage));
-        TmNettyRemotingClient.getInstance().sendAsync(channel,rpcMessage);
+        TmNettyRemotingClient.getInstance().sendAsync(channel, rpcMessage);
         Object response = TmNettyRemotingClient.getInstance().sendSync(channel, rpcMessage, 100);
         Assertions.assertTrue(response instanceof VersionNotSupportMessage);
 

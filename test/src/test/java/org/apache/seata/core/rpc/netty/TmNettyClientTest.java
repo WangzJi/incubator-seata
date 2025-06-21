@@ -21,11 +21,12 @@ import org.apache.seata.common.ConfigurationKeys;
 import org.apache.seata.common.ConfigurationTestHelper;
 import org.apache.seata.common.XID;
 import org.apache.seata.common.util.NetUtil;
+import org.apache.seata.common.util.UUIDGenerator;
 import org.apache.seata.core.model.GlobalStatus;
+import org.apache.seata.core.protocol.ResultCode;
 import org.apache.seata.core.protocol.transaction.GlobalCommitRequest;
 import org.apache.seata.core.protocol.transaction.GlobalCommitResponse;
 import org.apache.seata.saga.engine.db.AbstractServerTest;
-import org.apache.seata.common.util.UUIDGenerator;
 import org.apache.seata.server.coordinator.DefaultCoordinator;
 import org.apache.seata.server.session.SessionHolder;
 import org.junit.jupiter.api.AfterAll;
@@ -44,7 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.io.IOException;
 import java.net.ServerSocket;
 
-import org.apache.seata.core.protocol.ResultCode;
+
 
 /**
  */
@@ -53,15 +54,16 @@ public class TmNettyClientTest extends AbstractServerTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(TmNettyClientTest.class);
 
     @BeforeAll
-    public static void init() throws IOException {
+    public static void init() {
         // Remove hardcoded port configuration to support dynamic port allocation
         // ConfigurationTestHelper.putConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL, "8091");
     }
+
     @AfterAll
     public static void after() {
         // ConfigurationTestHelper.removeConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL);
     }
-    
+
     private static int getDynamicPort() throws IOException {
         try (ServerSocket serverSocket = new ServerSocket(0)) {
             return serverSocket.getLocalPort();
@@ -69,8 +71,8 @@ public class TmNettyClientTest extends AbstractServerTest {
     }
 
     public static ThreadPoolExecutor initMessageExecutor() {
-        return new ThreadPoolExecutor(5, 5, 500, TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>(20000), new ThreadPoolExecutor.CallerRunsPolicy());
+        return new ThreadPoolExecutor(
+                5, 5, 500, TimeUnit.SECONDS, new LinkedBlockingQueue(20000), new ThreadPoolExecutor.CallerRunsPolicy());
     }
 
     /**
@@ -101,18 +103,22 @@ public class TmNettyClientTest extends AbstractServerTest {
         ConfigurationTestHelper.putConfig("service.default.grouplist", "127.0.0.1:" + dynamicPort);
         ConfigurationTestHelper.putConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL, String.valueOf(dynamicPort));
 
+        // then test client
         String applicationId = "app 1";
         String transactionServiceGroup = "default_tx_group";
-        TmNettyRemotingClient tmNettyRemotingClient = TmNettyRemotingClient.getInstance(applicationId, transactionServiceGroup);
+        TmNettyRemotingClient tmNettyRemotingClient =
+                TmNettyRemotingClient.getInstance(applicationId, transactionServiceGroup);
+
         tmNettyRemotingClient.init();
         String serverAddress = "127.0.0.1:" + dynamicPort;
-        Channel channel = TmNettyRemotingClient.getInstance().getClientChannelManager().acquireChannel(serverAddress);
+        Channel channel =
+                TmNettyRemotingClient.getInstance().getClientChannelManager().acquireChannel(serverAddress);
         Assertions.assertNotNull(channel);
-        
+
         // Clean up configuration
         ConfigurationTestHelper.removeConfig("service.default.grouplist");
         ConfigurationTestHelper.removeConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL);
-        
+
         nettyRemotingServer.destroy();
         tmNettyRemotingClient.destroy();
     }
@@ -141,7 +147,7 @@ public class TmNettyClientTest extends AbstractServerTest {
         });
         thread.start();
 
-        //then test client
+        // then test client
         Thread.sleep(3000);
 
         // Configure client to use dynamic port
@@ -150,16 +156,17 @@ public class TmNettyClientTest extends AbstractServerTest {
 
         String applicationId = "app 1";
         String transactionServiceGroup = "default_tx_group";
-        TmNettyRemotingClient tmNettyRemotingClient = TmNettyRemotingClient.getInstance(applicationId, transactionServiceGroup);
+        TmNettyRemotingClient tmNettyRemotingClient =
+                TmNettyRemotingClient.getInstance(applicationId, transactionServiceGroup);
 
         tmNettyRemotingClient.init();
 
         TmNettyRemotingClient.getInstance().getClientChannelManager().reconnect(transactionServiceGroup);
-        
+
         // Clean up configuration
         ConfigurationTestHelper.removeConfig("service.default.grouplist");
         ConfigurationTestHelper.removeConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL);
-        
+
         nettyRemotingServer.destroy();
         tmNettyRemotingClient.destroy();
     }
@@ -172,15 +179,16 @@ public class TmNettyClientTest extends AbstractServerTest {
         serverConfig.setServerListenPort(dynamicPort);
         NettyRemotingServer nettyRemotingServer = new NettyRemotingServer(workingThreads, serverConfig);
         new Thread(() -> {
-            SessionHolder.init(null);
-            nettyRemotingServer.setHandler(DefaultCoordinator.getInstance(nettyRemotingServer));
-            // set registry
-            XID.setIpAddress(NetUtil.getLocalIp());
-            XID.setPort(dynamicPort);
-            // init snowflake for transactionId, branchId
-            UUIDGenerator.init(1L);
-            nettyRemotingServer.init();
-        }).start();
+                    SessionHolder.init(null);
+                    nettyRemotingServer.setHandler(DefaultCoordinator.getInstance(nettyRemotingServer));
+                    // set registry
+                    XID.setIpAddress(NetUtil.getLocalIp());
+                    XID.setPort(dynamicPort);
+                    // init snowflake for transactionId, branchId
+                    UUIDGenerator.init(1L);
+                    nettyRemotingServer.init();
+                })
+                .start();
         Thread.sleep(3000);
 
         // Configure client to use dynamic port
@@ -189,11 +197,13 @@ public class TmNettyClientTest extends AbstractServerTest {
 
         String applicationId = "app 1";
         String transactionServiceGroup = "default_tx_group";
-        TmNettyRemotingClient tmNettyRemotingClient = TmNettyRemotingClient.getInstance(applicationId, transactionServiceGroup);
+        TmNettyRemotingClient tmNettyRemotingClient =
+                TmNettyRemotingClient.getInstance(applicationId, transactionServiceGroup);
         tmNettyRemotingClient.init();
 
         String serverAddress = "127.0.0.1:" + dynamicPort;
-        Channel channel = TmNettyRemotingClient.getInstance().getClientChannelManager().acquireChannel(serverAddress);
+        Channel channel =
+                TmNettyRemotingClient.getInstance().getClientChannelManager().acquireChannel(serverAddress);
         Assertions.assertNotNull(channel);
         GlobalCommitRequest request = new GlobalCommitRequest();
         request.setXid("127.0.0.1:" + dynamicPort + ":1249853");
@@ -208,11 +218,11 @@ public class TmNettyClientTest extends AbstractServerTest {
         // Let's check what the actual response is and adjust accordingly
         LOGGER.info("Response result code: {}, message: {}", globalCommitResponse.getResultCode(), globalCommitResponse.getMsg());
         Assertions.assertTrue(globalCommitResponse.getResultCode() == ResultCode.Success || globalCommitResponse.getResultCode() == ResultCode.Failed);
-        
+
         // Clean up configuration
         ConfigurationTestHelper.removeConfig("service.default.grouplist");
         ConfigurationTestHelper.removeConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL);
-        
+
         nettyRemotingServer.destroy();
         tmNettyRemotingClient.destroy();
     }
