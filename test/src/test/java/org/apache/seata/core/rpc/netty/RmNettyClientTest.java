@@ -50,11 +50,12 @@ public class RmNettyClientTest extends AbstractServerTest {
 
     @BeforeAll
     public static void init(){
-        ConfigurationTestHelper.putConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL, "8091");
+        // Remove hardcoded port configuration to support dynamic port allocation
+        // ConfigurationTestHelper.putConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL, "8091");
     }
     @AfterAll
     public static void after() {
-        ConfigurationTestHelper.removeConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL);
+        // ConfigurationTestHelper.removeConfig(ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL);
     }
 
     public static ThreadPoolExecutor initMessageExecutor() {
