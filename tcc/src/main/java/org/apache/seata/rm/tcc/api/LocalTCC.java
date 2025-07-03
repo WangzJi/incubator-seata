@@ -26,40 +26,42 @@ import java.lang.annotation.Target;
 
 /**
  * Local TCC bean annotation, add on the TCC interface
- * 
+ *
  * This annotation is specifically designed for TCC (Try-Confirm-Cancel) transaction mode.
- * For Saga scenarios, consider using @LocalTransactional annotation instead to avoid confusion.
- * 
+ * For Saga scenarios, consider using @SagaTransactional annotation instead to avoid confusion.
+ *
  * When to Use @LocalTCC:
  * - Pure TCC scenarios with Try-Confirm-Cancel semantics
  * - Existing stable implementations (backward compatibility)
  * - Services explicitly designed for TCC mode
  * - When you want to explicitly indicate TCC transaction mode
- * 
- * When to Consider @LocalTransactional Instead:
+ *
+ * When to Consider @SagaTransactional Instead:
  * - Saga scenarios with compensation actions
  * - Generic transaction participants (non-TCC specific)
  * - Services that might be used in multiple transaction modes
- * 
+ *
  * Example Usage:
- * 
+ *
  * @LocalTCC
  * public interface PaymentTccService {
  *     @TwoPhaseBusinessAction(name = "payment", commitMethod = "confirmPayment", rollbackMethod = "cancelPayment")
  *     boolean tryPayment(BusinessActionContext context, String orderId, double amount);
- *     
+ *
  *     boolean confirmPayment(BusinessActionContext context);
- *     
+ *
  *     boolean cancelPayment(BusinessActionContext context);
  * }
- * 
- * Dual Annotation Support:
- * Starting from version 2.5.0, both @LocalTCC and @LocalTransactional are supported by the same parser,
- * allowing for gradual migration and mixed usage patterns.
+ *
+ * Annotation Separation:
+ * Starting from version 2.5.0, @LocalTCC and @SagaTransactional have dedicated parsers:
+ * - LocalTCCRemotingParser handles @LocalTCC (TCC mode)
+ * - SagaTransactionalRemotingParser handles @SagaTransactional (Saga mode)
+ * This ensures clear separation of concerns and better maintainability.
  *
  * @see org.apache.seata.spring.annotation.GlobalTransactionScanner#wrapIfNecessary(Object, String, Object) the scanner for TM, GlobalLock, and TCC mode
  * @see LocalTCCRemotingParser the RemotingParser impl for LocalTCC
- * @see org.apache.seata.common.transaction.api.LocalTransactional the more generic annotation for transaction participants
+ * @see org.apache.seata.saga.rm.api.SagaTransactional the dedicated annotation for Saga transaction participants
  * @see org.apache.seata.rm.tcc.api.TwoPhaseBusinessAction commonly used with this annotation
  */
 @Retention(RetentionPolicy.RUNTIME)

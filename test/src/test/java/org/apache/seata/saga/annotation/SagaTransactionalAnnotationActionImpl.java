@@ -23,22 +23,30 @@ import org.apache.seata.saga.rm.api.CompensationBusinessAction;
 import java.util.List;
 
 /**
- * Implementation that uses @LocalTransactional instead of @LocalTCC
+ * Implementation that uses @SagaTransactional instead of @LocalTCC
  * This demonstrates the recommended approach for Saga scenarios to avoid confusion
  */
-public class LocalTransactionalSagaAnnotationActionImpl implements LocalTransactionalSagaAnnotationAction {
+public class SagaTransactionalAnnotationActionImpl implements SagaTransactionalAnnotationAction {
 
     private boolean isCommit;
 
     @Override
-    @CompensationBusinessAction(name = "sagaActionWithLocalTransactional", compensationMethod = "compensation", compensationArgsClasses = {BusinessActionContext.class, SagaParam.class})
-    public boolean commit(BusinessActionContext actionContext, @BusinessActionContextParameter("a") int a, @BusinessActionContextParameter(paramName = "b", index = 0) List b, @BusinessActionContextParameter(isParamInProperty = true) SagaParam sagaParam) {
+    @CompensationBusinessAction(
+            name = "sagaActionWithLocalTransactional",
+            compensationMethod = "compensation",
+            compensationArgsClasses = {BusinessActionContext.class, SagaParam.class})
+    public boolean commit(
+            BusinessActionContext actionContext,
+            @BusinessActionContextParameter("a") int a,
+            @BusinessActionContextParameter(paramName = "b", index = 0) List b,
+            @BusinessActionContextParameter(isParamInProperty = true) SagaParam sagaParam) {
         isCommit = true;
         return a > 1;
     }
 
     @Override
-    public boolean compensation(BusinessActionContext actionContext, @BusinessActionContextParameter("sagaParam") SagaParam param) {
+    public boolean compensation(
+            BusinessActionContext actionContext, @BusinessActionContextParameter("sagaParam") SagaParam param) {
         isCommit = false;
         return true;
     }
@@ -46,4 +54,4 @@ public class LocalTransactionalSagaAnnotationActionImpl implements LocalTransact
     public boolean isCommit() {
         return isCommit;
     }
-} 
+}

@@ -16,125 +16,127 @@
  */
 package org.apache.seata.saga.annotation;
 
-import org.apache.seata.common.exception.FrameworkException;
-import org.apache.seata.common.transaction.api.LocalTransactional;
 import org.apache.seata.integration.tx.api.remoting.RemotingDesc;
 import org.apache.seata.rm.tcc.api.LocalTCC;
 import org.apache.seata.rm.tcc.remoting.parser.LocalTCCRemotingParser;
+import org.apache.seata.saga.rm.api.SagaTransactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
- * Boundary and edge case tests for annotation conflicts and complex scenarios
- * 
- * This test suite validates the parser behavior in challenging scenarios involving
- * @LocalTCC and @LocalTransactional annotations:
- * 
- * Edge cases covered:
- * 1. Annotation conflicts (both annotations on same class/interface)
- * 2. Mixed annotation scenarios (different annotations on interface vs implementation)
- * 3. Complex inheritance chains with mixed annotations
- * 4. Multiple interface implementation with different annotations
- * 5. Deep inheritance hierarchies
- * 6. Error handling and boundary conditions (null values, empty strings)
- * 7. Performance with many conflicting instances
- * 8. Annotation precedence rules (implementation vs interface priority)
- * 
- * These tests ensure robust behavior in real-world scenarios where annotation
- * usage might be complex or inconsistent, validating that the parser handles
- * all edge cases gracefully while maintaining predictable behavior.
+ * Tests for LocalTCCRemotingParser behavior with different annotation scenarios
+ *
+ * This test suite validates that LocalTCCRemotingParser:
+ * 1. ONLY recognizes @LocalTCC annotations (its primary responsibility)
+ * 2. IGNORES @SagaTransactional annotations (not its responsibility)
+ * 3. Handles inheritance correctly for @LocalTCC
+ * 4. Handles interface vs implementation scenarios for @LocalTCC
+ * 5. Properly handles edge cases and null scenarios
+ *
+ * Note: @SagaTransactional annotations should be handled by SagaTransactionalRemotingParser,
+ * not by LocalTCCRemotingParser. This test verifies proper separation of concerns.
  */
 public class AnnotationConflictTest {
 
     private LocalTCCRemotingParser parser;
 
-    // Conflict scenarios: both annotations present
+    // Valid @LocalTCC scenarios
     @LocalTCC
-    @LocalTransactional
-    public static class ConflictOnClassService {
-        public boolean doSomething() { return true; }
+    public static class LocalTCCService {
+        public boolean doSomething() {
+            return true;
+        }
     }
 
-    @LocalTCC
-    @LocalTransactional
-    public interface ConflictOnInterfaceService {
-        boolean doSomething();
-    }
-
-    public static class ConflictOnInterfaceServiceImpl implements ConflictOnInterfaceService {
-        @Override
-        public boolean doSomething() { return true; }
-    }
-
-    // Mixed scenarios: different annotations on interface vs implementation
     @LocalTCC
     public interface LocalTCCInterface {
         boolean doSomething();
     }
 
-    @LocalTransactional
-    public static class LocalTransactionalImpl implements LocalTCCInterface {
+    public static class LocalTCCInterfaceImpl implements LocalTCCInterface {
         @Override
-        public boolean doSomething() { return true; }
+        public boolean doSomething() {
+            return true;
+        }
     }
 
-    @LocalTransactional
-    public interface LocalTransactionalInterface {
+    // @SagaTransactional scenarios (should be IGNORED by LocalTCCRemotingParser)
+    @SagaTransactional
+    public static class SagaTransactionalService {
+        public boolean doSomething() {
+            return true;
+        }
+    }
+
+    @SagaTransactional
+    public interface SagaTransactionalInterface {
         boolean doSomething();
     }
 
-    @LocalTCC
-    public static class LocalTCCImpl implements LocalTransactionalInterface {
+    public static class SagaTransactionalInterfaceImpl implements SagaTransactionalInterface {
         @Override
-        public boolean doSomething() { return true; }
+        public boolean doSomething() {
+            return true;
+        }
     }
 
-    // Multiple interface inheritance scenarios
+    // Mixed scenarios - implementation vs interface
     @LocalTCC
-    public interface FirstInterface {
-        boolean firstMethod();
-    }
-
-    @LocalTransactional
-    public interface SecondInterface {
-        boolean secondMethod();
-    }
-
-    public static class MultipleInterfaceImpl implements FirstInterface, SecondInterface {
+    public static class LocalTCCImpl implements SagaTransactionalInterface {
         @Override
-        public boolean firstMethod() { return true; }
-        
-        @Override
-        public boolean secondMethod() { return true; }
+        public boolean doSomething() {
+            return true;
+        }
     }
 
-    // Inheritance chain scenarios
+    @SagaTransactional
+    public static class SagaImpl implements LocalTCCInterface {
+        @Override
+        public boolean doSomething() {
+            return true;
+        }
+    }
+
+    // Inheritance scenarios
     @LocalTCC
-    public static class BaseService {
-        public boolean baseMethod() { return true; }
+    public static class BaseLocalTCCService {
+        public boolean baseMethod() {
+            return true;
+        }
     }
 
-    @LocalTransactional
-    public static class ExtendedService extends BaseService {
-        public boolean extendedMethod() { return true; }
+    public static class ExtendedLocalTCCService extends BaseLocalTCCService {
+        public boolean extendedMethod() {
+            return true;
+        }
     }
 
-    // Deep inheritance chain
-    public static class DeeplyExtendedService extends ExtendedService {
-        public boolean deepMethod() { return true; }
+    @SagaTransactional
+    public static class BaseSagaService {
+        public boolean baseMethod() {
+            return true;
+        }
     }
 
-    // No annotation scenarios for edge case testing
+    public static class ExtendedSagaService extends BaseSagaService {
+        public boolean extendedMethod() {
+            return true;
+        }
+    }
+
+    // No annotation scenarios
     public static class NoAnnotationService {
-        public boolean doSomething() { return true; }
+        public boolean doSomething() {
+            return true;
+        }
     }
 
     public interface NoAnnotationInterface {
@@ -143,7 +145,9 @@ public class AnnotationConflictTest {
 
     public static class NoAnnotationInterfaceImpl implements NoAnnotationInterface {
         @Override
-        public boolean doSomething() { return true; }
+        public boolean doSomething() {
+            return true;
+        }
     }
 
     @BeforeEach
@@ -151,128 +155,112 @@ public class AnnotationConflictTest {
         parser = new LocalTCCRemotingParser();
     }
 
-    // Test both annotations on the same class
+    // Tests for @LocalTCC recognition (should work)
     @Test
-    public void testConflictOnClass_BothAnnotationsPresent() {
-        ConflictOnClassService service = new ConflictOnClassService();
-        
-        // Should be recognized as a valid service despite having both annotations
-        assertTrue(parser.isService(service, "conflictService"));
-        assertTrue(parser.isReference(service, "conflictService"));
-        
-        // Should generate valid RemotingDesc
-        RemotingDesc desc = parser.getServiceDesc(service, "conflictService");
+    public void testLocalTCCOnClass_ShouldBeRecognized() {
+        LocalTCCService service = new LocalTCCService();
+
+        assertTrue(parser.isService(service, "localTCCService"));
+        assertTrue(parser.isReference(service, "localTCCService"));
+
+        RemotingDesc desc = parser.getServiceDesc(service, "localTCCService");
         assertNotNull(desc);
-        assertEquals(ConflictOnClassService.class, desc.getServiceClass());
-        
-        // Should not throw exceptions
-        assertDoesNotThrow(() -> {
-            parser.getServiceDesc(service, "conflictService");
-        });
+        assertEquals(LocalTCCService.class, desc.getServiceClass());
     }
 
     @Test
-    public void testConflictOnInterface_BothAnnotationsPresent() {
-        ConflictOnInterfaceServiceImpl service = new ConflictOnInterfaceServiceImpl();
-        
-        // Should be recognized despite interface having both annotations
-        assertTrue(parser.isService(service, "conflictInterfaceService"));
-        
-        RemotingDesc desc = parser.getServiceDesc(service, "conflictInterfaceService");
+    public void testLocalTCCOnInterface_ShouldBeRecognized() {
+        LocalTCCInterfaceImpl service = new LocalTCCInterfaceImpl();
+
+        assertTrue(parser.isService(service, "localTCCInterfaceImpl"));
+
+        RemotingDesc desc = parser.getServiceDesc(service, "localTCCInterfaceImpl");
         assertNotNull(desc);
-        assertEquals(ConflictOnInterfaceService.class, desc.getServiceClass());
+        assertEquals(LocalTCCInterface.class, desc.getServiceClass());
     }
 
     @Test
-    public void testMixedAnnotations_LocalTCCInterfaceLocalTransactionalImpl() {
-        LocalTransactionalImpl service = new LocalTransactionalImpl();
-        
-        // Should be recognized (impl has @LocalTransactional, interface has @LocalTCC)
-        assertTrue(parser.isService(service, "mixedService1"));
-        
-        RemotingDesc desc = parser.getServiceDesc(service, "mixedService1");
+    public void testLocalTCCInheritance_ShouldBeRecognized() {
+        ExtendedLocalTCCService service = new ExtendedLocalTCCService();
+
+        // Should inherit @LocalTCC from parent
+        assertTrue(parser.isService(service, "extendedLocalTCCService"));
+
+        RemotingDesc desc = parser.getServiceDesc(service, "extendedLocalTCCService");
         assertNotNull(desc);
-        
-        // Either implementation class or interface should be used (depending on parser logic)
-        // Both are valid as long as the service is recognized
-        assertTrue(desc.getServiceClass() == LocalTransactionalImpl.class || 
-                   desc.getServiceClass() == LocalTCCInterface.class,
-                   "Service class should be either implementation or interface");
+        assertEquals(ExtendedLocalTCCService.class, desc.getServiceClass());
+    }
+
+    // Tests for @SagaTransactional scenarios (should be IGNORED)
+    @Test
+    public void testSagaTransactionalOnClass_ShouldBeIgnored() {
+        SagaTransactionalService service = new SagaTransactionalService();
+
+        // LocalTCCRemotingParser should NOT recognize @SagaTransactional
+        assertFalse(parser.isService(service, "sagaTransactionalService"));
+        assertFalse(parser.isReference(service, "sagaTransactionalService"));
+
+        RemotingDesc desc = parser.getServiceDesc(service, "sagaTransactionalService");
+        assertNull(desc);
     }
 
     @Test
-    public void testMixedAnnotations_LocalTransactionalInterfaceLocalTCCImpl() {
+    public void testSagaTransactionalOnInterface_ShouldBeIgnored() {
+        SagaTransactionalInterfaceImpl service = new SagaTransactionalInterfaceImpl();
+
+        // LocalTCCRemotingParser should NOT recognize @SagaTransactional
+        assertFalse(parser.isService(service, "sagaTransactionalInterfaceImpl"));
+
+        RemotingDesc desc = parser.getServiceDesc(service, "sagaTransactionalInterfaceImpl");
+        assertNull(desc);
+    }
+
+    @Test
+    public void testSagaTransactionalInheritance_ShouldBeIgnored() {
+        ExtendedSagaService service = new ExtendedSagaService();
+
+        // LocalTCCRemotingParser should NOT recognize inherited @SagaTransactional
+        assertFalse(parser.isService(service, "extendedSagaService"));
+
+        RemotingDesc desc = parser.getServiceDesc(service, "extendedSagaService");
+        assertNull(desc);
+    }
+
+    // Tests for mixed scenarios
+    @Test
+    public void testLocalTCCImplWithSagaTransactionalInterface_ShouldRecognizeLocalTCC() {
         LocalTCCImpl service = new LocalTCCImpl();
-        
-        // Should be recognized (both interface and impl have annotations)
-        assertTrue(parser.isService(service, "mixedService2"));
-        
-        RemotingDesc desc = parser.getServiceDesc(service, "mixedService2");
+
+        // Should recognize @LocalTCC on implementation, ignore @SagaTransactional on interface
+        assertTrue(parser.isService(service, "localTCCImpl"));
+
+        RemotingDesc desc = parser.getServiceDesc(service, "localTCCImpl");
         assertNotNull(desc);
-        
-        // The implementation annotation should take precedence
+        // Implementation class should be used (has @LocalTCC)
         assertEquals(LocalTCCImpl.class, desc.getServiceClass());
     }
 
     @Test
-    public void testMultipleInterfaceInheritance() {
-        MultipleInterfaceImpl service = new MultipleInterfaceImpl();
-        
-        // Should be recognized (implements interfaces with different annotations)
-        assertTrue(parser.isService(service, "multipleInterfaceService"));
-        
-        RemotingDesc desc = parser.getServiceDesc(service, "multipleInterfaceService");
+    public void testSagaImplWithLocalTCCInterface_ShouldRecognizeInterfaceLocalTCC() {
+        SagaImpl service = new SagaImpl();
+
+        // Should recognize @LocalTCC on interface, ignore @SagaTransactional on implementation
+        assertTrue(parser.isService(service, "sagaImpl"));
+
+        RemotingDesc desc = parser.getServiceDesc(service, "sagaImpl");
         assertNotNull(desc);
-        
-        // Should use one of the interfaces (behavior is deterministic based on iteration order)
-        assertTrue(desc.getServiceClass() == FirstInterface.class || 
-                  desc.getServiceClass() == SecondInterface.class);
+        // Interface should be used (has @LocalTCC)
+        assertEquals(LocalTCCInterface.class, desc.getServiceClass());
     }
 
-    @Test
-    public void testInheritanceChain_BaseWithLocalTCC() {
-        BaseService service = new BaseService();
-        
-        assertTrue(parser.isService(service, "baseService"));
-        
-        RemotingDesc desc = parser.getServiceDesc(service, "baseService");
-        assertNotNull(desc);
-        assertEquals(BaseService.class, desc.getServiceClass());
-    }
-
-    @Test
-    public void testInheritanceChain_ExtendedWithLocalTransactional() {
-        ExtendedService service = new ExtendedService();
-        
-        // Should be recognized (has @LocalTransactional, inherits from @LocalTCC)
-        assertTrue(parser.isService(service, "extendedService"));
-        
-        RemotingDesc desc = parser.getServiceDesc(service, "extendedService");
-        assertNotNull(desc);
-        assertEquals(ExtendedService.class, desc.getServiceClass());
-    }
-
-    @Test
-    public void testInheritanceChain_DeeplyExtended() {
-        DeeplyExtendedService service = new DeeplyExtendedService();
-        
-        // Should inherit @LocalTransactional from ExtendedService
-        assertTrue(parser.isService(service, "deeplyExtendedService"));
-        
-        RemotingDesc desc = parser.getServiceDesc(service, "deeplyExtendedService");
-        assertNotNull(desc);
-        assertEquals(DeeplyExtendedService.class, desc.getServiceClass());
-    }
-
+    // Tests for no annotation scenarios
     @Test
     public void testNoAnnotations_ShouldNotBeRecognized() {
         NoAnnotationService service = new NoAnnotationService();
-        
-        // Should not be recognized
+
         assertFalse(parser.isService(service, "noAnnotationService"));
         assertFalse(parser.isReference(service, "noAnnotationService"));
-        
-        // Should return null for getServiceDesc
+
         RemotingDesc desc = parser.getServiceDesc(service, "noAnnotationService");
         assertNull(desc);
     }
@@ -280,22 +268,20 @@ public class AnnotationConflictTest {
     @Test
     public void testNoAnnotationInterface_ShouldNotBeRecognized() {
         NoAnnotationInterfaceImpl service = new NoAnnotationInterfaceImpl();
-        
-        // Should not be recognized
+
         assertFalse(parser.isService(service, "noAnnotationInterfaceImpl"));
-        
-        // Should return null
+
         RemotingDesc desc = parser.getServiceDesc(service, "noAnnotationInterfaceImpl");
         assertNull(desc);
     }
 
-    // Edge case: null handling
+    // Edge case tests
     @Test
     public void testNullService_ShouldThrowException() {
         assertThrows(RuntimeException.class, () -> {
             parser.isService(null, "nullService");
         });
-        
+
         assertThrows(RuntimeException.class, () -> {
             parser.getServiceDesc(null, "nullService");
         });
@@ -303,14 +289,13 @@ public class AnnotationConflictTest {
 
     @Test
     public void testNullBeanName_ShouldNotThrowException() {
-        ConflictOnClassService service = new ConflictOnClassService();
-        
-        // Should handle null bean name gracefully
+        LocalTCCService service = new LocalTCCService();
+
         assertDoesNotThrow(() -> {
             boolean result = parser.isService(service, null);
             assertTrue(result);
         });
-        
+
         assertDoesNotThrow(() -> {
             RemotingDesc desc = parser.getServiceDesc(service, null);
             assertNotNull(desc);
@@ -319,80 +304,61 @@ public class AnnotationConflictTest {
 
     @Test
     public void testEmptyBeanName_ShouldNotThrowException() {
-        ConflictOnClassService service = new ConflictOnClassService();
-        
-        // Should handle empty bean name gracefully
+        LocalTCCService service = new LocalTCCService();
+
         assertDoesNotThrow(() -> {
             boolean result = parser.isService(service, "");
             assertTrue(result);
         });
-        
+
         assertDoesNotThrow(() -> {
             RemotingDesc desc = parser.getServiceDesc(service, "");
             assertNotNull(desc);
         });
     }
 
-    // Stress test: many conflicts
-    @Test
-    public void testManyConflicts_ShouldHandleGracefully() {
-        for (int i = 0; i < 100; i++) {
-            ConflictOnClassService service = new ConflictOnClassService();
-            String beanName = "conflictService" + i;
-            
-            // Should handle many instances with conflicts without performance degradation
-            assertTrue(parser.isService(service, beanName));
-            
-            RemotingDesc desc = parser.getServiceDesc(service, beanName);
-            assertNotNull(desc);
-            assertEquals(ConflictOnClassService.class, desc.getServiceClass());
-        }
-    }
-
-    // Test annotation precedence
     @Test
     public void testAnnotationPrecedence_ImplementationOverInterface() {
-        // When both implementation and interface have annotations,
+        // When implementation has @LocalTCC and interface has @SagaTransactional,
         // implementation should take precedence
-        
-        @LocalTCC
-        class TestImpl implements ConflictOnInterfaceService {
-            @Override
-            public boolean doSomething() { return true; }
-        }
-        
-        TestImpl service = new TestImpl();
+
+        LocalTCCImpl service = new LocalTCCImpl();
         RemotingDesc desc = parser.getServiceDesc(service, "testImpl");
-        
+
         assertNotNull(desc);
-        // Implementation class should be used, not the interface
-        assertEquals(TestImpl.class, desc.getServiceClass());
+        // Implementation class should be used (has @LocalTCC)
+        assertEquals(LocalTCCImpl.class, desc.getServiceClass());
     }
 
-    // Test class hierarchy with mixed annotations
     @Test
-    public void testComplexInheritanceHierarchy() {
-        @LocalTransactional
-        class Level1 {
-            public boolean level1Method() { return true; }
-        }
-        
+    public void testClassHierarchyWithLocalTCC() {
+        // Test inheritance chain with @LocalTCC
         @LocalTCC
+        class Level1 {
+            public boolean level1Method() {
+                return true;
+            }
+        }
+
         class Level2 extends Level1 {
-            public boolean level2Method() { return true; }
+            public boolean level2Method() {
+                return true;
+            }
         }
-        
+
         class Level3 extends Level2 {
-            public boolean level3Method() { return true; }
+            public boolean level3Method() {
+                return true;
+            }
         }
-        
+
         Level3 service = new Level3();
-        
-        // Should be recognized (inherits annotations)
+
+        // Should be recognized (inherits @LocalTCC)
         assertTrue(parser.isService(service, "level3Service"));
-        
+
         RemotingDesc desc = parser.getServiceDesc(service, "level3Service");
         assertNotNull(desc);
         assertEquals(Level3.class, desc.getServiceClass());
     }
-} 
+}

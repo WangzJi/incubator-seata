@@ -16,17 +16,17 @@
  */
 package org.apache.seata.saga.annotation;
 
-import org.apache.seata.common.transaction.api.LocalTransactional;
 import org.apache.seata.rm.tcc.api.BusinessActionContext;
+import org.apache.seata.saga.rm.api.SagaTransactional;
 
 import java.util.List;
 
 /**
- * The interface Saga action using the new @LocalTransactional annotation.
+ * The interface Saga action using the new @SagaTransactional annotation.
  * This demonstrates the new way to avoid using @LocalTCC in Saga scenarios.
  */
-@LocalTransactional
-public interface LocalTransactionalSagaAnnotationAction {
+@SagaTransactional
+public interface SagaTransactionalAnnotationAction {
 
     /**
      * Commit transaction
@@ -47,4 +47,4 @@ public interface LocalTransactionalSagaAnnotationAction {
      * @return the boolean
      */
     boolean compensation(BusinessActionContext actionContext, SagaParam param);
-} 
+}
