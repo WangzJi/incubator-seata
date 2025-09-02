@@ -30,7 +30,7 @@ import java.lang.annotation.Target;
  * Must be used with `@LocalTCC` annotation on the interface or implementation class.
  * This annotation is specifically designed for TCC (Try-Confirm-Cancel) transaction mode.
  *
- * For Saga scenarios with compensation patterns, use `@CompensationBusinessAction` with `@SagaTransactional` instead.
+ * For Saga scenarios with compensation patterns, use `@CompensationBusinessAction` on methods within classes or interfaces marked with `@SagaTransactional`.
  *
  * @see org.apache.seata.rm.tcc.api.LocalTCC TCC annotation, which added on the TCC interface. It can't be left out.
  * @see org.apache.seata.saga.rm.api.SagaTransactional Generic transaction participant annotation for Saga scenarios
