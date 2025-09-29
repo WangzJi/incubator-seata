@@ -14,45 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.seata.core.rpc;
+package org.apache.seata.core.rpc.netty.http.filter;
+
+import org.apache.seata.core.exception.HttpRequestFilterException;
 
 /**
- * The enum Transport protocol type.
- *
+ * Interface for Netty HTTP request filters with order and enable control.
  */
-public enum TransportProtocolType {
-    /**
-     * Tcp transport protocol type.
-     */
-    TCP("tcp"),
+public interface HttpRequestFilter {
 
     /**
-     * Unix domain socket transport protocol type.
+     * Filter execution order; lower values run first.
      */
-    UNIX_DOMAIN_SOCKET("unix-domain-socket");
-
-    /**
-     * The Name.
-     */
-    public final String name;
-
-    TransportProtocolType(String name) {
-        this.name = name;
+    default int getOrder() {
+        return 0;
     }
 
     /**
-     * Gets type.
-     *
-     * @param name the name
-     * @return the type
+     * Executes the filter logic.
      */
-    public static TransportProtocolType getType(String name) {
-        name = name.trim().replace('-', '_');
-        for (TransportProtocolType b : TransportProtocolType.values()) {
-            if (b.name().equalsIgnoreCase(name)) {
-                return b;
-            }
-        }
-        throw new IllegalArgumentException("unknown type:" + name);
-    }
+    void doFilter(HttpFilterContext<?> context) throws HttpRequestFilterException;
+
+    /**
+     * Determines if the filter should run.
+     */
+    boolean shouldApply();
 }

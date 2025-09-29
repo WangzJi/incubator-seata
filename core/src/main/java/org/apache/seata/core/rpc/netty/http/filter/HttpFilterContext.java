@@ -14,43 +14,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.seata.core.rpc;
+package org.apache.seata.core.rpc.netty.http.filter;
 
-/**
- * The enum Transport server type.
- *
- */
-public enum TransportServerType {
-    /**
-     * Native transport server type.
-     */
-    NATIVE("native"),
-    /**
-     * Nio transport server type.
-     */
-    NIO("nio");
+import java.util.function.Supplier;
 
-    /**
-     * The Name.
-     */
-    public final String name;
+public class HttpFilterContext<T> {
+    private final T request;
+    private final Supplier<HttpRequestParamWrapper> paramWrapperSupplier;
+    private volatile HttpRequestParamWrapper paramWrapper;
 
-    TransportServerType(String name) {
-        this.name = name;
+    public HttpFilterContext(T request, Supplier<HttpRequestParamWrapper> paramWrapperSupplier) {
+        this.request = request;
+        this.paramWrapperSupplier = paramWrapperSupplier;
     }
 
-    /**
-     * Gets type.
-     *
-     * @param name the name
-     * @return the type
-     */
-    public static TransportServerType getType(String name) {
-        for (TransportServerType b : TransportServerType.values()) {
-            if (b.name().equalsIgnoreCase(name)) {
-                return b;
+    public T getRequest() {
+        return request;
+    }
+
+    public HttpRequestParamWrapper getParamWrapper() {
+        if (paramWrapper == null) {
+            synchronized (this) {
+                if (paramWrapper == null) {
+                    paramWrapper = paramWrapperSupplier.get();
+                }
             }
         }
-        throw new IllegalArgumentException("unknown type:" + name);
+        return paramWrapper;
     }
 }
