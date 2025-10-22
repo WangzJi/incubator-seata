@@ -51,12 +51,20 @@ class EtcdConfigurationTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        System.setProperty("config.type", "etcd3");
+        System.setProperty("config.etcd3.serverAddr", "http://127.0.0.1:2379");
+
         mockClient = Mockito.mock(Client.class);
         mockKV = Mockito.mock(KV.class);
         mockWatch = Mockito.mock(Watch.class);
 
         Mockito.when(mockClient.getKVClient()).thenReturn(mockKV);
         Mockito.when(mockClient.getWatchClient()).thenReturn(mockWatch);
+
+        GetResponse mockGetResponse = Mockito.mock(GetResponse.class);
+        Mockito.when(mockGetResponse.getKvs()).thenReturn(Collections.emptyList());
+        CompletableFuture<GetResponse> emptyFuture = CompletableFuture.completedFuture(mockGetResponse);
+        Mockito.when(mockKV.get(Mockito.any(ByteSequence.class))).thenReturn(emptyFuture);
 
         Field clientField = ReflectionUtil.getField(EtcdConfiguration.class, "client");
         clientField.setAccessible(true);
@@ -69,6 +77,9 @@ class EtcdConfigurationTest {
 
     @AfterEach
     void tearDown() throws Exception {
+        System.clearProperty("config.type");
+        System.clearProperty("config.etcd3.serverAddr");
+
         Field instanceField = ReflectionUtil.getField(EtcdConfiguration.class, "instance");
         instanceField.setAccessible(true);
         instanceField.set(null, null);
