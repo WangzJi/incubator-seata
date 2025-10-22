@@ -25,15 +25,20 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.env.Environment;
 
-import static org.apache.seata.common.Constants.OBJECT_KEY_SPRING_APPLICATION_CONTEXT;
+import java.lang.reflect.Field;
+
 import static org.apache.seata.common.Constants.OBJECT_KEY_SPRING_CONFIGURABLE_ENVIRONMENT;
 
 class SpringApplicationContextProviderTest {
 
     @AfterEach
-    void tearDown() {
-        ObjectHolder.INSTANCE.setObject(OBJECT_KEY_SPRING_APPLICATION_CONTEXT, null);
-        ObjectHolder.INSTANCE.setObject(OBJECT_KEY_SPRING_CONFIGURABLE_ENVIRONMENT, null);
+    void tearDown() throws Exception {
+        // Clear the OBJECT_MAP in ObjectHolder using reflection
+        Field objectMapField = org.apache.seata.common.util.ReflectionUtil.getField(ObjectHolder.class, "OBJECT_MAP");
+        objectMapField.setAccessible(true);
+        java.util.Map<String, Object> objectMap =
+                (java.util.Map<String, Object>) objectMapField.get(ObjectHolder.INSTANCE);
+        objectMap.clear();
     }
 
     @Test
