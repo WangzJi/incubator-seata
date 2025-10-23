@@ -130,7 +130,7 @@ public class ZstdCompressorTest {
     @Test
     public void testCompressionRatio() {
         ZstdCompressor compressor = new ZstdCompressor();
-        String repeatedText = "a".repeat(1000);
+        String repeatedText = new String(new char[1000]).replace("\0", "a");
         byte[] original = repeatedText.getBytes(StandardCharsets.UTF_8);
         byte[] compressed = compressor.compress(original);
         Assertions.assertTrue(

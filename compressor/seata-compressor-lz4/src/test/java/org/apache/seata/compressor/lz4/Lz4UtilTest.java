@@ -89,7 +89,7 @@ class Lz4UtilTest {
 
     @Test
     public void testCompressionRatio() {
-        String repeatedText = "a".repeat(1000);
+        String repeatedText = new String(new char[1000]).replace("\0", "a");
         byte[] original = repeatedText.getBytes(StandardCharsets.UTF_8);
         byte[] compressed = Lz4Util.compress(original);
         Assertions.assertTrue(

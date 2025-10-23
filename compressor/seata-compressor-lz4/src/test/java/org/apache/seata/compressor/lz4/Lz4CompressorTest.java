@@ -110,7 +110,7 @@ public class Lz4CompressorTest {
     @Test
     public void testCompressionRatio() {
         Lz4Compressor compressor = new Lz4Compressor();
-        String repeatedText = "a".repeat(1000);
+        String repeatedText = new String(new char[1000]).replace("\0", "a");
         byte[] original = repeatedText.getBytes(StandardCharsets.UTF_8);
         byte[] compressed = compressor.compress(original);
         Assertions.assertTrue(
