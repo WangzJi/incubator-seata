@@ -54,7 +54,7 @@ public class ZstdUtilTest {
     @Test
     public void testDecompressWithLenIllegal() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            // https://github.com/facebook/zstd/blob/dev/doc/zstdCompression_format.md#zstandard-frames
+            // https://github.com/facebook/zstd/blob/dev/doc/zstd_compression_format.md#zstandard-frames
             List<Byte> bytes = new ArrayList<>();
             byte[] magic = new byte[] {(byte) 0x28, (byte) 0xB5, (byte) 0x2F, (byte) 0xFD};
             byte[] frameHeaderDescriptor = new byte[magic.length + 1];
