@@ -68,7 +68,7 @@ class FileConfigurationTest {
         });
         System.setProperty(dataId, String.valueOf(!value));
         logger.info(System.currentTimeMillis() + ", dataId: {}, oldValue: {}", dataId, value);
-        // 减少等待时间，避免测试超时
+        // reduce wait time to avoid test timeout
         boolean timeout = countDownLatch.await(5, TimeUnit.SECONDS);
         if (!timeout) {
             logger.warn("Timeout waiting for configuration change, skipping assertion");
@@ -391,8 +391,8 @@ class FileConfigurationTest {
 
         fileConfig.removeConfigListener(dataId, listener);
         Set<ConfigurationChangeListener> listeners = fileConfig.getConfigListeners(dataId);
-        // 由于配置缓存的存在，移除监听器后可能仍然返回空的集合而不是 null
-        // 或者可能仍然包含缓存中的监听器，这是正常行为
+        // due to configuration cache, may still return an empty set instead of null after removing listener
+        // or may still contain cached listeners, this is normal behavior
         Assertions.assertTrue(listeners == null || listeners.isEmpty() || !listeners.contains(listener));
     }
 

@@ -139,7 +139,7 @@ class ConcurrentConfigurationTest {
         java.util.Set<ConfigurationChangeListener> listeners =
                 fileConfig.getConfigListeners("test.concurrent.listener");
         Assertions.assertNotNull(listeners);
-        // 由于并发添加可能重复，允许一定的误差范围
+        // due to concurrent addition may duplicate, allow some margin of error
         Assertions.assertTrue(listeners.size() >= threadCount - 2 && listeners.size() <= threadCount + 2);
     }
 
@@ -181,7 +181,7 @@ class ConcurrentConfigurationTest {
         java.util.Set<ConfigurationChangeListener> remainingListeners =
                 fileConfig.getConfigListeners("test.concurrent.remove");
         Assertions.assertNotNull(remainingListeners);
-        // 由于并发移除可能不准确，允许一定的误差范围
+        // due to concurrent removal may be inaccurate, allow some margin of error
         Assertions.assertTrue(remainingListeners.size() >= 3 && remainingListeners.size() <= 7);
     }
 

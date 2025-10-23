@@ -163,7 +163,7 @@ class ConfigurationChangeListenerTest {
         };
 
         ExecutorService executor = listener.getExecutorService();
-        // 默认执行器服务可能不为 null，这是正常行为
+        // default executor service may not be null, this is normal behavior
         // Assertions.assertNull(executor);
     }
 
@@ -233,8 +233,8 @@ class ConfigurationChangeListenerTest {
             listener.onProcessEvent(event);
             Assertions.assertTrue(changeEventCalled.get());
         } catch (Exception e) {
-            // 忽略执行器服务相关的异常
-            // 这可能是因为执行器服务已关闭导致的
+            // ignore executor service related exceptions
+            // this may be caused by executor service being shutdown
         }
     }
 

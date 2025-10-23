@@ -272,7 +272,7 @@ class ConfigurationFactoryTest {
                 null, Configuration.class.getMethod("removeConfig", String.class), new Object[] {"test.key"});
         Assertions.assertTrue((Boolean) result);
 
-        // test getLatestConfig - 注释掉因为参数类型匹配问题
+        // test getLatestConfig - commented out due to parameter type matching issues
         // result = handler.invoke(
         //         null,
         //         Configuration.class.getMethod("getLatestConfig", String.class, String.class, long.class),

@@ -34,7 +34,7 @@ class AbstractConfigurationTest {
     @Test
     void testGetIntWithInvalidValue() {
         System.setProperty("test.invalid.int", "not-a-number");
-        // 由于代理模式，异常可能被包装为 UndeclaredThrowableException
+        // due to proxy mode, exceptions may be wrapped as UndeclaredThrowableException
         Assertions.assertThrows(Exception.class, () -> {
             configuration.getInt("test.invalid.int");
         });
@@ -62,7 +62,7 @@ class AbstractConfigurationTest {
     @Test
     void testGetLongWithInvalidValue() {
         System.setProperty("test.invalid.long", "not-a-number");
-        // 由于代理模式，异常可能被包装为 UndeclaredThrowableException
+        // due to proxy mode, exceptions may be wrapped as UndeclaredThrowableException
         Assertions.assertThrows(Exception.class, () -> {
             configuration.getLong("test.invalid.long");
         });
@@ -83,7 +83,7 @@ class AbstractConfigurationTest {
     @Test
     void testGetShortWithInvalidValue() {
         System.setProperty("test.invalid.short", "not-a-number");
-        // 由于代理模式，异常可能被包装为 UndeclaredThrowableException
+        // due to proxy mode, exceptions may be wrapped as UndeclaredThrowableException
         Assertions.assertThrows(Exception.class, () -> {
             configuration.getShort("test.invalid.short");
         });
@@ -104,7 +104,7 @@ class AbstractConfigurationTest {
     @Test
     void testGetShortOutOfRange() {
         System.setProperty("test.short.overflow", "100000");
-        // 由于代理模式，异常可能被包装为 UndeclaredThrowableException
+        // due to proxy mode, exceptions may be wrapped as UndeclaredThrowableException
         Assertions.assertThrows(Exception.class, () -> {
             configuration.getShort("test.short.overflow");
         });
@@ -148,7 +148,7 @@ class AbstractConfigurationTest {
     @Test
     void testGetConfigWithNull() {
         String value = configuration.getConfig("test.nonexistent.key");
-        // 由于配置缓存的存在，可能返回默认值而不是 null
+        // due to configuration cache, may return default value instead of null
         Assertions.assertNotNull(value);
     }
 
