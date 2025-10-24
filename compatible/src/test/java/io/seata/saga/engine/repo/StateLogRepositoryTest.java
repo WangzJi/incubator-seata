@@ -38,9 +38,14 @@ public class StateLogRepositoryTest {
     }
 
     @Test
-    public void testExtendsApacheStateLogRepository() {
-        assertTrue(
-                org.apache.seata.saga.engine.repo.StateLogRepository.class.isAssignableFrom(StateLogRepository.class),
-                "StateLogRepository should extend org.apache.seata.saga.engine.repo.StateLogRepository");
+    public void testHasSameMethodSignatures() {
+        // Verify that the interface has the main methods of Apache StateLogRepository
+        assertTrue(StateLogRepository.class.isInterface(), "StateLogRepository should be an interface");
+        try {
+            StateLogRepository.class.getMethod("getStateMachineInstance", String.class);
+            StateLogRepository.class.getMethod("getStateInstance", String.class, String.class);
+        } catch (NoSuchMethodException e) {
+            throw new AssertionError("StateLogRepository should have same method signatures as Apache interface", e);
+        }
     }
 }

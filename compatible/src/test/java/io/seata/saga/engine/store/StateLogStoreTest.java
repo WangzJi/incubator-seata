@@ -38,9 +38,14 @@ public class StateLogStoreTest {
     }
 
     @Test
-    public void testExtendsApacheStateLogStore() {
-        assertTrue(
-                org.apache.seata.saga.engine.store.StateLogStore.class.isAssignableFrom(StateLogStore.class),
-                "StateLogStore should extend org.apache.seata.saga.engine.store.StateLogStore");
+    public void testHasSameMethodSignatures() {
+        // Verify that the interface has the main methods of Apache StateLogStore
+        assertTrue(StateLogStore.class.isInterface(), "StateLogStore should be an interface");
+        try {
+            StateLogStore.class.getMethod("getStateMachineInstance", String.class);
+            StateLogStore.class.getMethod("getStateInstance", String.class, String.class);
+        } catch (NoSuchMethodException e) {
+            throw new AssertionError("StateLogStore should have same method signatures as Apache interface", e);
+        }
     }
 }

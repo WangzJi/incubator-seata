@@ -33,15 +33,19 @@ public class ExpressionFactoryManagerTest {
     }
 
     @Test
-    public void testIsInterface() {
-        assertTrue(ExpressionFactoryManager.class.isInterface(), "ExpressionFactoryManager should be an interface");
+    public void testCanInstantiate() {
+        ExpressionFactoryManager manager = new ExpressionFactoryManager();
+        assertTrue(manager != null, "ExpressionFactoryManager should be instantiable");
     }
 
     @Test
-    public void testExtendsApacheExpressionFactoryManager() {
+    public void testHasUnwrapMethod() throws NoSuchMethodException {
+        ExpressionFactoryManager manager = new ExpressionFactoryManager();
         assertTrue(
-                org.apache.seata.saga.engine.expression.ExpressionFactoryManager.class.isAssignableFrom(
-                        ExpressionFactoryManager.class),
-                "ExpressionFactoryManager should extend org.apache.seata.saga.engine.expression.ExpressionFactoryManager");
+                manager.unwrap() != null,
+                "ExpressionFactoryManager should have unwrap method returning Apache instance");
+        assertTrue(
+                manager.unwrap() instanceof org.apache.seata.saga.engine.expression.ExpressionFactoryManager,
+                "unwrap() should return Apache ExpressionFactoryManager instance");
     }
 }

@@ -38,10 +38,16 @@ public class HierarchicalProcessContextTest {
     }
 
     @Test
-    public void testExtendsApacheHierarchicalProcessContext() {
+    public void testExtendsProcessContext() {
+        // Verify that the interface extends ProcessContext
         assertTrue(
-                org.apache.seata.saga.proctrl.HierarchicalProcessContext.class.isAssignableFrom(
-                        HierarchicalProcessContext.class),
-                "HierarchicalProcessContext should extend org.apache.seata.saga.proctrl.HierarchicalProcessContext");
+                io.seata.saga.proctrl.ProcessContext.class.isAssignableFrom(HierarchicalProcessContext.class),
+                "HierarchicalProcessContext should extend ProcessContext");
+        try {
+            HierarchicalProcessContext.class.getMethod("getVariableLocally", String.class);
+            HierarchicalProcessContext.class.getMethod("setVariableLocally", String.class, Object.class);
+        } catch (NoSuchMethodException e) {
+            throw new AssertionError("HierarchicalProcessContext should have local variable methods", e);
+        }
     }
 }

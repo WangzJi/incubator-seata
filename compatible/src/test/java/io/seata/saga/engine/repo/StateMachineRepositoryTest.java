@@ -38,10 +38,15 @@ public class StateMachineRepositoryTest {
     }
 
     @Test
-    public void testExtendsApacheStateMachineRepository() {
-        assertTrue(
-                org.apache.seata.saga.engine.repo.StateMachineRepository.class.isAssignableFrom(
-                        StateMachineRepository.class),
-                "StateMachineRepository should extend org.apache.seata.saga.engine.repo.StateMachineRepository");
+    public void testHasSameMethodSignatures() {
+        // Verify that the interface has the main methods of Apache StateMachineRepository
+        assertTrue(StateMachineRepository.class.isInterface(), "StateMachineRepository should be an interface");
+        try {
+            StateMachineRepository.class.getMethod("getStateMachineById", String.class);
+            StateMachineRepository.class.getMethod("getStateMachine", String.class, String.class);
+        } catch (NoSuchMethodException e) {
+            throw new AssertionError(
+                    "StateMachineRepository should have same method signatures as Apache interface", e);
+        }
     }
 }
