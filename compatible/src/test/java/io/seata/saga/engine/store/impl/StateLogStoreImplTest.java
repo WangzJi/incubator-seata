@@ -24,8 +24,9 @@ import io.seata.saga.statelang.domain.impl.StateInstanceImpl;
 import io.seata.saga.statelang.domain.impl.StateMachineInstanceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,7 @@ import static org.mockito.Mockito.*;
 /**
  * Test cases for StateLogStoreImpl.
  */
+@ExtendWith(MockitoExtension.class)
 public class StateLogStoreImplTest {
 
     @Mock
@@ -46,7 +48,6 @@ public class StateLogStoreImplTest {
 
     @BeforeEach
     public void setUp() {
-        MockitoAnnotations.openMocks(this);
         stateLogStore = StateLogStoreImpl.wrap(mockApacheStateLogStore);
     }
 

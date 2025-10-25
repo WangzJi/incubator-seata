@@ -36,6 +36,20 @@ public class ProcessCtrlStateMachineEngineTest {
     @BeforeEach
     public void setUp() {
         stateMachineEngine = new ProcessCtrlStateMachineEngine();
+        // Mock the DefaultStateMachineConfig to avoid NullPointerException and ClassCastException
+        DefaultStateMachineConfig mockConfig = mock(DefaultStateMachineConfig.class);
+
+        // Mock the unwrap method to return a proper Apache StateMachineConfig
+        org.apache.seata.saga.engine.impl.DefaultStateMachineConfig apacheConfig =
+                mock(org.apache.seata.saga.engine.impl.DefaultStateMachineConfig.class);
+        when(mockConfig.unwrap()).thenReturn(apacheConfig);
+
+        // Mock the StateLogStore to avoid NPE
+        org.apache.seata.saga.engine.store.StateLogStore mockStateLogStore =
+                mock(org.apache.seata.saga.engine.store.StateLogStore.class);
+        when(apacheConfig.getStateLogStore()).thenReturn(mockStateLogStore);
+
+        stateMachineEngine.setStateMachineConfig(mockConfig);
     }
 
     @Test

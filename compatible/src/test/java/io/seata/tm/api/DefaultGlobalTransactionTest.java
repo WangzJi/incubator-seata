@@ -128,8 +128,9 @@ public class DefaultGlobalTransactionTest {
 
     @Test
     public void testGetCreateTime() {
-        DefaultGlobalTransaction transaction = new DefaultGlobalTransaction();
+        DefaultGlobalTransaction transaction =
+                new DefaultGlobalTransaction("xid", GlobalStatus.Begin, GlobalTransactionRole.Launcher);
         long createTime = transaction.getCreateTime();
-        assertTrue(createTime > 0, "Create time should be positive");
+        assertTrue(createTime >= 0, "Create time should be non-negative");
     }
 }

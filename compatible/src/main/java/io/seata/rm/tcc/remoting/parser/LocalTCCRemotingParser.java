@@ -64,6 +64,11 @@ public class LocalTCCRemotingParser extends org.apache.seata.rm.tcc.remoting.par
     }
 
     @Override
+    public boolean isService(Object bean, String beanName) {
+        return isLocalTCC(bean);
+    }
+
+    @Override
     public boolean isService(Class<?> beanClass) throws FrameworkException {
         return isLocalTCC(beanClass);
     }

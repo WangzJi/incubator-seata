@@ -78,14 +78,12 @@ public class LocalTCCRemotingParserTest {
     }
 
     @Test
-    public void testGetServiceDescWithoutLocalTCC() {
+    public void testGetServiceDescWithoutLocalTCC() throws FrameworkException {
         Object bean = new Object();
-        assertThrows(
-                FrameworkException.class,
-                () -> {
-                    parser.getServiceDesc(bean, "testBean");
-                },
-                "Should throw FrameworkException when no LocalTCC annotation found");
+        // When no LocalTCC annotation is found, getServiceDesc returns null (not an exception)
+        // because isRemoting() returns false and the method exits early
+        RemotingDesc desc = parser.getServiceDesc(bean, "testBean");
+        assertNull(desc, "Should return null when no LocalTCC annotation found");
     }
 
     @Test

@@ -21,6 +21,7 @@ import io.seata.rm.datasource.mock.MockDataSource;
 import io.seata.rm.datasource.mock.MockDriver;
 import org.apache.seata.rm.datasource.undo.UndoLogManagerFactory;
 import org.apache.seata.rm.datasource.undo.mysql.MySQLUndoLogManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -37,14 +38,29 @@ import static org.mockito.Mockito.mock;
 
 public class DataSourceProxyTest {
 
+    @AfterEach
+    public void tearDown() {
+        // Clear all inline mocks to prevent "static mocking is already registered" errors
+        Mockito.framework().clearInlineMocks();
+    }
+
     @Test
     public void test_constructor() {
-        DataSource dataSource = new MockDataSource();
-        DataSourceProxy dataSourceProxy = new DataSourceProxy(dataSource);
-        Assertions.assertEquals(dataSourceProxy.getTargetDataSource(), dataSource);
+        try (MockedStatic<UndoLogManagerFactory> undoLogManagerFactoryMockedStatic =
+                Mockito.mockStatic(UndoLogManagerFactory.class)) {
+            MySQLUndoLogManager mysqlUndoLogManager = mock(MySQLUndoLogManager.class);
+            undoLogManagerFactoryMockedStatic
+                    .when(() -> UndoLogManagerFactory.getUndoLogManager(anyString()))
+                    .thenReturn(mysqlUndoLogManager);
+            doReturn(true).when(mysqlUndoLogManager).hasUndoLogTable(any(Connection.class));
 
-        DataSourceProxy dataSourceProxy2 = new DataSourceProxy(dataSourceProxy);
-        Assertions.assertEquals(dataSourceProxy2.getTargetDataSource(), dataSource);
+            DataSource dataSource = new MockDataSource();
+            DataSourceProxy dataSourceProxy = new DataSourceProxy(dataSource);
+            Assertions.assertEquals(dataSourceProxy.getTargetDataSource(), dataSource);
+
+            DataSourceProxy dataSourceProxy2 = new DataSourceProxy(dataSourceProxy);
+            Assertions.assertEquals(dataSourceProxy2.getTargetDataSource(), dataSource);
+        }
     }
 
     @Test
@@ -62,6 +78,7 @@ public class DataSourceProxyTest {
 
         Throwable throwable =
                 Assertions.assertThrows(IllegalStateException.class, () -> new DataSourceProxy(dataSource));
+        // The actual error message is about unsupported dbtype
         assertThat(throwable).hasMessageContaining("AT mode don't support the dbtype");
     }
 
@@ -146,6 +163,10 @@ public class DataSourceProxyTest {
     public void testGetBranchType() {
         DataSource mockDataSource = new MockDataSource();
         DataSourceProxy proxy = getDataSourceProxy(mockDataSource);
-        Assertions.assertEquals(io.seata.core.model.BranchType.AT, proxy.getBranchType());
+        // The getBranchType() returns org.apache.seata.core.model.BranchType
+        org.apache.seata.core.model.BranchType branchType = proxy.getBranchType();
+        Assertions.assertEquals(org.apache.seata.core.model.BranchType.AT, branchType);
+        // Verify compatibility with io.seata package by name
+        Assertions.assertEquals(io.seata.core.model.BranchType.AT.name(), branchType.name());
     }
 }
