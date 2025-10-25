@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * Test cases for GlobalTransactionScanner compatibility wrapper.
@@ -70,5 +71,45 @@ public class GlobalTransactionScannerTest {
                 org.apache.seata.spring.annotation.GlobalTransactionScanner.class.isAssignableFrom(
                         GlobalTransactionScanner.class),
                 "GlobalTransactionScanner should extend org.apache.seata.spring.annotation.GlobalTransactionScanner");
+    }
+
+    @Test
+    public void testConstructorWithApplicationIdTxServiceGroupAndFailureHandler() {
+        io.seata.tm.api.FailureHandler failureHandler = mock(io.seata.tm.api.FailureHandler.class);
+        GlobalTransactionScanner scanner =
+                new GlobalTransactionScanner("test-app", "test-service-group", failureHandler);
+        assertNotNull(scanner, "Scanner should be created");
+        assertEquals("test-app", scanner.getApplicationId());
+        assertEquals("test-service-group", scanner.getTxServiceGroup());
+    }
+
+    @Test
+    public void testConstructorWithApplicationIdTxServiceGroupExposeProxyAndFailureHandler() {
+        io.seata.tm.api.FailureHandler failureHandler = mock(io.seata.tm.api.FailureHandler.class);
+        GlobalTransactionScanner scanner =
+                new GlobalTransactionScanner("test-app", "test-service-group", true, failureHandler);
+        assertNotNull(scanner, "Scanner should be created");
+        assertEquals("test-app", scanner.getApplicationId());
+        assertEquals("test-service-group", scanner.getTxServiceGroup());
+    }
+
+    @Test
+    public void testConstructorWithApplicationIdTxServiceGroupModeAndFailureHandler() {
+        io.seata.tm.api.FailureHandler failureHandler = mock(io.seata.tm.api.FailureHandler.class);
+        GlobalTransactionScanner scanner =
+                new GlobalTransactionScanner("test-app", "test-service-group", 1, failureHandler);
+        assertNotNull(scanner, "Scanner should be created");
+        assertEquals("test-app", scanner.getApplicationId());
+        assertEquals("test-service-group", scanner.getTxServiceGroup());
+    }
+
+    @Test
+    public void testConstructorWithAllParameters() {
+        io.seata.tm.api.FailureHandler failureHandler = mock(io.seata.tm.api.FailureHandler.class);
+        GlobalTransactionScanner scanner =
+                new GlobalTransactionScanner("test-app", "test-service-group", 1, true, failureHandler);
+        assertNotNull(scanner, "Scanner should be created");
+        assertEquals("test-app", scanner.getApplicationId());
+        assertEquals("test-service-group", scanner.getTxServiceGroup());
     }
 }

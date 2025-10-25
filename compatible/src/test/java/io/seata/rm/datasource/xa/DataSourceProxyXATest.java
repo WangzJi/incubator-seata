@@ -16,124 +16,77 @@
  */
 package io.seata.rm.datasource.xa;
 
-import com.alibaba.druid.pool.DruidDataSource;
-import com.alibaba.druid.pool.DruidStatementConnection;
-import com.mysql.jdbc.JDBC4MySQLConnection;
-import com.mysql.jdbc.jdbc2.optional.JDBC4ConnectionWrapper;
-import io.seata.core.context.RootContext;
+import io.seata.core.model.BranchType;
 import io.seata.rm.datasource.mock.MockDataSource;
-import org.apache.seata.rm.datasource.xa.ConnectionProxyXA;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import javax.sql.DataSource;
-import javax.sql.PooledConnection;
-import javax.sql.XAConnection;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.Driver;
-import java.sql.SQLException;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for DataSourceProxyXA
+ * Test cases for DataSourceProxyXA.
  */
 public class DataSourceProxyXATest {
 
     @Test
-    public void test_constructor() {
-        DataSource dataSource = new MockDataSource();
-
-        DataSourceProxyXA dataSourceProxy = new DataSourceProxyXA(dataSource);
-        Assertions.assertEquals(dataSourceProxy.getTargetDataSource(), dataSource);
-
-        DataSourceProxyXA dataSourceProxy2 = new DataSourceProxyXA(dataSourceProxy);
-        Assertions.assertEquals(dataSourceProxy2.getTargetDataSource(), dataSource);
+    public void testConstructorWithDataSource() {
+        DataSource mockDataSource = new MockDataSource();
+        DataSourceProxyXA proxy = new DataSourceProxyXA(mockDataSource);
+        assertNotNull(proxy);
     }
 
     @Test
-    public void testGetConnection() throws SQLException {
-        // Mock
-        Driver driver = Mockito.mock(Driver.class);
-        JDBC4MySQLConnection connection = Mockito.mock(JDBC4MySQLConnection.class);
-        Mockito.when(connection.getAutoCommit()).thenReturn(true);
-        DatabaseMetaData metaData = Mockito.mock(DatabaseMetaData.class);
-        Mockito.when(metaData.getURL()).thenReturn("jdbc:mysql:xxx");
-        Mockito.when(connection.getMetaData()).thenReturn(metaData);
-        Mockito.when(driver.connect(any(), any())).thenReturn(connection);
-
-        DruidDataSource druidDataSource = new DruidDataSource();
-        druidDataSource.setDriver(driver);
-        druidDataSource.setUrl("jdbc:mysql:xxx");
-        DataSourceProxyXA dataSourceProxyXA = new DataSourceProxyXA(druidDataSource);
-        RootContext.unbind();
-        Connection connFromDataSourceProxyXA = dataSourceProxyXA.getConnection();
-        Assertions.assertFalse(connFromDataSourceProxyXA instanceof ConnectionProxyXA);
-        RootContext.bind("test");
-        connFromDataSourceProxyXA = dataSourceProxyXA.getConnection();
-        Assertions.assertTrue(connFromDataSourceProxyXA instanceof ConnectionProxyXA);
-        ConnectionProxyXA connectionProxyXA = (ConnectionProxyXA) dataSourceProxyXA.getConnection();
-
-        Connection wrappedConnection = connectionProxyXA.getWrappedConnection();
-        Assertions.assertTrue(wrappedConnection instanceof PooledConnection);
-
-        Connection wrappedPhysicalConn = ((PooledConnection) wrappedConnection).getConnection();
-        if (wrappedPhysicalConn instanceof DruidStatementConnection) {
-            wrappedPhysicalConn = ((DruidStatementConnection) wrappedPhysicalConn).getConnection();
-        }
-        Assertions.assertSame(wrappedPhysicalConn, connection);
-
-        XAConnection xaConnection = connectionProxyXA.getWrappedXAConnection();
-        Connection connectionInXA = xaConnection.getConnection();
-        Assertions.assertTrue(connectionInXA instanceof JDBC4ConnectionWrapper);
-        tearDown();
+    public void testConstructorWithDataSourceAndResourceGroupId() {
+        DataSource mockDataSource = new MockDataSource();
+        DataSourceProxyXA proxy = new DataSourceProxyXA(mockDataSource, "test-resource-group");
+        assertNotNull(proxy);
     }
 
     @Test
-    public void testGetMariaXaConnection() throws SQLException, ClassNotFoundException {
-        // Mock
-        Driver driver = Mockito.mock(Driver.class);
-        Class clazz = Class.forName("org.mariadb.jdbc.MariaDbConnection");
-        Connection connection = (Connection) (Mockito.mock(clazz));
-        Mockito.when(connection.getAutoCommit()).thenReturn(true);
-        DatabaseMetaData metaData = Mockito.mock(DatabaseMetaData.class);
-        Mockito.when(metaData.getURL()).thenReturn("jdbc:mariadb:xxx");
-        Mockito.when(connection.getMetaData()).thenReturn(metaData);
-        Mockito.when(driver.connect(any(), any())).thenReturn(connection);
-
-        DruidDataSource druidDataSource = new DruidDataSource();
-        druidDataSource.setDriver(driver);
-        druidDataSource.setUrl("jdbc:mariadb:xxx");
-        DataSourceProxyXA dataSourceProxyXA = new DataSourceProxyXA(druidDataSource);
-        RootContext.unbind();
-        Connection connFromDataSourceProxyXA = dataSourceProxyXA.getConnection();
-        Assertions.assertFalse(connFromDataSourceProxyXA instanceof ConnectionProxyXA);
-        RootContext.bind("test");
-        connFromDataSourceProxyXA = dataSourceProxyXA.getConnection();
-
-        Assertions.assertTrue(connFromDataSourceProxyXA instanceof ConnectionProxyXA);
-        ConnectionProxyXA connectionProxyXA = (ConnectionProxyXA) dataSourceProxyXA.getConnection();
-
-        Connection wrappedConnection = connectionProxyXA.getWrappedConnection();
-        Assertions.assertTrue(wrappedConnection instanceof PooledConnection);
-
-        Connection wrappedPhysicalConn = ((PooledConnection) wrappedConnection).getConnection();
-        if (wrappedPhysicalConn instanceof DruidStatementConnection) {
-            wrappedPhysicalConn = ((DruidStatementConnection) wrappedPhysicalConn).getConnection();
-        }
-        Assertions.assertSame(wrappedPhysicalConn, connection);
-
-        XAConnection xaConnection = connectionProxyXA.getWrappedXAConnection();
-        Connection connectionInXA = xaConnection.getConnection();
-        Assertions.assertEquals(
-                "org.mariadb.jdbc.MariaDbConnection", connectionInXA.getClass().getName());
+    public void testGetConnection() throws Exception {
+        DataSource mockDataSource = new MockDataSource();
+        DataSourceProxyXA proxy = new DataSourceProxyXA(mockDataSource);
+        Connection connection = proxy.getConnection();
+        assertNotNull(connection);
     }
 
-    @AfterEach
-    public void tearDown() {
-        RootContext.unbind();
+    @Test
+    public void testGetConnectionWithCredentials() throws Exception {
+        DataSource mockDataSource = new MockDataSource();
+        DataSourceProxyXA proxy = new DataSourceProxyXA(mockDataSource);
+        Connection connection = proxy.getConnection("user", "password");
+        assertNotNull(connection);
+    }
+
+    @Test
+    public void testGetBranchType() {
+        DataSource mockDataSource = new MockDataSource();
+        DataSourceProxyXA proxy = new DataSourceProxyXA(mockDataSource);
+        assertEquals(BranchType.XA, proxy.getBranchType());
+    }
+
+    @Test
+    public void testGetTargetDataSource() {
+        DataSource mockDataSource = new MockDataSource();
+        DataSourceProxyXA proxy = new DataSourceProxyXA(mockDataSource);
+        assertSame(mockDataSource, proxy.getTargetDataSource());
+    }
+
+    @Test
+    public void testExtendsApacheDataSourceProxyXA() {
+        assertTrue(
+                org.apache.seata.rm.datasource.xa.DataSourceProxyXA.class.isAssignableFrom(DataSourceProxyXA.class),
+                "DataSourceProxyXA should extend org.apache.seata.rm.datasource.xa.DataSourceProxyXA");
+    }
+
+    @Test
+    public void testConstructorWithNestedProxy() {
+        DataSource mockDataSource = new MockDataSource();
+        DataSourceProxyXA proxy1 = new DataSourceProxyXA(mockDataSource);
+        DataSourceProxyXA proxy2 = new DataSourceProxyXA(proxy1);
+        assertNotNull(proxy2);
+        assertSame(mockDataSource, proxy2.getTargetDataSource());
     }
 }

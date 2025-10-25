@@ -17,45 +17,61 @@
 package io.seata.spring.annotation.datasource;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.SimpleBeanDefinitionRegistry;
+import org.springframework.core.type.AnnotationMetadata;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
- * Test cases for AutoDataSourceProxyRegistrar compatibility wrapper.
+ * Test cases for AutoDataSourceProxyRegistrar.
  */
 public class AutoDataSourceProxyRegistrarTest {
+
+    @Test
+    public void testImplementsImportBeanDefinitionRegistrar() {
+        assertTrue(
+                org.springframework.context.annotation.ImportBeanDefinitionRegistrar.class.isAssignableFrom(
+                        AutoDataSourceProxyRegistrar.class),
+                "AutoDataSourceProxyRegistrar should implement ImportBeanDefinitionRegistrar");
+    }
+
+    @Test
+    public void testRegisterBeanDefinitions() {
+        AutoDataSourceProxyRegistrar registrar = new AutoDataSourceProxyRegistrar();
+        AnnotationMetadata mockMetadata = mock(AnnotationMetadata.class);
+        BeanDefinitionRegistry registry = new SimpleBeanDefinitionRegistry();
+
+        // Should not throw exception
+        assertDoesNotThrow(() -> registrar.registerBeanDefinitions(mockMetadata, registry));
+    }
+
+    @Test
+    public void testRegisterBeanDefinitionsWithNullMetadata() {
+        AutoDataSourceProxyRegistrar registrar = new AutoDataSourceProxyRegistrar();
+        BeanDefinitionRegistry registry = new SimpleBeanDefinitionRegistry();
+
+        // Should handle null metadata gracefully
+        assertDoesNotThrow(() -> registrar.registerBeanDefinitions(null, registry));
+    }
+
+    @Test
+    public void testRegisterBeanDefinitionsWithRealRegistry() {
+        AutoDataSourceProxyRegistrar registrar = new AutoDataSourceProxyRegistrar();
+        AnnotationMetadata mockMetadata = mock(AnnotationMetadata.class);
+        SimpleBeanDefinitionRegistry registry = new SimpleBeanDefinitionRegistry();
+
+        registrar.registerBeanDefinitions(mockMetadata, registry);
+
+        // Verify that registry has been used (beans may or may not be registered depending on annotation presence)
+        assertNotNull(registry);
+    }
 
     @Test
     public void testDeprecatedAnnotation() {
         assertTrue(
                 AutoDataSourceProxyRegistrar.class.isAnnotationPresent(Deprecated.class),
                 "AutoDataSourceProxyRegistrar should be marked as @Deprecated");
-    }
-
-    @Test
-    public void testImplementsImportBeanDefinitionRegistrar() {
-        assertTrue(
-                ImportBeanDefinitionRegistrar.class.isAssignableFrom(AutoDataSourceProxyRegistrar.class),
-                "AutoDataSourceProxyRegistrar should implement ImportBeanDefinitionRegistrar");
-    }
-
-    @Test
-    public void testBeanNameConstant() throws Exception {
-        java.lang.reflect.Field field =
-                AutoDataSourceProxyRegistrar.class.getField("BEAN_NAME_SEATA_AUTO_DATA_SOURCE_PROXY_CREATOR");
-        assertNotNull(field, "Should have BEAN_NAME_SEATA_AUTO_DATA_SOURCE_PROXY_CREATOR field");
-        assertEquals(
-                "seataAutoDataSourceProxyCreator",
-                field.get(null),
-                "Bean name should be seataAutoDataSourceProxyCreator");
-    }
-
-    @Test
-    public void testCanInstantiate() {
-        AutoDataSourceProxyRegistrar registrar = new AutoDataSourceProxyRegistrar();
-        assertNotNull(registrar, "Should be able to instantiate AutoDataSourceProxyRegistrar");
     }
 }

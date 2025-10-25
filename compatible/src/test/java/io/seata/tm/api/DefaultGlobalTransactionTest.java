@@ -125,4 +125,11 @@ public class DefaultGlobalTransactionTest {
                 new DefaultGlobalTransaction("xid3", GlobalStatus.Rollbacked, GlobalTransactionRole.Launcher);
         assertNotNull(rollbackedTx);
     }
+
+    @Test
+    public void testGetCreateTime() {
+        DefaultGlobalTransaction transaction = new DefaultGlobalTransaction();
+        long createTime = transaction.getCreateTime();
+        assertTrue(createTime > 0, "Create time should be positive");
+    }
 }
