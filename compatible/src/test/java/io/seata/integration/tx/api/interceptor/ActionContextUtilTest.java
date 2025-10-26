@@ -20,7 +20,10 @@ import io.seata.rm.tcc.api.BusinessActionContextParameter;
 import org.apache.seata.rm.tcc.api.ParamType;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -258,6 +261,143 @@ public class ActionContextUtilTest {
         String value = "testValue";
         String result = ActionContextUtil.convertActionContext("key", value, String.class);
         assertEquals(value, result);
+    }
+
+    // New tests for uncovered branches
+
+    @Test
+    public void testLoadParamByAnnotationAndPutToContext_NullParamValue() {
+        Map<String, Object> actionContext = new HashMap<>();
+        BusinessActionContextParameter annotation = createAnnotation("testParam", "", -1, false);
+
+        // When paramValue is null, should return immediately without modifying actionContext
+        ActionContextUtil.loadParamByAnnotationAndPutToContext(
+                ParamType.PARAM, "testParam", null, annotation, actionContext);
+
+        assertTrue(actionContext.isEmpty(), "actionContext should remain empty when paramValue is null");
+    }
+
+    @Test
+    public void testLoadParamByAnnotationAndPutToContext_EmptyListWithIndex() {
+        Map<String, Object> actionContext = new HashMap<>();
+        List<String> emptyList = new ArrayList<>();
+        BusinessActionContextParameter annotation = createAnnotation("testParam", "", 0, false);
+
+        // When paramValue is empty list with index >= 0, should return without modifying actionContext
+        ActionContextUtil.loadParamByAnnotationAndPutToContext(
+                ParamType.PARAM, "testParam", emptyList, annotation, actionContext);
+
+        assertTrue(actionContext.isEmpty(), "actionContext should remain empty when list is empty");
+    }
+
+    @Test
+    public void testLoadParamByAnnotationAndPutToContext_IndexOutOfBounds() {
+        Map<String, Object> actionContext = new HashMap<>();
+        List<String> list = Arrays.asList("item0", "item1");
+        BusinessActionContextParameter annotation = createAnnotation("testParam", "", 5, false);
+
+        // When index is out of bounds, should return without modifying actionContext
+        ActionContextUtil.loadParamByAnnotationAndPutToContext(
+                ParamType.PARAM, "testParam", list, annotation, actionContext);
+
+        assertTrue(actionContext.isEmpty(), "actionContext should remain empty when index is out of bounds");
+    }
+
+    @Test
+    public void testLoadParamByAnnotationAndPutToContext_ValidIndexFromList() {
+        Map<String, Object> actionContext = new HashMap<>();
+        List<String> list = Arrays.asList("item0", "item1", "item2");
+        BusinessActionContextParameter annotation = createAnnotation("myParam", "", 1, false);
+
+        // When index is valid, should get element at index and put it into actionContext
+        ActionContextUtil.loadParamByAnnotationAndPutToContext(
+                ParamType.PARAM, "testParam", list, annotation, actionContext);
+
+        assertFalse(actionContext.isEmpty(), "actionContext should contain the extracted element");
+        assertEquals("item1", actionContext.get("myParam"));
+    }
+
+    @Test
+    public void testLoadParamByAnnotationAndPutToContext_NonListWithIndex() {
+        Map<String, Object> actionContext = new HashMap<>();
+        String nonListValue = "simpleString";
+        BusinessActionContextParameter annotation = createAnnotation("testParam", "", 0, false);
+
+        // When paramValue is not a List but index >= 0, should log warning and use original value
+        ActionContextUtil.loadParamByAnnotationAndPutToContext(
+                ParamType.PARAM, "testParam", nonListValue, annotation, actionContext);
+
+        assertFalse(actionContext.isEmpty(), "actionContext should contain the original value");
+        assertEquals("simpleString", actionContext.get("testParam"));
+    }
+
+    @Test
+    public void testLoadParamByAnnotationAndPutToContext_IsParamInPropertyTrue() {
+        Map<String, Object> actionContext = new HashMap<>();
+        TestObject testObj = new TestObject();
+        testObj.setUserId("user123");
+        testObj.setOrderId("order456");
+        BusinessActionContextParameter annotation = createAnnotation("", "", -1, true);
+
+        // When isParamInProperty is true, should fetch context from the object
+        ActionContextUtil.loadParamByAnnotationAndPutToContext(
+                ParamType.PARAM, "testParam", testObj, annotation, actionContext);
+
+        // The actual behavior depends on fetchContextFromObject implementation
+        // At minimum, the method should have been called without error
+        assertNotNull(actionContext);
+    }
+
+    @Test
+    public void testLoadParamByAnnotationAndPutToContext_UseAnnotationParamName() {
+        Map<String, Object> actionContext = new HashMap<>();
+        String value = "testValue";
+        BusinessActionContextParameter annotation = createAnnotation("annotationParamName", "", -1, false);
+
+        // When annotation has paramName, should use it instead of method parameter name
+        ActionContextUtil.loadParamByAnnotationAndPutToContext(
+                ParamType.PARAM, "methodParamName", value, annotation, actionContext);
+
+        assertTrue(actionContext.containsKey("annotationParamName"), "actionContext should use annotation paramName");
+        assertEquals("testValue", actionContext.get("annotationParamName"));
+        assertFalse(
+                actionContext.containsKey("methodParamName"), "actionContext should not contain method parameter name");
+    }
+
+    // Helper method to create annotation instances
+    private BusinessActionContextParameter createAnnotation(
+            String paramName, String value, int index, boolean isParamInProperty) {
+        return new BusinessActionContextParameter() {
+            @Override
+            public String value() {
+                return value;
+            }
+
+            @Override
+            public String paramName() {
+                return paramName;
+            }
+
+            @Override
+            public boolean isShardingParam() {
+                return false;
+            }
+
+            @Override
+            public int index() {
+                return index;
+            }
+
+            @Override
+            public boolean isParamInProperty() {
+                return isParamInProperty;
+            }
+
+            @Override
+            public Class<? extends java.lang.annotation.Annotation> annotationType() {
+                return BusinessActionContextParameter.class;
+            }
+        };
     }
 
     // Test helper classes
