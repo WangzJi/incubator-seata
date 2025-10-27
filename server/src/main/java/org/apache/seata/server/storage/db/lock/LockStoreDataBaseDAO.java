@@ -428,7 +428,7 @@ public class LockStoreDataBaseDAO implements LockStore {
         try {
             // query
             String checkLockSQL =
-                    LockStoreSqlFactory.getLogStoreSql(dbType).getCheckLockableSql(lockTable, lockDOs.size());
+                    LockStoreSqlFactory.getLockStoreSql(dbType).getCheckLockableSql(lockTable, lockDOs.size());
             ps = conn.prepareStatement(checkLockSQL);
             for (int i = 0; i < lockDOs.size(); i++) {
                 ps.setString(i + 1, lockDOs.get(i).getRowKey());
