@@ -86,7 +86,7 @@ public class GlobalLockDBServiceImpl extends AbstractLockService implements Glob
         List<Object> sqlParamList = new ArrayList<>();
         String whereCondition = this.getWhereConditionByParam(param, sqlParamList);
 
-        String sourceSql = LockStoreSqlFactory.getLockStoreSql(dbType).getAllLockSql(lockTable, whereCondition);
+        String sourceSql = LockStoreSqlFactory.getLogStoreSql(dbType).getAllLockSql(lockTable, whereCondition);
         String queryLockSql = PageUtil.pageSql(sourceSql, dbType, param.getPageNum(), param.getPageSize());
         String lockCountSql = PageUtil.countSql(sourceSql, dbType);
 
@@ -132,7 +132,7 @@ public class GlobalLockDBServiceImpl extends AbstractLockService implements Glob
                     param.getBranchId(),
                     rowKey);
         }
-        String deleteLockSql = LockStoreSqlFactory.getLockStoreSql(dbType).getDeleteLockSql(lockTable);
+        String deleteLockSql = LockStoreSqlFactory.getLogStoreSql(dbType).getDeleteLockSql(lockTable);
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement ps = conn.prepareStatement(deleteLockSql)) {
             ps.setString(1, rowKey);

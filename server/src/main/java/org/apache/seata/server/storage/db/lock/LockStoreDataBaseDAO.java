@@ -131,7 +131,7 @@ public class LockStoreDataBaseDAO implements LockStore {
                 boolean canLock = true;
                 // query
                 String checkLockSQL =
-                        LockStoreSqlFactory.getLockStoreSql(dbType).getCheckLockableSql(lockTable, lockDOs.size());
+                        LockStoreSqlFactory.getLogStoreSql(dbType).getCheckLockableSql(lockTable, lockDOs.size());
                 ps = conn.prepareStatement(checkLockSQL);
                 for (int i = 0; i < lockDOs.size(); i++) {
                     ps.setString(i + 1, lockDOs.get(i).getRowKey());
@@ -246,7 +246,7 @@ public class LockStoreDataBaseDAO implements LockStore {
 
             // batch release lock
             String batchDeleteSQL =
-                    LockStoreSqlFactory.getLockStoreSql(dbType).getBatchDeleteLockSql(lockTable, lockDOs.size());
+                    LockStoreSqlFactory.getLogStoreSql(dbType).getBatchDeleteLockSql(lockTable, lockDOs.size());
             ps = conn.prepareStatement(batchDeleteSQL);
             ps.setString(1, lockDOs.get(0).getXid());
             for (int i = 0; i < lockDOs.size(); i++) {
@@ -269,7 +269,7 @@ public class LockStoreDataBaseDAO implements LockStore {
             conn = lockStoreDataSource.getConnection();
             conn.setAutoCommit(true);
             // batch release lock by branch list
-            String batchDeleteSQL = LockStoreSqlFactory.getLockStoreSql(dbType).getBatchDeleteLockSqlByXid(lockTable);
+            String batchDeleteSQL = LockStoreSqlFactory.getLogStoreSql(dbType).getBatchDeleteLockSqlByXid(lockTable);
             ps = conn.prepareStatement(batchDeleteSQL);
             ps.setString(1, xid);
             ps.executeUpdate();
@@ -290,7 +290,7 @@ public class LockStoreDataBaseDAO implements LockStore {
             conn.setAutoCommit(true);
             // batch release lock by branchId
             String batchDeleteSQL =
-                    LockStoreSqlFactory.getLockStoreSql(dbType).getBatchDeleteLockSqlByBranchId(lockTable);
+                    LockStoreSqlFactory.getLogStoreSql(dbType).getBatchDeleteLockSqlByBranchId(lockTable);
             ps = conn.prepareStatement(batchDeleteSQL);
             ps.setLong(1, branchId);
             ps.executeUpdate();
@@ -322,7 +322,7 @@ public class LockStoreDataBaseDAO implements LockStore {
     @Override
     public void updateLockStatus(String xid, LockStatus lockStatus) {
         String updateStatusLockByGlobalSql =
-                LockStoreSqlFactory.getLockStoreSql(dbType).getBatchUpdateStatusLockByGlobalSql(lockTable);
+                LockStoreSqlFactory.getLogStoreSql(dbType).getBatchUpdateStatusLockByGlobalSql(lockTable);
         try (Connection conn = lockStoreDataSource.getConnection();
                 PreparedStatement ps = conn.prepareStatement(updateStatusLockByGlobalSql)) {
             conn.setAutoCommit(true);
@@ -345,7 +345,7 @@ public class LockStoreDataBaseDAO implements LockStore {
         PreparedStatement ps = null;
         try {
             // insert
-            String insertLockSQL = LockStoreSqlFactory.getLockStoreSql(dbType).getInsertLockSQL(lockTable);
+            String insertLockSQL = LockStoreSqlFactory.getLogStoreSql(dbType).getInsertLockSQL(lockTable);
             ps = conn.prepareStatement(insertLockSQL);
             ps.setString(1, lockDO.getXid());
             ps.setLong(2, lockDO.getTransactionId());
@@ -377,7 +377,7 @@ public class LockStoreDataBaseDAO implements LockStore {
         PreparedStatement ps = null;
         try {
             // insert
-            String insertLockSQL = LockStoreSqlFactory.getLockStoreSql(dbType).getInsertLockSQL(lockTable);
+            String insertLockSQL = LockStoreSqlFactory.getLogStoreSql(dbType).getInsertLockSQL(lockTable);
             ps = conn.prepareStatement(insertLockSQL);
             for (LockDO lockDO : lockDOs) {
                 ps.setString(1, lockDO.getXid());
@@ -428,7 +428,7 @@ public class LockStoreDataBaseDAO implements LockStore {
         try {
             // query
             String checkLockSQL =
-                    LockStoreSqlFactory.getLockStoreSql(dbType).getCheckLockableSql(lockTable, lockDOs.size());
+                    LockStoreSqlFactory.getLogStoreSql(dbType).getCheckLockableSql(lockTable, lockDOs.size());
             ps = conn.prepareStatement(checkLockSQL);
             for (int i = 0; i < lockDOs.size(); i++) {
                 ps.setString(i + 1, lockDOs.get(i).getRowKey());

@@ -24,29 +24,29 @@ class DistributedLockSqlFactoryTest {
 
     @Test
     void testGetDistributedLogStoreSqlForMysql() {
-        DistributedLockSql sql = DistributedLockSqlFactory.getDistributedLockSql("mysql");
+        DistributedLockSql sql = DistributedLockSqlFactory.getDistributedLogStoreSql("mysql");
         assertNotNull(sql);
         assertTrue(sql instanceof BaseDistributedLockSql);
     }
 
     @Test
     void testGetDistributedLogStoreSqlForSqlServer() {
-        DistributedLockSql sql = DistributedLockSqlFactory.getDistributedLockSql("sqlserver");
+        DistributedLockSql sql = DistributedLockSqlFactory.getDistributedLogStoreSql("sqlserver");
         assertNotNull(sql);
         assertTrue(sql instanceof BaseDistributedLockSqlServer);
     }
 
     @Test
     void testGetDistributedLogStoreSqlForUnsupportedDb() {
-        DistributedLockSql sql = DistributedLockSqlFactory.getDistributedLockSql("unsupported");
+        DistributedLockSql sql = DistributedLockSqlFactory.getDistributedLogStoreSql("unsupported");
         assertNotNull(sql);
         assertTrue(sql instanceof BaseDistributedLockSql);
     }
 
     @Test
     void testCacheImplementation() {
-        DistributedLockSql sql1 = DistributedLockSqlFactory.getDistributedLockSql("mysql");
-        DistributedLockSql sql2 = DistributedLockSqlFactory.getDistributedLockSql("mysql");
+        DistributedLockSql sql1 = DistributedLockSqlFactory.getDistributedLogStoreSql("mysql");
+        DistributedLockSql sql2 = DistributedLockSqlFactory.getDistributedLogStoreSql("mysql");
         assertSame(sql1, sql2);
     }
 }

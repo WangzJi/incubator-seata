@@ -36,7 +36,7 @@ public class DistributedLockSqlFactory {
      * @param dbType the dbType, support mysql/oracle/h2/postgre/oceanbase/dm/sqlserver/oscar ...
      * @return lock store sql
      */
-    public static DistributedLockSql getDistributedLockSql(String dbType) {
+    public static DistributedLockSql getDistributedLogStoreSql(String dbType) {
         return distributedLockSqlCache.computeIfAbsent(dbType, method -> {
             try {
                 return EnhancedServiceLoader.load(DistributedLockSql.class, dbType);
