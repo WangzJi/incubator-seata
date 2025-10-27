@@ -1,0 +1,2 @@
+org.apache.seata.core.rpc.processor.server.MockRegisterCheckAuthHandler
+
