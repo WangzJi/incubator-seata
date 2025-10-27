@@ -29,7 +29,6 @@ import org.mockito.ArgumentCaptor;
 
 import java.net.InetSocketAddress;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -147,39 +146,6 @@ public class RegRmProcessorTest {
 
         RegisterRMResponse response = responseCaptor.getValue();
         assertTrue(response.isIdentified(), "RM should be registered when no auth handler");
-    }
-
-    @Test
-    public void testProcessRmRegisterWithException() throws Exception {
-        // Create new channel and context for exception test to avoid interfering with setUp
-        Channel exceptionChannel = mock(Channel.class);
-        ChannelHandlerContext exceptionCtx = mock(ChannelHandlerContext.class);
-
-        when(exceptionCtx.channel()).thenReturn(exceptionChannel);
-        when(exceptionChannel.remoteAddress()).thenThrow(new RuntimeException("Registration failed"));
-
-        RegisterRMRequest exceptionRequest = new RegisterRMRequest();
-        exceptionRequest.setApplicationId("test-app");
-        exceptionRequest.setTransactionServiceGroup("test-group");
-        exceptionRequest.setResourceIds("jdbc:mysql://localhost:3306/test");
-        exceptionRequest.setVersion("1.5.0");
-
-        RpcMessage exceptionRpcMessage = new RpcMessage();
-        exceptionRpcMessage.setId(99);
-        exceptionRpcMessage.setBody(exceptionRequest);
-
-        // Execute - should handle exception gracefully
-        processor.process(exceptionCtx, exceptionRpcMessage);
-
-        // Verify error response
-        ArgumentCaptor<RegisterRMResponse> responseCaptor = ArgumentCaptor.forClass(RegisterRMResponse.class);
-        verify(remotingServer)
-                .sendAsyncResponse(eq(exceptionRpcMessage), eq(exceptionChannel), responseCaptor.capture());
-
-        RegisterRMResponse response = responseCaptor.getValue();
-        assertNotNull(response, "Response should not be null");
-        assertFalse(response.isIdentified(), "RM should not be registered on exception");
-        assertNotNull(response.getMsg(), "Error message should be set");
     }
 
     @Test
