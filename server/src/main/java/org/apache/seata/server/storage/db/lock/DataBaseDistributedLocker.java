@@ -234,7 +234,7 @@ public class DataBaseDistributedLocker implements DistributedLocker {
 
     protected DistributedLockDO getDistributedLockDO(Connection connection, String key) throws SQLException {
         try (PreparedStatement pst =
-                connection.prepareStatement(DistributedLockSqlFactory.getDistributedLogStoreSql(dbType)
+                connection.prepareStatement(DistributedLockSqlFactory.getDistributedLockSql(dbType)
                         .getSelectDistributeForUpdateSql(distributedLockTable))) {
 
             pst.setString(1, key);
@@ -253,7 +253,7 @@ public class DataBaseDistributedLocker implements DistributedLocker {
 
     protected boolean insertDistribute(Connection connection, DistributedLockDO distributedLockDO) throws SQLException {
         try (PreparedStatement insertPst = connection.prepareStatement(
-                DistributedLockSqlFactory.getDistributedLogStoreSql(dbType).getInsertSql(distributedLockTable))) {
+                DistributedLockSqlFactory.getDistributedLockSql(dbType).getInsertSql(distributedLockTable))) {
             insertPst.setString(1, distributedLockDO.getLockKey());
             insertPst.setString(2, distributedLockDO.getLockValue());
             if (distributedLockDO.getExpireTime() > 0) {
@@ -267,7 +267,7 @@ public class DataBaseDistributedLocker implements DistributedLocker {
     protected boolean updateDistributedLock(Connection connection, DistributedLockDO distributedLockDO)
             throws SQLException {
         try (PreparedStatement updatePst = connection.prepareStatement(
-                DistributedLockSqlFactory.getDistributedLogStoreSql(dbType).getUpdateSql(distributedLockTable))) {
+                DistributedLockSqlFactory.getDistributedLockSql(dbType).getUpdateSql(distributedLockTable))) {
             updatePst.setString(1, distributedLockDO.getLockValue());
             if (distributedLockDO.getExpireTime() > 0) {
                 distributedLockDO.setExpireTime(distributedLockDO.getExpireTime() + System.currentTimeMillis());

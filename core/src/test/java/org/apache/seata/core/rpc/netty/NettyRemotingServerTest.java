@@ -21,13 +21,16 @@ import org.apache.seata.common.XID;
 import org.apache.seata.common.loader.EnhancedServiceLoader;
 import org.apache.seata.core.rpc.RegisterCheckAuthHandler;
 import org.apache.seata.discovery.registry.MultiRegistryFactory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.ServerSocket;
 import java.util.Collections;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -44,33 +47,57 @@ public class NettyRemotingServerTest {
                 new NettyRemotingServer(new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, new LinkedBlockingDeque<>()));
     }
 
+    @AfterEach
+    public void cleanup() {
+        if (nettyRemotingServer != null) {
+            try {
+                nettyRemotingServer.destroy();
+            } catch (Exception e) {
+                // Ignore cleanup errors
+            }
+        }
+    }
+
+    /**
+     * Get an available port for testing
+     */
+    private int getAvailablePort() {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            socket.setReuseAddress(true);
+            return socket.getLocalPort();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to find available port", e);
+        }
+    }
+
     @Test
     public void testInit() throws NoSuchFieldException, IllegalAccessException {
 
-        MockedStatic<EnhancedServiceLoader> enhancedServiceLoaderMockedStatic =
-                Mockito.mockStatic(EnhancedServiceLoader.class);
-        enhancedServiceLoaderMockedStatic
-                .when(() -> EnhancedServiceLoader.load((RegisterCheckAuthHandler.class)))
-                .thenReturn(null);
+        try (MockedStatic<EnhancedServiceLoader> enhancedServiceLoaderMockedStatic =
+                        Mockito.mockStatic(EnhancedServiceLoader.class);
+                MockedStatic<MultiRegistryFactory> multiRegistryFactoryMockedStatic =
+                        Mockito.mockStatic(MultiRegistryFactory.class)) {
 
-        MockedStatic<MultiRegistryFactory> multiRegistryFactoryMockedStatic =
-                Mockito.mockStatic(MultiRegistryFactory.class);
-        multiRegistryFactoryMockedStatic
-                .when(MultiRegistryFactory::getInstances)
-                .thenReturn(Collections.emptyList());
+            enhancedServiceLoaderMockedStatic
+                    .when(() -> EnhancedServiceLoader.load((RegisterCheckAuthHandler.class)))
+                    .thenReturn(null);
 
-        XID.setIpAddress("127.0.0.1");
-        XID.setPort(8093);
+            multiRegistryFactoryMockedStatic
+                    .when(MultiRegistryFactory::getInstances)
+                    .thenReturn(Collections.emptyList());
 
-        nettyRemotingServer.init();
+            // Use an available port to avoid conflicts
+            int availablePort = getAvailablePort();
+            XID.setIpAddress("127.0.0.1");
+            XID.setPort(availablePort);
 
-        multiRegistryFactoryMockedStatic.close();
-        enhancedServiceLoaderMockedStatic.close();
+            nettyRemotingServer.init();
 
-        Field field = NettyRemotingServer.class.getDeclaredField("initialized");
-        field.setAccessible(true);
+            Field field = NettyRemotingServer.class.getDeclaredField("initialized");
+            field.setAccessible(true);
 
-        Assertions.assertTrue(((AtomicBoolean) field.get(nettyRemotingServer)).get());
+            Assertions.assertTrue(((AtomicBoolean) field.get(nettyRemotingServer)).get());
+        }
     }
 
     @Test

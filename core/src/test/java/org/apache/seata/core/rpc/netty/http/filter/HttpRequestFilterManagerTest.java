@@ -18,6 +18,7 @@ package org.apache.seata.core.rpc.netty.http.filter;
 
 import org.apache.seata.common.loader.EnhancedServiceLoader;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
@@ -38,8 +39,17 @@ class HttpRequestFilterManagerTest {
 
     interface MockFilter extends HttpRequestFilter {}
 
+    @BeforeEach
+    void setup() throws Exception {
+        reset();
+    }
+
     @AfterEach
-    void reset() throws Exception {
+    void tearDown() throws Exception {
+        reset();
+    }
+
+    private void reset() throws Exception {
         Field filtersField = HttpRequestFilterManager.class.getDeclaredField("HTTP_REQUEST_FILTERS");
         filtersField.setAccessible(true);
         List<?> filters = (List<?>) filtersField.get(null);

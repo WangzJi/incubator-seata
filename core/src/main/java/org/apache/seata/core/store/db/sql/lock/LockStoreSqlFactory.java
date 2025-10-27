@@ -37,7 +37,7 @@ public class LockStoreSqlFactory {
      * @param dbType the dbType, support mysql/oracle/h2/postgre/oceanbase/dm/oscar
      * @return lock store sql
      */
-    public static LockStoreSql getLogStoreSql(String dbType) {
+    public static LockStoreSql getLockStoreSql(String dbType) {
         return CollectionUtils.computeIfAbsent(
                 LOCK_STORE_SQL_MAP,
                 dbType,
