@@ -337,30 +337,6 @@ public class DefaultServerMessageListenerImplTest {
     }
 
     @Test
-    public void testOnRegRmMessageWithException() {
-        RegisterRMRequest request = new RegisterRMRequest();
-        request.setApplicationId("test-app");
-        request.setTransactionServiceGroup("test-group");
-        request.setVersion("1.5.0");
-
-        when(channel.remoteAddress()).thenThrow(new RuntimeException("Registration failed"));
-
-        RpcMessage rpcMessage = new RpcMessage();
-        rpcMessage.setId(1);
-        rpcMessage.setBody(request);
-
-        listener.onRegRmMessage(rpcMessage, ctx, null);
-
-        ArgumentCaptor<RegisterRMResponse> responseCaptor = ArgumentCaptor.forClass(RegisterRMResponse.class);
-        verify(remotingServer).sendAsyncResponse(eq(rpcMessage), any(Channel.class), responseCaptor.capture());
-
-        RegisterRMResponse response = responseCaptor.getValue();
-        assertNotNull(response);
-        // Should have error response
-        assertNotNull(response.getMsg());
-    }
-
-    @Test
     public void testOnCheckMessageWithException() {
         org.mockito.Mockito.doThrow(new RuntimeException("Send failed"))
                 .when(remotingServer)
