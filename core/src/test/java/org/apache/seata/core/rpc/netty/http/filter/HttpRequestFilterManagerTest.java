@@ -49,7 +49,7 @@ class HttpRequestFilterManagerTest {
         reset();
     }
 
-     void reset() throws Exception {
+    void reset() throws Exception {
         Field filtersField = HttpRequestFilterManager.class.getDeclaredField("HTTP_REQUEST_FILTERS");
         filtersField.setAccessible(true);
         List<?> filters = (List<?>) filtersField.get(null);
