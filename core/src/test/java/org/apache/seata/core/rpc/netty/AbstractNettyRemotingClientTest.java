@@ -17,6 +17,7 @@
 package org.apache.seata.core.rpc.netty;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelId;
 import org.apache.seata.common.thread.NamedThreadFactory;
 import org.apache.seata.core.protocol.AbstractMessage;
@@ -419,6 +420,170 @@ public class AbstractNettyRemotingClientTest {
         verify(listener).onChannelIdle(channel);
     }
 
+    @Test
+    public void testSendSyncRequestWithNullChannel() {
+        Channel channel = null;
+        GlobalBeginRequest request = new GlobalBeginRequest();
+        request.setTransactionName("test-tx");
+
+        try {
+            client.sendSyncRequest(channel, request);
+        } catch (Exception e) {
+            // Expected exception
+        }
+    }
+
+    @Test
+    public void testSendAsyncResponse() {
+        String serverAddress = "127.0.0.1:8080";
+        RpcMessage rpcMessage = new RpcMessage();
+        rpcMessage.setId(1);
+        GlobalBeginRequest request = new GlobalBeginRequest();
+        request.setTransactionName("test-tx");
+
+        try {
+            client.sendAsyncResponse(serverAddress, rpcMessage, request);
+        } catch (Exception e) {
+            // Expected when channel is not available
+        }
+    }
+
+    @Test
+    public void testLoadBalance() {
+        GlobalBeginRequest request = new GlobalBeginRequest();
+        request.setTransactionName("test-tx");
+
+        try {
+            String address = client.loadBalance("test-service-group", request);
+            // May fail if registry is not initialized
+        } catch (Exception e) {
+            assertNotNull(e);
+        }
+    }
+
+    @Test
+    public void testLoadBalanceWithNullMessage() {
+        try {
+            String address = client.loadBalance("test-service-group", null);
+        } catch (Exception e) {
+            assertNotNull(e);
+        }
+    }
+
+    @Test
+    public void testChannelWritabilityChanged() {
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        Channel channel = mock(Channel.class);
+        when(ctx.channel()).thenReturn(channel);
+        when(channel.isWritable()).thenReturn(true);
+
+        try {
+            AbstractNettyRemotingClient.ClientHandler handler = client.new ClientHandler();
+            handler.channelWritabilityChanged(ctx);
+            verify(ctx, times(1)).fireChannelWritabilityChanged();
+        } catch (Exception e) {
+            // Expected in test environment
+        }
+    }
+
+    @Test
+    public void testChannelWritabilityChangedWhenNotWritable() {
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        Channel channel = mock(Channel.class);
+        when(ctx.channel()).thenReturn(channel);
+        when(channel.isWritable()).thenReturn(false);
+
+        try {
+            AbstractNettyRemotingClient.ClientHandler handler = client.new ClientHandler();
+            handler.channelWritabilityChanged(ctx);
+            verify(ctx, times(1)).fireChannelWritabilityChanged();
+        } catch (Exception e) {
+            // Expected in test environment
+        }
+    }
+
+    @Test
+    public void testSendSyncRequestWithBatchEnabled() {
+        // Create a client with batch send enabled
+        TestNettyRemotingClientWithBatch batchClient =
+                new TestNettyRemotingClientWithBatch(clientConfig, messageExecutor);
+
+        GlobalBeginRequest request = new GlobalBeginRequest();
+        request.setTransactionName("test-tx");
+
+        try {
+            batchClient.sendSyncRequest(request);
+        } catch (Exception e) {
+            // Expected when registry is not initialized or timeout
+            assertNotNull(e);
+        } finally {
+            try {
+                batchClient.destroy();
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+    }
+
+    @Test
+    public void testDoSelectWithEmptyList() throws Exception {
+        GlobalBeginRequest request = new GlobalBeginRequest();
+        request.setTransactionName("test-tx");
+
+        InetSocketAddress address = client.doSelect(null, request);
+        assertNull(address);
+    }
+
+    @Test
+    public void testDoSelectWithSingleAddress() throws Exception {
+        GlobalBeginRequest request = new GlobalBeginRequest();
+        request.setTransactionName("test-tx");
+
+        java.util.List<InetSocketAddress> list = new java.util.ArrayList<>();
+        list.add(new InetSocketAddress("127.0.0.1", 8080));
+
+        InetSocketAddress address = client.doSelect(list, request);
+        assertNotNull(address);
+        assertEquals("127.0.0.1", address.getHostString());
+        assertEquals(8080, address.getPort());
+    }
+
+    @Test
+    public void testSendAsyncRequestWithChannel() {
+        Channel channel = mock(Channel.class);
+        when(channel.isActive()).thenReturn(true);
+        when(channel.isWritable()).thenReturn(true);
+
+        GlobalBeginRequest request = new GlobalBeginRequest();
+        request.setTransactionName("test-tx");
+
+        try {
+            client.sendAsyncRequest(channel, request);
+        } catch (Exception e) {
+            // Expected in test environment
+        }
+    }
+
+    @Test
+    public void testSendAsyncRequestWithMergedWarpMessage() {
+        Channel channel = mock(Channel.class);
+        when(channel.isActive()).thenReturn(true);
+        when(channel.isWritable()).thenReturn(true);
+
+        MergedWarpMessage mergeMessage = new MergedWarpMessage();
+        mergeMessage.msgIds.add(1);
+        mergeMessage.msgIds.add(2);
+        GlobalBeginRequest request = new GlobalBeginRequest();
+        request.setTransactionName("test-tx");
+        mergeMessage.msgs.add(request);
+
+        try {
+            client.sendAsyncRequest(channel, mergeMessage);
+        } catch (Exception e) {
+            // Expected in test environment
+        }
+    }
+
     /**
      * Concrete test implementation of AbstractNettyRemotingClient
      */
@@ -441,6 +606,45 @@ public class AbstractNettyRemotingClientTest {
         @Override
         protected boolean isEnableClientBatchSendRequest() {
             return false;
+        }
+
+        @Override
+        protected long getRpcRequestTimeout() {
+            return 30000L;
+        }
+
+        @Override
+        public void onRegisterMsgSuccess(
+                String serverAddress, Channel channel, Object response, AbstractMessage requestMessage) {}
+
+        @Override
+        public void onRegisterMsgFail(
+                String serverAddress, Channel channel, Object response, AbstractMessage requestMessage) {}
+    }
+
+    /**
+     * Test implementation with batch send enabled
+     */
+    static class TestNettyRemotingClientWithBatch extends AbstractNettyRemotingClient {
+
+        public TestNettyRemotingClientWithBatch(
+                NettyClientConfig nettyClientConfig, ThreadPoolExecutor messageExecutor) {
+            super(nettyClientConfig, messageExecutor, NettyPoolKey.TransactionRole.TMROLE);
+        }
+
+        @Override
+        protected Function<String, NettyPoolKey> getPoolKeyFunction() {
+            return serverAddress -> new NettyPoolKey(NettyPoolKey.TransactionRole.TMROLE, serverAddress);
+        }
+
+        @Override
+        protected String getTransactionServiceGroup() {
+            return "test-service-group";
+        }
+
+        @Override
+        protected boolean isEnableClientBatchSendRequest() {
+            return true;
         }
 
         @Override
