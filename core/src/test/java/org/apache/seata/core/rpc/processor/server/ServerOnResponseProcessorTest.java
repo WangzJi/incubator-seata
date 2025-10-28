@@ -39,7 +39,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -152,17 +151,15 @@ public class ServerOnResponseProcessorTest {
         response.setResultCode(ResultCode.Success);
         rpcMessage.setBody(response);
 
-        // Execute with unregistered channel - will throw NPE because code tries to log before checking registration
-        try {
-            processor.process(unregisteredCtx, rpcMessage);
-            // If it doesn't throw NPE, that's also acceptable (means code was updated to handle null context)
-        } catch (NullPointerException e) {
-            // Expected: ServerOnResponseProcessor tries to get context for logging before checking if registered
-            assertTrue(
-                    e.getMessage().contains("getTransactionServiceGroup")
-                            || e.getMessage().contains("RpcContext"),
-                    "NPE should be from trying to access RpcContext");
-        }
+        // Execute with unregistered channel - should disconnect and close without NPE
+        processor.process(unregisteredCtx, rpcMessage);
+
+        // Verify that disconnect and close were called
+        verify(unregisteredCtx).disconnect();
+        verify(unregisteredCtx).close();
+
+        // Verify transaction handler was not called
+        verify(transactionMessageHandler, never()).onResponse(any(), any());
     }
 
     @Test
@@ -247,18 +244,18 @@ public class ServerOnResponseProcessorTest {
         ChannelHandlerContext unregisteredCtx = mock(ChannelHandlerContext.class);
         when(unregisteredCtx.channel()).thenReturn(unregisteredChannel);
         when(unregisteredChannel.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.3", 8082));
+        when(unregisteredChannel.toString()).thenReturn("Channel[127.0.0.3:8082]");
         when(unregisteredCtx.disconnect()).thenThrow(new RuntimeException("Disconnect failed"));
 
         BranchCommitResponse response = new BranchCommitResponse();
         rpcMessage.setBody(response);
 
-        // Should handle exception gracefully, but will throw NPE first trying to get context for logging
-        try {
-            processor.process(unregisteredCtx, rpcMessage);
-        } catch (NullPointerException e) {
-            // Expected: code tries to log before checking registration
-            assertTrue(e.getMessage().contains("getTransactionServiceGroup")
-                    || e.getMessage().contains("RpcContext"));
-        }
+        // Should handle disconnect exception gracefully without NPE
+        processor.process(unregisteredCtx, rpcMessage);
+
+        // Verify disconnect was attempted
+        verify(unregisteredCtx).disconnect();
+        // Verify close was still attempted despite disconnect failure
+        verify(unregisteredCtx).close();
     }
 }
