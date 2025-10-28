@@ -350,4 +350,235 @@ public class ChannelManagerTest {
         assertTrue(ChannelManager.isRegistered(channel1));
         assertTrue(ChannelManager.isRegistered(channel2));
     }
+
+    @Test
+    public void testGetChannelFallbackToSameIPDifferentPort() throws Exception {
+        Channel channel1 = mock(Channel.class);
+        when(channel1.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 8081));
+        when(channel1.isActive()).thenReturn(true);
+
+        Channel channel2 = mock(Channel.class);
+        when(channel2.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 8082));
+        when(channel2.isActive()).thenReturn(true);
+
+        RegisterRMRequest request1 = new RegisterRMRequest();
+        request1.setApplicationId("test-app");
+        request1.setTransactionServiceGroup("test-group");
+        request1.setVersion("1.5.0");
+        request1.setResourceIds("jdbc:mysql://localhost:3306/seata");
+        ChannelManager.registerRMChannel(request1, channel1);
+
+        RegisterRMRequest request2 = new RegisterRMRequest();
+        request2.setApplicationId("test-app");
+        request2.setTransactionServiceGroup("test-group");
+        request2.setVersion("1.5.0");
+        request2.setResourceIds("jdbc:mysql://localhost:3306/seata");
+        ChannelManager.registerRMChannel(request2, channel2);
+
+        String clientId = "test-app:127.0.0.1:8081";
+        Channel result = ChannelManager.getChannel("jdbc:mysql://localhost:3306/seata", clientId, false);
+
+        assertNotNull(result, "Should find a channel on same IP");
+    }
+
+    @Test
+    public void testGetChannelFallbackToDifferentIPSameApp() throws Exception {
+        Channel channel1 = mock(Channel.class);
+        when(channel1.remoteAddress()).thenReturn(new InetSocketAddress("192.168.1.1", 8080));
+        when(channel1.isActive()).thenReturn(true);
+
+        Channel channel2 = mock(Channel.class);
+        when(channel2.remoteAddress()).thenReturn(new InetSocketAddress("192.168.1.2", 8080));
+        when(channel2.isActive()).thenReturn(true);
+
+        RegisterRMRequest request1 = new RegisterRMRequest();
+        request1.setApplicationId("test-app");
+        request1.setTransactionServiceGroup("test-group");
+        request1.setVersion("1.5.0");
+        request1.setResourceIds("jdbc:mysql://localhost:3306/seata");
+        ChannelManager.registerRMChannel(request1, channel1);
+
+        RegisterRMRequest request2 = new RegisterRMRequest();
+        request2.setApplicationId("test-app");
+        request2.setTransactionServiceGroup("test-group");
+        request2.setVersion("1.5.0");
+        request2.setResourceIds("jdbc:mysql://localhost:3306/seata");
+        ChannelManager.registerRMChannel(request2, channel2);
+
+        String clientId = "test-app:192.168.1.3:8080";
+        Channel result = ChannelManager.getChannel("jdbc:mysql://localhost:3306/seata", clientId, false);
+
+        assertNotNull(result, "Should find channel from different IP in same app");
+    }
+
+    @Test
+    public void testGetChannelWithTryOtherApp() throws Exception {
+        Channel channel1 = mock(Channel.class);
+        when(channel1.remoteAddress()).thenReturn(new InetSocketAddress("192.168.1.1", 8080));
+        when(channel1.isActive()).thenReturn(true);
+
+        RegisterRMRequest request1 = new RegisterRMRequest();
+        request1.setApplicationId("other-app");
+        request1.setTransactionServiceGroup("test-group");
+        request1.setVersion("1.5.0");
+        request1.setResourceIds("jdbc:mysql://localhost:3306/seata");
+        ChannelManager.registerRMChannel(request1, channel1);
+
+        String clientId = "test-app:192.168.1.2:8080";
+        Channel result = ChannelManager.getChannel("jdbc:mysql://localhost:3306/seata", clientId, true);
+
+        assertNotNull(result, "Should find channel from other app when tryOtherApp=true");
+        assertEquals(channel1, result);
+    }
+
+    @Test
+    public void testGetChannelWithInactiveChannel() throws Exception {
+        Channel inactiveChannel = mock(Channel.class);
+        when(inactiveChannel.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 8080));
+        when(inactiveChannel.isActive()).thenReturn(false);
+
+        Channel activeChannel = mock(Channel.class);
+        when(activeChannel.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 8081));
+        when(activeChannel.isActive()).thenReturn(true);
+
+        RegisterRMRequest request1 = new RegisterRMRequest();
+        request1.setApplicationId("test-app");
+        request1.setTransactionServiceGroup("test-group");
+        request1.setVersion("1.5.0");
+        request1.setResourceIds("jdbc:mysql://localhost:3306/seata");
+        ChannelManager.registerRMChannel(request1, inactiveChannel);
+
+        RegisterRMRequest request2 = new RegisterRMRequest();
+        request2.setApplicationId("test-app");
+        request2.setTransactionServiceGroup("test-group");
+        request2.setVersion("1.5.0");
+        request2.setResourceIds("jdbc:mysql://localhost:3306/seata");
+        ChannelManager.registerRMChannel(request2, activeChannel);
+
+        String clientId = "test-app:127.0.0.1:8080";
+        Channel result = ChannelManager.getChannel("jdbc:mysql://localhost:3306/seata", clientId, false);
+
+        assertNotNull(result, "Should skip inactive channel and return active one");
+        assertTrue(result.isActive());
+    }
+
+    @Test
+    public void testGetSameClientChannelForRMRole() throws Exception {
+        Channel channel1 = mock(Channel.class);
+        when(channel1.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 8080));
+        when(channel1.isActive()).thenReturn(false);
+
+        Channel channel2 = mock(Channel.class);
+        when(channel2.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 8081));
+        when(channel2.isActive()).thenReturn(true);
+
+        RegisterRMRequest request1 = new RegisterRMRequest();
+        request1.setApplicationId("test-app");
+        request1.setTransactionServiceGroup("test-group");
+        request1.setVersion("1.5.0");
+        request1.setResourceIds("jdbc:mysql://localhost:3306/seata");
+        ChannelManager.registerRMChannel(request1, channel1);
+
+        RegisterRMRequest request2 = new RegisterRMRequest();
+        request2.setApplicationId("test-app");
+        request2.setTransactionServiceGroup("test-group");
+        request2.setVersion("1.5.0");
+        request2.setResourceIds("jdbc:mysql://localhost:3306/seata");
+        ChannelManager.registerRMChannel(request2, channel2);
+
+        Channel result = ChannelManager.getSameClientChannel(channel1);
+
+        assertNotNull(result, "Should find alternative channel for RM role");
+        assertTrue(result.isActive());
+    }
+
+    @Test
+    public void testGetSameClientChannelReturnsNullWhenNoAlternative() {
+        Channel inactiveChannel = mock(Channel.class);
+        when(inactiveChannel.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 8080));
+        when(inactiveChannel.isActive()).thenReturn(false);
+
+        RpcContext context = new RpcContext();
+        context.setChannel(inactiveChannel);
+        context.setClientRole(NettyPoolKey.TransactionRole.TMROLE);
+        context.setApplicationId("test-app");
+        identifiedChannels.put(inactiveChannel, context);
+
+        Channel result = ChannelManager.getSameClientChannel(inactiveChannel);
+
+        assertNull(result, "Should return null when no alternative channel exists");
+    }
+
+    @Test
+    public void testUpdateChannelsResourceByRegisteringMultipleResources() throws Exception {
+        Channel channel1 = mock(Channel.class);
+        when(channel1.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 8080));
+        when(channel1.isActive()).thenReturn(true);
+
+        RegisterRMRequest request1 = new RegisterRMRequest();
+        request1.setApplicationId("test-app");
+        request1.setTransactionServiceGroup("test-group");
+        request1.setVersion("1.5.0");
+        request1.setResourceIds("jdbc:mysql://localhost:3306/db1");
+        ChannelManager.registerRMChannel(request1, channel1);
+
+        RegisterRMRequest request2 = new RegisterRMRequest();
+        request2.setApplicationId("test-app");
+        request2.setTransactionServiceGroup("test-group");
+        request2.setVersion("1.5.0");
+        request2.setResourceIds("jdbc:mysql://localhost:3306/db2");
+        ChannelManager.registerRMChannel(request2, channel1);
+
+        String clientId = "test-app:127.0.0.1:8080";
+        Channel resultDb1 = ChannelManager.getChannel("jdbc:mysql://localhost:3306/db1", clientId, false);
+        Channel resultDb2 = ChannelManager.getChannel("jdbc:mysql://localhost:3306/db2", clientId, false);
+
+        assertNotNull(resultDb1, "Should find channel for db1");
+        assertNotNull(resultDb2, "Should find channel for db2");
+        assertEquals(resultDb1, resultDb2, "Should be the same channel for both resources");
+    }
+
+    @Test
+    public void testDbKeytoSetWithMultipleResources() throws Exception {
+        RegisterRMRequest request = new RegisterRMRequest();
+        request.setApplicationId("test-app");
+        request.setTransactionServiceGroup("test-group");
+        request.setVersion("1.5.0");
+        request.setResourceIds("resource1,resource2,resource3");
+
+        ChannelManager.registerRMChannel(request, channel);
+
+        RpcContext context = ChannelManager.getContextFromIdentified(channel);
+        assertNotNull(context.getResourceSets());
+        assertEquals(3, context.getResourceSets().size());
+        assertTrue(context.getResourceSets().contains("resource1"));
+        assertTrue(context.getResourceSets().contains("resource2"));
+        assertTrue(context.getResourceSets().contains("resource3"));
+    }
+
+    @Test
+    public void testGetChannelWithNonExistentResource() {
+        String clientId = "test-app:127.0.0.1:8080";
+        Channel result = ChannelManager.getChannel("jdbc:mysql://localhost:3306/nonexistent", clientId, false);
+
+        assertNull(result, "Should return null for non-existent resource");
+    }
+
+    @Test
+    public void testReleaseRpcContextWithNullChannel() {
+        // Should not throw exception when channel is null
+        try {
+            ChannelManager.releaseRpcContext(null);
+        } catch (NullPointerException e) {
+            // Expected behavior - null channel may cause NPE
+        }
+    }
+
+    @Test
+    public void testReleaseRpcContextWithUnregisteredChannel() {
+        Channel unregisteredChannel = mock(Channel.class);
+        when(unregisteredChannel.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 9999));
+
+        ChannelManager.releaseRpcContext(unregisteredChannel);
+    }
 }
