@@ -78,7 +78,7 @@ public class MultiProtocolDecoderTest {
     @Test
     public void testConstructorWithMaxFrameLength() {
         int maxFrameLength = 16 * 1024 * 1024;
-        decoder = new MultiProtocolDecoder(maxFrameLength, new ChannelHandler[]{customHandler});
+        decoder = new MultiProtocolDecoder(maxFrameLength, new ChannelHandler[] {customHandler});
         assertNotNull(decoder);
     }
 
@@ -217,10 +217,8 @@ public class MultiProtocolDecoderTest {
         verify(pipeline).remove(decoder);
 
         // Verify correct decoder and encoder were added
-        assertTrue(handlerCaptor.getAllValues().stream()
-                .anyMatch(h -> h instanceof ProtocolDecoderV1));
-        assertTrue(handlerCaptor.getAllValues().stream()
-                .anyMatch(h -> h instanceof ProtocolEncoderV1));
+        assertTrue(handlerCaptor.getAllValues().stream().anyMatch(h -> h instanceof ProtocolDecoderV1));
+        assertTrue(handlerCaptor.getAllValues().stream().anyMatch(h -> h instanceof ProtocolEncoderV1));
 
         byteBuf.release();
     }
@@ -249,10 +247,8 @@ public class MultiProtocolDecoderTest {
         verify(pipeline).remove(decoder);
 
         // Verify correct V0 decoder and encoder were added
-        assertTrue(handlerCaptor.getAllValues().stream()
-                .anyMatch(h -> h instanceof ProtocolDecoderV0));
-        assertTrue(handlerCaptor.getAllValues().stream()
-                .anyMatch(h -> h instanceof ProtocolEncoderV0));
+        assertTrue(handlerCaptor.getAllValues().stream().anyMatch(h -> h instanceof ProtocolDecoderV0));
+        assertTrue(handlerCaptor.getAllValues().stream().anyMatch(h -> h instanceof ProtocolEncoderV0));
 
         byteBuf.release();
     }
@@ -277,7 +273,7 @@ public class MultiProtocolDecoderTest {
         assertNotNull(result);
 
         // Verify custom handler was added to pipeline
-        verify(pipeline, times(1)).addLast(new ChannelHandler[]{customHandler});
+        verify(pipeline, times(1)).addLast(new ChannelHandler[] {customHandler});
 
         byteBuf.release();
     }

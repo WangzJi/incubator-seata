@@ -46,10 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -198,7 +195,8 @@ class NettyClientChannelManagerTest {
 
     @Test
     void testThrowFailFastExceptionWhenFailFastIsTrue() throws Exception {
-        Method method = channelManager.getClass().getDeclaredMethod("throwFailFastException", boolean.class, String.class);
+        Method method =
+                channelManager.getClass().getDeclaredMethod("throwFailFastException", boolean.class, String.class);
         method.setAccessible(true);
 
         FrameworkException exception = assertThrows(FrameworkException.class, () -> {
@@ -217,7 +215,8 @@ class NettyClientChannelManagerTest {
 
     @Test
     void testThrowFailFastExceptionWhenFailFastIsFalse() throws Exception {
-        Method method = channelManager.getClass().getDeclaredMethod("throwFailFastException", boolean.class, String.class);
+        Method method =
+                channelManager.getClass().getDeclaredMethod("throwFailFastException", boolean.class, String.class);
         method.setAccessible(true);
 
         // Should not throw any exception
