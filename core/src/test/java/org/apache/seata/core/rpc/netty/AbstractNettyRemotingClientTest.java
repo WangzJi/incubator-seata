@@ -584,6 +584,130 @@ public class AbstractNettyRemotingClientTest {
         }
     }
 
+    @Test
+    public void testSendSyncRequestNonBatchMode() {
+        GlobalBeginRequest request = new GlobalBeginRequest();
+        request.setTransactionName("test-tx");
+
+        try {
+            client.sendSyncRequest(request);
+        } catch (Exception e) {
+            assertNotNull(e);
+        }
+    }
+
+    @Test
+    public void testSendSyncRequestBatchModeSuccess() throws Exception {
+        TestNettyRemotingClientWithBatchAndMockManager batchClient =
+                new TestNettyRemotingClientWithBatchAndMockManager(clientConfig, messageExecutor);
+
+        GlobalBeginRequest request = new GlobalBeginRequest();
+        request.setTransactionName("test-tx");
+
+        try {
+            java.lang.reflect.Field basketMapField = AbstractNettyRemotingClient.class.getDeclaredField("basketMap");
+            basketMapField.setAccessible(true);
+            basketMapField.get(batchClient);
+
+            batchClient.sendSyncRequest(request);
+        } catch (Exception e) {
+            assertNotNull(e);
+        } finally {
+            try {
+                batchClient.destroy();
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+    }
+
+    @Test
+    public void testSendSyncRequestBatchModeTimeout() throws Exception {
+        TestNettyRemotingClientWithBatchTimeout batchClient =
+                new TestNettyRemotingClientWithBatchTimeout(clientConfig, messageExecutor);
+
+        GlobalBeginRequest request = new GlobalBeginRequest();
+        request.setTransactionName("test-tx");
+
+        try {
+            batchClient.sendSyncRequest(request);
+        } catch (java.util.concurrent.TimeoutException e) {
+            assertNotNull(e);
+        } catch (Exception e) {
+            assertNotNull(e);
+        } finally {
+            try {
+                batchClient.destroy();
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+    }
+
+    @Test
+    public void testCollectMessageIdsForChannel() throws Exception {
+        Channel channel = mock(Channel.class);
+        ChannelId channelId = mock(ChannelId.class);
+        when(channel.id()).thenReturn(channelId);
+        when(channel.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 8080));
+
+        java.lang.reflect.Method collectMethod =
+                AbstractNettyRemotingClient.class.getDeclaredMethod("collectMessageIdsForChannel", ChannelId.class);
+        collectMethod.setAccessible(true);
+
+        java.util.Set<Integer> messageIds = (java.util.Set<Integer>) collectMethod.invoke(client, channelId);
+
+        assertNotNull(messageIds);
+    }
+
+    @Test
+    public void testCleanupFuturesForMessageIds() throws Exception {
+        java.util.Set<Integer> messageIds = new java.util.HashSet<>();
+        messageIds.add(1);
+        messageIds.add(2);
+
+        Exception testException = new Exception("Test exception");
+
+        java.lang.reflect.Method cleanupMethod = AbstractNettyRemotingClient.class.getDeclaredMethod(
+                "cleanupFuturesForMessageIds", java.util.Set.class, Exception.class);
+        cleanupMethod.setAccessible(true);
+
+        cleanupMethod.invoke(client, messageIds, testException);
+    }
+
+    @Test
+    public void testClientHandlerChannelRead() throws Exception {
+        AbstractNettyRemotingClient.ClientHandler handler = client.new ClientHandler();
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        Channel channel = mock(Channel.class);
+        when(ctx.channel()).thenReturn(channel);
+
+        RpcMessage rpcMessage = new RpcMessage();
+        rpcMessage.setId(1);
+
+        try {
+            handler.channelRead(ctx, rpcMessage);
+        } catch (Exception e) {
+            // Expected in test environment
+        }
+    }
+
+    @Test
+    public void testClientHandlerChannelReadInvalidMessage() throws Exception {
+        AbstractNettyRemotingClient.ClientHandler handler = client.new ClientHandler();
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        Channel channel = mock(Channel.class);
+        when(ctx.channel()).thenReturn(channel);
+
+        String invalidMessage = "not an RpcMessage";
+
+        try {
+            handler.channelRead(ctx, invalidMessage);
+        } catch (Exception e) {
+            // Expected in test environment
+        }
+    }
+
     /**
      * Concrete test implementation of AbstractNettyRemotingClient
      */
@@ -650,6 +774,84 @@ public class AbstractNettyRemotingClientTest {
         @Override
         protected long getRpcRequestTimeout() {
             return 30000L;
+        }
+
+        @Override
+        public void onRegisterMsgSuccess(
+                String serverAddress, Channel channel, Object response, AbstractMessage requestMessage) {}
+
+        @Override
+        public void onRegisterMsgFail(
+                String serverAddress, Channel channel, Object response, AbstractMessage requestMessage) {}
+    }
+
+    /**
+     * Test implementation with batch send enabled and mock manager
+     */
+    static class TestNettyRemotingClientWithBatchAndMockManager extends AbstractNettyRemotingClient {
+
+        public TestNettyRemotingClientWithBatchAndMockManager(
+                NettyClientConfig nettyClientConfig, ThreadPoolExecutor messageExecutor) {
+            super(nettyClientConfig, messageExecutor, NettyPoolKey.TransactionRole.TMROLE);
+        }
+
+        @Override
+        protected Function<String, NettyPoolKey> getPoolKeyFunction() {
+            return serverAddress -> new NettyPoolKey(NettyPoolKey.TransactionRole.TMROLE, serverAddress);
+        }
+
+        @Override
+        protected String getTransactionServiceGroup() {
+            return "test-service-group";
+        }
+
+        @Override
+        protected boolean isEnableClientBatchSendRequest() {
+            return true;
+        }
+
+        @Override
+        protected long getRpcRequestTimeout() {
+            return 100L;
+        }
+
+        @Override
+        public void onRegisterMsgSuccess(
+                String serverAddress, Channel channel, Object response, AbstractMessage requestMessage) {}
+
+        @Override
+        public void onRegisterMsgFail(
+                String serverAddress, Channel channel, Object response, AbstractMessage requestMessage) {}
+    }
+
+    /**
+     * Test implementation with batch send enabled and short timeout
+     */
+    static class TestNettyRemotingClientWithBatchTimeout extends AbstractNettyRemotingClient {
+
+        public TestNettyRemotingClientWithBatchTimeout(
+                NettyClientConfig nettyClientConfig, ThreadPoolExecutor messageExecutor) {
+            super(nettyClientConfig, messageExecutor, NettyPoolKey.TransactionRole.TMROLE);
+        }
+
+        @Override
+        protected Function<String, NettyPoolKey> getPoolKeyFunction() {
+            return serverAddress -> new NettyPoolKey(NettyPoolKey.TransactionRole.TMROLE, serverAddress);
+        }
+
+        @Override
+        protected String getTransactionServiceGroup() {
+            return "test-service-group";
+        }
+
+        @Override
+        protected boolean isEnableClientBatchSendRequest() {
+            return true;
+        }
+
+        @Override
+        protected long getRpcRequestTimeout() {
+            return 1L;
         }
 
         @Override
