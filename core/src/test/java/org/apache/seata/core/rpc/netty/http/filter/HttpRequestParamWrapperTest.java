@@ -405,4 +405,26 @@ class HttpRequestParamWrapperTest {
         assertThat(all).containsKey("content-type");
         assertThat(all.get("content-type")).containsExactly("application/json");
     }
+
+    @Test
+    void testInvalidMultipartFormDataHandling() {
+        // Create malformed multipart form data without proper content-disposition
+        String malformedMultipartData =
+                "--boundary\r\n" + "Invalid-Header: value\r\n" + "\r\n" + "some data\r\n" + "--boundary--\r\n";
+
+        ByteBuf buf = Unpooled.copiedBuffer(malformedMultipartData, StandardCharsets.UTF_8);
+
+        DefaultFullHttpRequest req = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, "/path", buf);
+        // Set malformed content-type to trigger exception in parseFormBody
+        req.headers().set(HttpHeaderNames.CONTENT_TYPE, "multipart/form-data");
+
+        // Should handle exception gracefully and not throw
+        HttpRequestParamWrapper wrapper = new HttpRequestParamWrapper(req);
+
+        Map<String, List<String>> all = wrapper.getAllParamsAsMultiMap();
+
+        // Should still contain content-type header
+        assertThat(all).containsKey("content-type");
+        assertThat(all.get("content-type")).containsExactly("multipart/form-data");
+    }
 }

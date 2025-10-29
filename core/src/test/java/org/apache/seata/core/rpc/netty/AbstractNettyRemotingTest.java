@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -49,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -349,6 +351,121 @@ class AbstractNettyRemotingTest {
         rpcMessage.setBody(request);
 
         nettyRemoting.processMessage(ctx, rpcMessage);
+    }
+
+    @Test
+    public void testProcessMessageThrowsExceptionInExecutor() throws Exception {
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        Channel channel = mock(Channel.class);
+        when(ctx.channel()).thenReturn(channel);
+
+        RemotingProcessor processor = mock(RemotingProcessor.class);
+        doThrow(new RuntimeException("Test exception"))
+                .when(processor)
+                .process(any(ChannelHandlerContext.class), any(RpcMessage.class));
+
+        nettyRemoting.registerProcessor((int) MessageType.TYPE_BRANCH_COMMIT, processor, messageExecutor);
+
+        BranchCommitRequest request = new BranchCommitRequest();
+        RpcMessage rpcMessage = new RpcMessage();
+        rpcMessage.setId(1);
+        rpcMessage.setBody(request);
+
+        nettyRemoting.processMessage(ctx, rpcMessage);
+
+        Thread.sleep(100);
+
+        verify(processor, times(1)).process(any(ChannelHandlerContext.class), any(RpcMessage.class));
+    }
+
+    @Test
+    public void testProcessMessageThrowsExceptionWithNullExecutor() throws Exception {
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        Channel channel = mock(Channel.class);
+        when(ctx.channel()).thenReturn(channel);
+
+        RemotingProcessor processor = mock(RemotingProcessor.class);
+        doThrow(new RuntimeException("Test exception"))
+                .when(processor)
+                .process(any(ChannelHandlerContext.class), any(RpcMessage.class));
+
+        nettyRemoting.registerProcessor((int) MessageType.TYPE_BRANCH_COMMIT, processor, null);
+
+        BranchCommitRequest request = new BranchCommitRequest();
+        RpcMessage rpcMessage = new RpcMessage();
+        rpcMessage.setId(1);
+        rpcMessage.setBody(request);
+
+        nettyRemoting.processMessage(ctx, rpcMessage);
+
+        verify(processor, times(1)).process(any(ChannelHandlerContext.class), any(RpcMessage.class));
+    }
+
+    @Test
+    public void testProcessMessageWithNonMessageTypeAwareBody() throws Exception {
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        Channel channel = mock(Channel.class);
+        when(ctx.channel()).thenReturn(channel);
+
+        RpcMessage rpcMessage = new RpcMessage();
+        rpcMessage.setId(1);
+        rpcMessage.setBody("Not a MessageTypeAware object");
+
+        nettyRemoting.processMessage(ctx, rpcMessage);
+    }
+
+    @Test
+    public void testProcessMessageRejectedExecutionWithDumpStack() throws Exception {
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        Channel channel = mock(Channel.class);
+        when(ctx.channel()).thenReturn(channel);
+
+        ExecutorService rejectedExecutor = mock(ExecutorService.class);
+        doThrow(new RejectedExecutionException("Thread pool is full"))
+                .when(rejectedExecutor)
+                .execute(any(Runnable.class));
+
+        RemotingProcessor processor = mock(RemotingProcessor.class);
+        nettyRemoting.registerProcessor((int) MessageType.TYPE_BRANCH_COMMIT, processor, rejectedExecutor);
+
+        nettyRemoting.allowDumpStack = true;
+
+        BranchCommitRequest request = new BranchCommitRequest();
+        RpcMessage rpcMessage = new RpcMessage();
+        rpcMessage.setId(1);
+        rpcMessage.setBody(request);
+
+        nettyRemoting.processMessage(ctx, rpcMessage);
+
+        verify(rejectedExecutor, times(1)).execute(any(Runnable.class));
+        verify(processor, times(0)).process(any(ChannelHandlerContext.class), any(RpcMessage.class));
+    }
+
+    @Test
+    public void testProcessMessageRejectedExecutionWithoutDumpStack() throws Exception {
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        Channel channel = mock(Channel.class);
+        when(ctx.channel()).thenReturn(channel);
+
+        ExecutorService rejectedExecutor = mock(ExecutorService.class);
+        doThrow(new RejectedExecutionException("Thread pool is full"))
+                .when(rejectedExecutor)
+                .execute(any(Runnable.class));
+
+        RemotingProcessor processor = mock(RemotingProcessor.class);
+        nettyRemoting.registerProcessor((int) MessageType.TYPE_BRANCH_COMMIT, processor, rejectedExecutor);
+
+        nettyRemoting.allowDumpStack = false;
+
+        BranchCommitRequest request = new BranchCommitRequest();
+        RpcMessage rpcMessage = new RpcMessage();
+        rpcMessage.setId(1);
+        rpcMessage.setBody(request);
+
+        nettyRemoting.processMessage(ctx, rpcMessage);
+
+        verify(rejectedExecutor, times(1)).execute(any(Runnable.class));
+        verify(processor, times(0)).process(any(ChannelHandlerContext.class), any(RpcMessage.class));
     }
 
     @Test

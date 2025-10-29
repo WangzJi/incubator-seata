@@ -258,4 +258,26 @@ public class ServerOnResponseProcessorTest {
         // Verify close was still attempted despite disconnect failure
         verify(unregisteredCtx).close();
     }
+
+    @Test
+    public void testProcessCloseChannelExceptionOnClose() throws Exception {
+        // Create an unregistered channel
+        Channel unregisteredChannel = mock(Channel.class);
+        ChannelHandlerContext unregisteredCtx = mock(ChannelHandlerContext.class);
+        when(unregisteredCtx.channel()).thenReturn(unregisteredChannel);
+        when(unregisteredChannel.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.4", 8083));
+        when(unregisteredChannel.toString()).thenReturn("Channel[127.0.0.4:8083]");
+        when(unregisteredCtx.close()).thenThrow(new RuntimeException("Close failed"));
+
+        BranchCommitResponse response = new BranchCommitResponse();
+        rpcMessage.setBody(response);
+
+        // Should handle close exception gracefully
+        processor.process(unregisteredCtx, rpcMessage);
+
+        // Verify disconnect was attempted
+        verify(unregisteredCtx).disconnect();
+        // Verify close was attempted and exception was caught
+        verify(unregisteredCtx).close();
+    }
 }
