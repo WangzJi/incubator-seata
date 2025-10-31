@@ -17,7 +17,9 @@
 package org.apache.seata.server.storage.redis;
 
 import org.apache.seata.server.BaseSpringBootTest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import redis.clients.jedis.Jedis;
@@ -25,8 +27,41 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolAbstract;
 import redis.clients.jedis.JedisPoolConfig;
 
+import java.lang.reflect.Field;
+
 @EnabledIfSystemProperty(named = "redisCaseEnabled", matches = "true")
 public class JedisPooledFactoryTest extends BaseSpringBootTest {
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        // Reset the singleton jedisPool field to null before each test to ensure test isolation
+        Field jedisPoolField = JedisPooledFactory.class.getDeclaredField("jedisPool");
+        jedisPoolField.setAccessible(true);
+        JedisPoolAbstract existingPool = (JedisPoolAbstract) jedisPoolField.get(null);
+
+        // Close existing pool if present to prevent resource leaks
+        if (existingPool != null) {
+            existingPool.close();
+        }
+
+        // Reset to null
+        jedisPoolField.set(null, null);
+    }
+
+    @AfterEach
+    public void tearDown() throws Exception {
+        // Clean up resources after each test
+        Field jedisPoolField = JedisPooledFactory.class.getDeclaredField("jedisPool");
+        jedisPoolField.setAccessible(true);
+        JedisPoolAbstract pool = (JedisPoolAbstract) jedisPoolField.get(null);
+
+        if (pool != null) {
+            pool.close();
+        }
+
+        // Reset to null for next test
+        jedisPoolField.set(null, null);
+    }
 
     @Test
     public void testGetJedisPoolInstanceWithProvidedPool() {
