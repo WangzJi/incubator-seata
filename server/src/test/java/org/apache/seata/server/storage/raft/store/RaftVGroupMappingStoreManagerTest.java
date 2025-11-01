@@ -31,9 +31,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -298,7 +302,7 @@ public class RaftVGroupMappingStoreManagerTest extends BaseSpringBootTest {
                         Mockito.mockStatic(MultiRegistryFactory.class)) {
 
             // Mock RaftServerManager
-            java.util.Set<String> groups = java.util.Set.of("group1");
+            Set<String> groups = Collections.singleton("group1");
             raftServerManagerMock.when(RaftServerManager::groups).thenReturn(groups);
             raftServerManagerMock
                     .when(() -> RaftServerManager.isLeader("group1"))
@@ -306,7 +310,7 @@ public class RaftVGroupMappingStoreManagerTest extends BaseSpringBootTest {
 
             // Mock MultiRegistryFactory
             RegistryService<?> mockRegistryService = mock(RegistryService.class);
-            List<RegistryService<?>> registryServices = List.of(mockRegistryService);
+            List<RegistryService<?>> registryServices = Collections.singletonList(mockRegistryService);
             registryFactoryMock.when(MultiRegistryFactory::getInstances).thenReturn(registryServices);
 
             // Add some vGroups
@@ -326,7 +330,7 @@ public class RaftVGroupMappingStoreManagerTest extends BaseSpringBootTest {
                         Mockito.mockStatic(MultiRegistryFactory.class)) {
 
             // Mock RaftServerManager - node is follower
-            java.util.Set<String> groups = java.util.Set.of("group1");
+            Set<String> groups = Collections.singleton("group1");
             raftServerManagerMock.when(RaftServerManager::groups).thenReturn(groups);
             raftServerManagerMock
                     .when(() -> RaftServerManager.isLeader("group1"))
@@ -334,7 +338,7 @@ public class RaftVGroupMappingStoreManagerTest extends BaseSpringBootTest {
 
             // Mock MultiRegistryFactory
             RegistryService<?> mockRegistryService = mock(RegistryService.class);
-            List<RegistryService<?>> registryServices = List.of(mockRegistryService);
+            List<RegistryService<?>> registryServices = Collections.singletonList(mockRegistryService);
             registryFactoryMock.when(MultiRegistryFactory::getInstances).thenReturn(registryServices);
 
             // Add some vGroups
@@ -354,7 +358,7 @@ public class RaftVGroupMappingStoreManagerTest extends BaseSpringBootTest {
                         Mockito.mockStatic(MultiRegistryFactory.class)) {
 
             // Mock RaftServerManager with multiple groups
-            java.util.Set<String> groups = java.util.Set.of("group1", "group2");
+            Set<String> groups = new HashSet<>(Arrays.asList("group1", "group2"));
             raftServerManagerMock.when(RaftServerManager::groups).thenReturn(groups);
             raftServerManagerMock
                     .when(() -> RaftServerManager.isLeader("group1"))
@@ -365,7 +369,7 @@ public class RaftVGroupMappingStoreManagerTest extends BaseSpringBootTest {
 
             // Mock MultiRegistryFactory
             RegistryService<?> mockRegistryService = mock(RegistryService.class);
-            List<RegistryService<?>> registryServices = List.of(mockRegistryService);
+            List<RegistryService<?>> registryServices = Collections.singletonList(mockRegistryService);
             registryFactoryMock.when(MultiRegistryFactory::getInstances).thenReturn(registryServices);
 
             assertDoesNotThrow(() -> raftVGroupMappingStoreManager.notifyMapping());
@@ -379,7 +383,7 @@ public class RaftVGroupMappingStoreManagerTest extends BaseSpringBootTest {
                         Mockito.mockStatic(MultiRegistryFactory.class)) {
 
             // Mock RaftServerManager
-            java.util.Set<String> groups = java.util.Set.of("group1");
+            Set<String> groups = Collections.singleton("group1");
             raftServerManagerMock.when(RaftServerManager::groups).thenReturn(groups);
             raftServerManagerMock
                     .when(() -> RaftServerManager.isLeader("group1"))
@@ -394,7 +398,7 @@ public class RaftVGroupMappingStoreManagerTest extends BaseSpringBootTest {
             } catch (Exception e) {
                 // This shouldn't happen as we're just configuring the mock
             }
-            List<RegistryService<?>> registryServices = List.of(mockRegistryService);
+            List<RegistryService<?>> registryServices = Collections.singletonList(mockRegistryService);
             registryFactoryMock.when(MultiRegistryFactory::getInstances).thenReturn(registryServices);
 
             RuntimeException exception =
