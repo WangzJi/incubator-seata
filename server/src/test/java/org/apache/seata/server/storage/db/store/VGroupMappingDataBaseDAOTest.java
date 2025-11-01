@@ -377,7 +377,7 @@ public class VGroupMappingDataBaseDAOTest extends BaseSpringBootTest {
 
             VGroupMappingDataBaseDAO dao = new VGroupMappingDataBaseDAO(dataSource);
 
-            assertThrows(org.apache.seata.common.exception.SeataRuntimeException.class, () -> dao.queryMappingDO());
+            assertThrows(org.apache.seata.common.exception.SeataRuntimeException.class, dao::queryMappingDO);
         }
     }
 

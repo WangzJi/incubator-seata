@@ -320,7 +320,7 @@ public class DataBaseVGroupMappingStoreManagerTest extends BaseSpringBootTest {
         VGroupMappingDataBaseDAO mockDAO = getMockDAO(manager);
         when(mockDAO.queryMappingDO()).thenThrow(new SeataRuntimeException(ErrorCode.ERR_CONFIG, "Database error"));
 
-        assertThrows(SeataRuntimeException.class, () -> manager.loadVGroups());
+        assertThrows(SeataRuntimeException.class, manager::loadVGroups);
     }
 
     @Test
@@ -339,7 +339,7 @@ public class DataBaseVGroupMappingStoreManagerTest extends BaseSpringBootTest {
             VGroupMappingDataBaseDAO mockDAO = getMockDAO(manager);
             when(mockDAO.queryMappingDO()).thenReturn(mockList);
 
-            assertThrows(NullPointerException.class, () -> manager.loadVGroups());
+            assertThrows(NullPointerException.class, manager::loadVGroups);
         }
     }
 
