@@ -29,12 +29,17 @@ import org.apache.seata.core.constants.ConfigurationKeys;
 import org.apache.seata.core.exception.TransactionException;
 import org.apache.seata.core.model.BranchStatus;
 import org.apache.seata.core.model.BranchType;
+import org.apache.seata.core.model.GlobalStatus;
+import org.apache.seata.core.protocol.AbstractResultMessage;
 import org.apache.seata.core.protocol.RpcMessage;
 import org.apache.seata.core.protocol.transaction.BranchCommitRequest;
 import org.apache.seata.core.protocol.transaction.BranchCommitResponse;
 import org.apache.seata.core.protocol.transaction.BranchRollbackRequest;
 import org.apache.seata.core.protocol.transaction.BranchRollbackResponse;
+import org.apache.seata.core.protocol.transaction.GlobalBeginRequest;
+import org.apache.seata.core.protocol.transaction.GlobalBeginResponse;
 import org.apache.seata.core.rpc.RemotingServer;
+import org.apache.seata.core.rpc.RpcContext;
 import org.apache.seata.core.rpc.processor.RemotingProcessor;
 import org.apache.seata.server.BaseSpringBootTest;
 import org.apache.seata.server.metrics.MetricsManager;
@@ -140,7 +145,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
     }
 
     @Test
-    public void test_handleRetryRollbacking() throws TransactionException, InterruptedException {
+    public void handleRetryRollbackingTest() throws TransactionException, InterruptedException {
 
         String xid = core.begin(applicationId, txServiceGroup, txName, 10);
         Long branchId = core.branchRegister(BranchType.AT, "abcd", clientId, xid, applicationData, lockKeys_2);
@@ -157,7 +162,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
     @Test
     @EnabledOnJre({JRE.JAVA_8, JRE.JAVA_11
     }) // `ReflectionUtil.modifyStaticFinalField` does not supported java17 and above versions
-    public void test_handleRetryRollbackingTimeOut()
+    public void handleRetryRollbackingTimeOutTest()
             throws TransactionException, InterruptedException, NoSuchFieldException, IllegalAccessException {
         String xid = core.begin(applicationId, txServiceGroup, txName, 10);
         Long branchId = core.branchRegister(BranchType.AT, "abcd", clientId, xid, applicationData, lockKeys_2);
@@ -191,7 +196,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
     @Test
     @EnabledOnJre({JRE.JAVA_8, JRE.JAVA_11
     }) // `ReflectionUtil.modifyStaticFinalField` does not supported java17 and above versions
-    public void test_handleRetryRollbackingTimeOut_unlock()
+    public void handleRetryRollbackingTimeOut_unlockTest()
             throws TransactionException, InterruptedException, NoSuchFieldException, IllegalAccessException {
         String xid = core.begin(applicationId, txServiceGroup, txName, 10);
         Long branchId = core.branchRegister(BranchType.AT, "abcd", clientId, xid, applicationData, lockKeys_2);
@@ -254,6 +259,97 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         Long branchId = core.branchRegister(BranchType.AT, resourceId, clientId, xid, applicationData, lockKeys_2);
         return Stream.of(Arguments.of(xid, branchId));
+    }
+
+    @Test
+    public void getInstanceSingletonTest() {
+        DefaultCoordinator instance1 = DefaultCoordinator.getInstance();
+        DefaultCoordinator instance2 = DefaultCoordinator.getInstance();
+        Assertions.assertSame(instance1, instance2);
+    }
+
+    @Test
+    public void doGlobalCommitNullSessionTest() throws TransactionException {
+        boolean result = defaultCoordinator.doGlobalCommit(null, false);
+        Assertions.assertTrue(result);
+    }
+
+    @Test
+    public void doGlobalRollbackNullSessionTest() throws TransactionException {
+        boolean result = defaultCoordinator.doGlobalRollback(null, false);
+        Assertions.assertTrue(result);
+    }
+
+    @Test
+    public void doBranchDeleteNullSessionTest() throws TransactionException {
+        Boolean result = defaultCoordinator.doBranchDelete(null, null);
+        Assertions.assertTrue(result);
+    }
+
+    @Test
+    public void doBranchDeleteNullBranchTest() throws TransactionException {
+        String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
+        GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
+
+        Boolean result = defaultCoordinator.doBranchDelete(globalSession, null);
+        Assertions.assertTrue(result);
+
+        globalSession.end();
+    }
+
+    @Test
+    public void timeoutCheckNoTimeoutTest() throws TransactionException {
+        String xid = core.begin(applicationId, txServiceGroup, txName, 30000);
+        GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
+        Assertions.assertNotNull(globalSession);
+
+        defaultCoordinator.timeoutCheck();
+
+        GlobalSession afterCheck = SessionHolder.findGlobalSession(xid);
+        Assertions.assertNotNull(afterCheck);
+        Assertions.assertEquals(GlobalStatus.Begin, afterCheck.getStatus());
+
+        globalSession.end();
+    }
+
+    @Test
+    public void handleRetryCommittingNoSessionsTest() {
+        defaultCoordinator.handleRetryCommitting();
+    }
+
+    @Test
+    public void handleAsyncCommittingNoSessionsTest() {
+        defaultCoordinator.handleAsyncCommitting();
+    }
+
+    @Test
+    public void undoLogDelete_NoChannelsTest() {
+        defaultCoordinator.undoLogDelete();
+    }
+
+    @Test
+    public void onRequestValidRequestTest() {
+        GlobalBeginRequest request = new GlobalBeginRequest();
+        request.setTransactionName("test_tx");
+        request.setTimeout(3000);
+
+        RpcContext rpcContext = new RpcContext();
+        rpcContext.setApplicationId(applicationId);
+        rpcContext.setTransactionServiceGroup(txServiceGroup);
+        rpcContext.setClientId(clientId);
+
+        AbstractResultMessage response = defaultCoordinator.onRequest(request, rpcContext);
+        Assertions.assertNotNull(response);
+        Assertions.assertTrue(response instanceof GlobalBeginResponse);
+    }
+
+    @Test
+    public void onResponseValidResponseTest() {
+        GlobalBeginResponse response = new GlobalBeginResponse();
+        response.setXid("test_xid");
+        RpcContext rpcContext = new RpcContext();
+
+        defaultCoordinator.onResponse(response, rpcContext);
     }
 
     public static class MockServerMessageSender implements RemotingServer {
