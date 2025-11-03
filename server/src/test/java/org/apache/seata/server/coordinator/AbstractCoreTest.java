@@ -148,7 +148,7 @@ public class AbstractCoreTest extends BaseSpringBootTest {
 
         globalSession.end();
     }
-    
+
     @Test
     public void LBranchReportSuccessTest() throws Exception {
         GlobalSession globalSession = createGlobalSession();
