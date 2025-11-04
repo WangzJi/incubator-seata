@@ -121,7 +121,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
     @BeforeEach
     public void tearUp() throws IOException {
         deleteAndCreateDataFile();
-        // 每次测试前重新初始化 core 以清除之前的 mock
+        // Reinitialize core before each test to clear previous mocks
         core = new DefaultCore(remotingServer);
     }
 
@@ -368,7 +368,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
 
     @Test
     public void doBranchReportTest() throws TransactionException {
-        // 创建全局事务和分支（不使用锁以避免冲突）
+        // Create global transaction and branch (without lock to avoid conflicts)
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         Long branchId =
                 core.branchRegister(BranchType.AT, "resource_branch_report", clientId, xid, applicationData, null);
@@ -377,7 +377,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         Assertions.assertNotNull(globalSession);
         Assertions.assertNotNull(globalSession.getBranch(branchId));
 
-        // 创建 BranchReportRequest
+        // Create BranchReportRequest
         BranchReportRequest request = new BranchReportRequest();
         request.setXid(xid);
         request.setBranchId(branchId);
@@ -385,7 +385,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         request.setStatus(BranchStatus.PhaseOne_Done);
         request.setApplicationData(applicationData);
 
-        // 执行测试
+        // Execute test
         RpcContext rpcContext = new RpcContext();
         rpcContext.setApplicationId(applicationId);
         rpcContext.setTransactionServiceGroup(txServiceGroup);
@@ -393,16 +393,16 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
 
         BranchReportResponse response = defaultCoordinator.handle(request, rpcContext);
 
-        // 验证结果
+        // Verify result
         Assertions.assertNotNull(response);
 
-        // 清理
+        // Cleanup
         globalSession.end();
     }
 
     @Test
     public void doLockCheckTest() throws TransactionException {
-        // 创建带锁的全局事务，使用独特的 resourceId 避免冲突
+        // Create global transaction with lock, using unique resourceId to avoid conflicts
         String testResourceId = "resource_lock_check";
         String testLockKey1 = "lock_check:1";
         String testLockKey2 = "lock_check:2";
@@ -413,7 +413,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
 
         Assertions.assertNotNull(branchId);
 
-        // 测试可锁定场景（不同的lockKey）
+        // Test lockable scenario (different lockKey)
         GlobalLockQueryRequest request1 = new GlobalLockQueryRequest();
         request1.setXid(xid);
         request1.setBranchType(BranchType.AT);
@@ -430,7 +430,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         Assertions.assertNotNull(response1);
         Assertions.assertTrue(response1.isLockable());
 
-        // 测试不可锁定场景（相同的lockKey）
+        // Test unlockable scenario (same lockKey)
         GlobalLockQueryRequest request2 = new GlobalLockQueryRequest();
         request2.setBranchType(BranchType.AT);
         request2.setResourceId(testResourceId);
@@ -441,41 +441,41 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         Assertions.assertNotNull(response2);
         Assertions.assertFalse(response2.isLockable());
 
-        // 清理
+        // Cleanup
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
         globalSession.end();
     }
 
     @Test
     public void doBranchRemoveAsyncNullSessionTest() {
-        // 验证空会话不会抛出异常
+        // Verify null session does not throw exception
         Assertions.assertDoesNotThrow(() -> defaultCoordinator.doBranchRemoveAsync(null, null));
     }
 
     @Test
     public void doBranchRemoveAllAsyncNullSessionTest() {
-        // 验证空会话不会抛出异常
+        // Verify null session does not throw exception
         Assertions.assertDoesNotThrow(() -> defaultCoordinator.doBranchRemoveAllAsync(null));
     }
 
     @Test
     public void branchRemoveTaskConstructorWithNullBranchTest() throws TransactionException {
-        // 创建全局会话
+        // Create global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
 
-        // 测试用 null branchSession 创建 BranchRemoveTask 应该抛出异常
+        // Test creating BranchRemoveTask with null branchSession should throw exception
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             new DefaultCoordinator.BranchRemoveTask(globalSession, null);
         });
 
-        // 清理
+        // Cleanup
         globalSession.end();
     }
 
     @Test
     public void branchRemoveTaskRunWithSingleBranchTest() throws TransactionException, InterruptedException {
-        // 创建全局会话和分支（不使用锁以避免冲突）
+        // Create global session and branch (without lock to avoid conflicts)
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         Long branchId =
                 core.branchRegister(BranchType.AT, "resource_remove_single", clientId, xid, applicationData, null);
@@ -486,22 +486,22 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         Assertions.assertNotNull(branchSession);
         Assertions.assertEquals(1, globalSession.getBranchSessions().size());
 
-        // 创建并执行 BranchRemoveTask
+        // Create and execute BranchRemoveTask
         DefaultCoordinator.BranchRemoveTask task =
                 new DefaultCoordinator.BranchRemoveTask(globalSession, branchSession);
         task.run();
 
-        // 验证分支已被删除
+        // Verify branch has been removed
         Assertions.assertNull(globalSession.getBranch(branchId));
         Assertions.assertEquals(0, globalSession.getBranchSessions().size());
 
-        // 清理
+        // Cleanup
         globalSession.end();
     }
 
     @Test
     public void branchRemoveTaskRunWithAllBranchesTest() throws TransactionException, InterruptedException {
-        // 创建全局会话和多个分支（不使用锁以避免冲突）
+        // Create global session and multiple branches (without lock to avoid conflicts)
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         core.branchRegister(BranchType.AT, "resource_remove_all_1", clientId, xid, applicationData, null);
         core.branchRegister(BranchType.AT, "resource_remove_all_2", clientId, xid, applicationData, null);
@@ -510,46 +510,46 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
 
         Assertions.assertEquals(2, globalSession.getBranchSessions().size());
 
-        // 创建并执行 BranchRemoveTask（删除所有分支）
+        // Create and execute BranchRemoveTask (remove all branches)
         DefaultCoordinator.BranchRemoveTask task = new DefaultCoordinator.BranchRemoveTask(globalSession);
         task.run();
 
-        // 验证所有分支已被删除
+        // Verify all branches have been removed
         Assertions.assertTrue(globalSession.getBranchSessions().isEmpty());
 
-        // 清理
+        // Cleanup
         globalSession.end();
     }
 
     @Test
     public void branchRemoveTaskRunWithNullGlobalSessionTest() {
-        // 测试 null globalSession 不会抛出异常
+        // Test null globalSession does not throw exception
         DefaultCoordinator.BranchRemoveTask task = new DefaultCoordinator.BranchRemoveTask(null);
         Assertions.assertDoesNotThrow(() -> task.run());
     }
 
     @Test
     public void handleCommittingByScheduledNoSessionsTest() {
-        // 测试没有 Committing 状态的会话时不会抛出异常
+        // Test no exception is thrown when there are no sessions in Committing state
         Assertions.assertDoesNotThrow(() -> defaultCoordinator.handleCommittingByScheduled());
     }
 
     @Test
     public void handleCommittingByScheduledWithSessionTest() throws TransactionException, InterruptedException {
-        // 创建全局事务
+        // Create global transaction
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         core.branchRegister(BranchType.AT, "resource_committing_scheduled", clientId, xid, applicationData, null);
 
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
         Assertions.assertNotNull(globalSession);
 
-        // 将会话状态改为 Committing
+        // Change session status to Committing
         globalSession.changeGlobalStatus(GlobalStatus.Committing);
 
-        // 执行调度方法
+        // Execute scheduling method
         Assertions.assertDoesNotThrow(() -> defaultCoordinator.handleCommittingByScheduled());
 
-        // 清理
+        // Cleanup
         GlobalSession session = SessionHolder.findGlobalSession(xid);
         if (session != null) {
             session.end();
@@ -558,26 +558,26 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
 
     @Test
     public void handleRollbackingByScheduledNoSessionsTest() {
-        // 测试没有 Rollbacking 状态的会话时不会抛出异常
+        // Test no exception is thrown when there are no sessions in Rollbacking state
         Assertions.assertDoesNotThrow(() -> defaultCoordinator.handleRollbackingByScheduled());
     }
 
     @Test
     public void handleRollbackingByScheduledWithSessionTest() throws TransactionException, InterruptedException {
-        // 创建全局事务
+        // Create global transaction
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         core.branchRegister(BranchType.AT, "resource_rollbacking_scheduled", clientId, xid, applicationData, null);
 
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
         Assertions.assertNotNull(globalSession);
 
-        // 将会话状态改为 Rollbacking
+        // Change session status to Rollbacking
         globalSession.changeGlobalStatus(GlobalStatus.Rollbacking);
 
-        // 执行调度方法
+        // Execute scheduling method
         Assertions.assertDoesNotThrow(() -> defaultCoordinator.handleRollbackingByScheduled());
 
-        // 清理
+        // Cleanup
         GlobalSession session = SessionHolder.findGlobalSession(xid);
         if (session != null) {
             session.end();
@@ -586,30 +586,30 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
 
     @Test
     public void handleEndStatesByScheduledNoSessionsTest() {
-        // 测试没有结束状态的会话时不会抛出异常
+        // Test no exception is thrown when there are no sessions in end state
         Assertions.assertDoesNotThrow(() -> defaultCoordinator.handleEndStatesByScheduled());
     }
 
     @Test
     public void handleEndStatesByScheduledWithCommittedSessionTest() throws TransactionException, InterruptedException {
-        // 创建全局事务
+        // Create global transaction
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         core.branchRegister(BranchType.AT, "resource_end_committed", clientId, xid, applicationData, null);
 
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
         Assertions.assertNotNull(globalSession);
 
-        // 将会话状态改为 Committed
+        // Change session status to Committed
         globalSession.changeGlobalStatus(GlobalStatus.Committed);
-        // 清空分支以便可以进入 end 状态处理
+        // Clear branches so it can enter end state processing
         while (!globalSession.getBranchSessions().isEmpty()) {
             globalSession.removeBranch(globalSession.getBranchSessions().get(0));
         }
 
-        // 执行调度方法
+        // Execute scheduling method
         Assertions.assertDoesNotThrow(() -> defaultCoordinator.handleEndStatesByScheduled());
 
-        // 清理
+        // Cleanup
         GlobalSession session = SessionHolder.findGlobalSession(xid);
         if (session != null && session.getStatus() != GlobalStatus.Finished) {
             session.end();
@@ -619,24 +619,24 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
     @Test
     public void handleEndStatesByScheduledWithRollbackedSessionTest()
             throws TransactionException, InterruptedException {
-        // 创建全局事务
+        // Create global transaction
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         core.branchRegister(BranchType.AT, "resource_end_rollbacked", clientId, xid, applicationData, null);
 
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
         Assertions.assertNotNull(globalSession);
 
-        // 将会话状态改为 Rollbacked
+        // Change session status to Rollbacked
         globalSession.changeGlobalStatus(GlobalStatus.Rollbacked);
-        // 清空分支以便可以进入 end 状态处理
+        // Clear branches so it can enter end state processing
         while (!globalSession.getBranchSessions().isEmpty()) {
             globalSession.removeBranch(globalSession.getBranchSessions().get(0));
         }
 
-        // 执行调度方法
+        // Execute scheduling method
         Assertions.assertDoesNotThrow(() -> defaultCoordinator.handleEndStatesByScheduled());
 
-        // 清理
+        // Cleanup
         GlobalSession session = SessionHolder.findGlobalSession(xid);
         if (session != null && session.getStatus() != GlobalStatus.Finished) {
             session.end();
@@ -645,187 +645,187 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
 
     @Test
     public void doBranchDeleteSagaTypeTest() throws TransactionException {
-        // 创建 SAGA 类型的全局会话
+        // Create SAGA type global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-
-        // 创建 SAGA 类型的分支会话
+        
+        // Create SAGA type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
         branchSession.setBranchId(1L);
         branchSession.setBranchType(BranchType.SAGA);
         branchSession.setResourceId("saga_resource");
         branchSession.setApplicationData(applicationData);
-
+        
         globalSession.addBranch(branchSession);
-
-        // 执行测试
+        
+        // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-
-        // 验证结果 - SAGA 类型应该直接返回 true
+        
+        // Verify result - SAGA type should return true directly
         Assertions.assertTrue(result);
-
-        // 清理
+        
+        // Cleanup
         globalSession.end();
     }
 
     @Test
     public void doBranchDeleteATSuccessTest() throws TransactionException {
-        // 创建全局会话
+        // Create global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-
-        // 创建 AT 类型的分支会话
+        
+        // Create AT type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
         branchSession.setBranchId(1L);
         branchSession.setBranchType(BranchType.AT);
         branchSession.setResourceId("at_resource");
         branchSession.setApplicationData(applicationData);
-
+        
         globalSession.addBranch(branchSession);
-
-        // Mock AT Core 返回 PhaseTwo_Committed（AT 删除成功状态）
+        
+        // Mock AT Core returns PhaseTwo_Committed (AT delete success status)
         AbstractCore mockATCore = mock(AbstractCore.class);
         when(mockATCore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_Committed);
         core.mockCore(BranchType.AT, mockATCore);
-
-        // 执行测试
+        
+        // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-
-        // 验证结果 - AT 分支删除成功应该返回 true
+        
+        // Verify result - AT branch delete success should return true
         Assertions.assertTrue(result);
-
-        // 清理
+        
+        // Cleanup
         globalSession.end();
     }
 
     @Test
     public void doBranchDeleteATFailureTest() throws TransactionException {
-        // 创建全局会话
+        // Create global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-
-        // 创建 AT 类型的分支会话
+        
+        // Create AT type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
         branchSession.setBranchId(1L);
         branchSession.setBranchType(BranchType.AT);
         branchSession.setResourceId("at_resource");
         branchSession.setApplicationData(applicationData);
-
+        
         globalSession.addBranch(branchSession);
-
-        // Mock AT Core 返回 PhaseTwo_CommitFailed_Retryable（AT 删除失败状态）
+        
+        // Mock AT Core returns PhaseTwo_CommitFailed_Retryable (AT delete failure status)
         AbstractCore mockATCore = mock(AbstractCore.class);
         when(mockATCore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_CommitFailed_Retryable);
         core.mockCore(BranchType.AT, mockATCore);
-
-        // 执行测试
+        
+        // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-
-        // 验证结果 - AT 分支删除失败应该返回 false
+        
+        // Verify result - AT branch delete failure should return false
         Assertions.assertFalse(result);
-
-        // 清理
+        
+        // Cleanup
         globalSession.end();
     }
 
     @Test
     public void doBranchDeleteTCCSuccessTest() throws TransactionException {
-        // 创建全局会话
+        // Create global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-
-        // 创建 TCC 类型的分支会话
+        
+        // Create TCC type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
         branchSession.setBranchId(1L);
         branchSession.setBranchType(BranchType.TCC);
         branchSession.setResourceId("tcc_resource");
         branchSession.setApplicationData(applicationData);
-
+        
         globalSession.addBranch(branchSession);
-
-        // Mock TCC Core 返回 PhaseTwo_Rollbacked（TCC 删除成功状态）
+        
+        // Mock TCC Core returns PhaseTwo_Rollbacked (TCC delete success status)
         AbstractCore mockTCCCore = mock(AbstractCore.class);
         when(mockTCCCore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_Rollbacked);
         core.mockCore(BranchType.TCC, mockTCCCore);
-
-        // 执行测试
+        
+        // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-
-        // 验证结果 - TCC 分支删除成功应该返回 true
+        
+        // Verify result - TCC branch delete success should return true
         Assertions.assertTrue(result);
-
-        // 清理
+        
+        // Cleanup
         globalSession.end();
     }
 
     @Test
     public void doBranchDeleteTCCFailureTest() throws TransactionException {
-        // 创建全局会话
+        // Create global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-
-        // 创建 TCC 类型的分支会话
+        
+        // Create TCC type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
         branchSession.setBranchId(1L);
         branchSession.setBranchType(BranchType.TCC);
         branchSession.setResourceId("tcc_resource");
         branchSession.setApplicationData(applicationData);
-
+        
         globalSession.addBranch(branchSession);
-
-        // Mock TCC Core 返回 PhaseTwo_RollbackFailed_Retryable（TCC 删除失败状态）
+        
+        // Mock TCC Core returns PhaseTwo_RollbackFailed_Retryable (TCC delete failure status)
         AbstractCore mockTCCCore = mock(AbstractCore.class);
         when(mockTCCCore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_RollbackFailed_Retryable);
         core.mockCore(BranchType.TCC, mockTCCCore);
-
-        // 执行测试
+        
+        // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-
-        // 验证结果 - TCC 分支删除失败应该返回 false
+        
+        // Verify result - TCC branch delete failure should return false
         Assertions.assertFalse(result);
-
-        // 清理
+        
+        // Cleanup
         globalSession.end();
     }
 
     @Test
     public void doBranchDeleteXASuccessTest() throws TransactionException {
-        // 创建全局会话
+        // Create global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-
-        // 创建 XA 类型的分支会话
+        
+        // Create XA type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
         branchSession.setBranchId(1L);
         branchSession.setBranchType(BranchType.XA);
         branchSession.setResourceId("xa_resource");
         branchSession.setApplicationData(applicationData);
-
+        
         globalSession.addBranch(branchSession);
-
-        // Mock XA Core 返回 PhaseTwo_Rollbacked（XA 删除成功状态）
+        
+        // Mock XA Core returns PhaseTwo_Rollbacked (XA delete success status)
         AbstractCore mockXACore = mock(AbstractCore.class);
         when(mockXACore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_Rollbacked);
         core.mockCore(BranchType.XA, mockXACore);
-
-        // 执行测试
+        
+        // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-
-        // 验证结果 - XA 分支删除成功应该返回 true
+        
+        // Verify result - XA branch delete success should return true
         Assertions.assertTrue(result);
-
-        // 清理
+        
+        // Cleanup
         globalSession.end();
     }
 
@@ -834,175 +834,176 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
     }) // `ReflectionUtil.modifyStaticFinalField` does not supported java17 and above versions
     public void doBranchDeleteXAXaerNotaTimeoutTest()
             throws TransactionException, InterruptedException, NoSuchFieldException, IllegalAccessException {
-        // 创建全局会话，设置较短的超时时间
-        String xid = core.begin(applicationId, txServiceGroup, txName, 100);
+        // Create global session with short timeout (10ms)
+        String xid = core.begin(applicationId, txServiceGroup, txName, 10);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-
-        // 创建 XA 类型的分支会话
+        
+        // Create XA type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
         branchSession.setBranchId(1L);
         branchSession.setBranchType(BranchType.XA);
         branchSession.setResourceId("xa_resource");
         branchSession.setApplicationData(applicationData);
-
+        
         globalSession.addBranch(branchSession);
-
-        // Mock XA Core 返回 PhaseTwo_RollbackFailed_XAER_NOTA_Retryable
+        
+        // Mock XA Core returns PhaseTwo_RollbackFailed_XAER_NOTA_Retryable
         AbstractCore mockXACore = mock(AbstractCore.class);
         when(mockXACore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_RollbackFailed_XAER_NOTA_Retryable);
         core.mockCore(BranchType.XA, mockXACore);
-
+        
         try {
-            // 临时修改 RETRY_XAER_NOTA_TIMEOUT 为较小值以测试超时
+            // Temporarily modify RETRY_XAER_NOTA_TIMEOUT to small value for timeout testing
             ReflectionUtil.modifyStaticFinalField(core.getClass(), "RETRY_XAER_NOTA_TIMEOUT", 10);
-
-            // 等待超时
-            Thread.sleep(150);
-
-            // 执行测试
+            
+            // Wait for timeout: timeout condition is currentTime > beginTime + timeout + max(RETRY_XAER_NOTA_TIMEOUT, timeout)
+            // = beginTime + 10 + max(10, 10) = beginTime + 20ms, so waiting 25ms is enough to trigger timeout
+            Thread.sleep(25);
+            
+            // Execute test
             Boolean result = core.doBranchDelete(globalSession, branchSession);
-
-            // 验证结果 - XAER_NOTA 超时应该返回 true
+            
+            // Verify result - XAER_NOTA timeout should return true
             Assertions.assertTrue(result);
         } finally {
-            // 恢复原始值
+            // Restore original value
             ReflectionUtil.modifyStaticFinalField(
                     core.getClass(),
                     "RETRY_XAER_NOTA_TIMEOUT",
                     ConfigurationFactory.getInstance()
                             .getInt(XAER_NOTA_RETRY_TIMEOUT, DefaultValues.DEFAULT_XAER_NOTA_RETRY_TIMEOUT));
-            // 清理
+            // Cleanup
             globalSession.end();
         }
     }
 
     @Test
     public void doBranchDeleteXAXaerNotaNoTimeoutTest() throws TransactionException {
-        // 创建全局会话，设置较长的超时时间
+        // Create global session with long timeout
         String xid = core.begin(applicationId, txServiceGroup, txName, 30000);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-
-        // 创建 XA 类型的分支会话
+        
+        // Create XA type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
         branchSession.setBranchId(1L);
         branchSession.setBranchType(BranchType.XA);
         branchSession.setResourceId("xa_resource");
         branchSession.setApplicationData(applicationData);
-
+        
         globalSession.addBranch(branchSession);
-
-        // Mock XA Core 返回 PhaseTwo_RollbackFailed_XAER_NOTA_Retryable
+        
+        // Mock XA Core returns PhaseTwo_RollbackFailed_XAER_NOTA_Retryable
         AbstractCore mockXACore = mock(AbstractCore.class);
         when(mockXACore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_RollbackFailed_XAER_NOTA_Retryable);
         core.mockCore(BranchType.XA, mockXACore);
-
-        // 执行测试
+        
+        // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-
-        // 验证结果 - XAER_NOTA 未超时应该返回 false
+        
+        // Verify result - XAER_NOTA not timed out should return false
         Assertions.assertFalse(result);
-
-        // 清理
+        
+        // Cleanup
         globalSession.end();
     }
 
     @Test
     public void doBranchDeleteXAFailureTest() throws TransactionException {
-        // 创建全局会话
+        // Create global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-
-        // 创建 XA 类型的分支会话
+        
+        // Create XA type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
         branchSession.setBranchId(1L);
         branchSession.setBranchType(BranchType.XA);
         branchSession.setResourceId("xa_resource");
         branchSession.setApplicationData(applicationData);
-
+        
         globalSession.addBranch(branchSession);
-
-        // Mock XA Core 返回 PhaseTwo_RollbackFailed_Retryable（XA 删除失败状态）
+        
+        // Mock XA Core returns PhaseTwo_RollbackFailed_Retryable (XA delete failure status)
         AbstractCore mockXACore = mock(AbstractCore.class);
         when(mockXACore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_RollbackFailed_Retryable);
         core.mockCore(BranchType.XA, mockXACore);
-
-        // 执行测试
+        
+        // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-
-        // 验证结果 - XA 分支删除失败应该返回 false
+        
+        // Verify result - XA branch delete failure should return false
         Assertions.assertFalse(result);
-
-        // 清理
+        
+        // Cleanup
         globalSession.end();
     }
 
     @Test
     public void doBranchDeleteUnretryableTest() throws TransactionException {
-        // 创建全局会话
+        // Create global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-
-        // 创建 AT 类型的分支会话
+        
+        // Create AT type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
         branchSession.setBranchId(1L);
         branchSession.setBranchType(BranchType.AT);
         branchSession.setResourceId("at_resource");
         branchSession.setApplicationData(applicationData);
-
+        
         globalSession.addBranch(branchSession);
-
-        // Mock Core 返回 PhaseTwo_RollbackFailed_Unretryable（不可重试状态）
+        
+        // Mock Core returns PhaseTwo_RollbackFailed_Unretryable (unretryable status)
         AbstractCore mockATCore = mock(AbstractCore.class);
         when(mockATCore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_RollbackFailed_Unretryable);
         core.mockCore(BranchType.AT, mockATCore);
-
-        // 执行测试
+        
+        // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-
-        // 验证结果 - 不可重试状态应该返回 true（停止重试并删除）
+        
+        // Verify result - unretryable status should return true (stop retry and delete)
         Assertions.assertTrue(result);
-
-        // 清理
+        
+        // Cleanup
         globalSession.end();
     }
 
     @Test
     public void doBranchDeleteGeneralFailureTest() throws TransactionException {
-        // 创建全局会话
+        // Create global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-
-        // 创建一个未知类型的分支会话（使用 AT 类型但返回不匹配的状态）
+        
+        // Create an unknown type branch session (using AT type but returns mismatched status)
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
         branchSession.setBranchId(1L);
         branchSession.setBranchType(BranchType.AT);
         branchSession.setResourceId("at_resource");
         branchSession.setApplicationData(applicationData);
-
+        
         globalSession.addBranch(branchSession);
-
-        // Mock Core 返回 PhaseOne_Failed（通用失败状态）
+        
+        // Mock Core returns PhaseOne_Failed (general failure status)
         AbstractCore mockATCore = mock(AbstractCore.class);
         when(mockATCore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseOne_Failed);
         core.mockCore(BranchType.AT, mockATCore);
-
-        // 执行测试
+        
+        // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-
-        // 验证结果 - 通用失败场景应该返回 false
+        
+        // Verify result - general failure scenario should return false
         Assertions.assertFalse(result);
-
-        // 清理
+        
+        // Cleanup
         globalSession.end();
     }
 
