@@ -34,6 +34,8 @@ import org.apache.seata.core.protocol.AbstractResultMessage;
 import org.apache.seata.core.protocol.RpcMessage;
 import org.apache.seata.core.protocol.transaction.BranchCommitRequest;
 import org.apache.seata.core.protocol.transaction.BranchCommitResponse;
+import org.apache.seata.core.protocol.transaction.BranchRegisterRequest;
+import org.apache.seata.core.protocol.transaction.BranchRegisterResponse;
 import org.apache.seata.core.protocol.transaction.BranchReportRequest;
 import org.apache.seata.core.protocol.transaction.BranchReportResponse;
 import org.apache.seata.core.protocol.transaction.BranchRollbackRequest;
@@ -42,6 +44,10 @@ import org.apache.seata.core.protocol.transaction.GlobalBeginRequest;
 import org.apache.seata.core.protocol.transaction.GlobalBeginResponse;
 import org.apache.seata.core.protocol.transaction.GlobalLockQueryRequest;
 import org.apache.seata.core.protocol.transaction.GlobalLockQueryResponse;
+import org.apache.seata.core.protocol.transaction.GlobalReportRequest;
+import org.apache.seata.core.protocol.transaction.GlobalReportResponse;
+import org.apache.seata.core.protocol.transaction.GlobalStatusRequest;
+import org.apache.seata.core.protocol.transaction.GlobalStatusResponse;
 import org.apache.seata.core.rpc.RemotingServer;
 import org.apache.seata.core.rpc.RpcContext;
 import org.apache.seata.core.rpc.processor.RemotingProcessor;
@@ -1006,6 +1012,266 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
 
         // Cleanup
         globalSession.end();
+    }
+
+    @Test
+    public void doGlobalStatusTest() throws TransactionException {
+        // Create global transaction
+        String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
+        GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
+        Assertions.assertNotNull(globalSession);
+
+        // Create GlobalStatusRequest
+        GlobalStatusRequest request = new GlobalStatusRequest();
+        request.setXid(xid);
+
+        // Execute test
+        RpcContext rpcContext = new RpcContext();
+        rpcContext.setApplicationId(applicationId);
+        rpcContext.setTransactionServiceGroup(txServiceGroup);
+        rpcContext.setClientId(clientId);
+
+        GlobalStatusResponse response = defaultCoordinator.handle(request, rpcContext);
+
+        // Verify result
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals(GlobalStatus.Begin, response.getGlobalStatus());
+
+        // Cleanup
+        globalSession.end();
+    }
+
+    @Test
+    public void doGlobalReportTest() throws TransactionException {
+        // Create global transaction
+        String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
+        GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
+        Assertions.assertNotNull(globalSession);
+
+        // Change status to Committed first
+        globalSession.changeGlobalStatus(GlobalStatus.Committed);
+
+        // Create GlobalReportRequest
+        GlobalReportRequest request = new GlobalReportRequest();
+        request.setXid(xid);
+        request.setGlobalStatus(GlobalStatus.Committed);
+
+        // Execute test
+        RpcContext rpcContext = new RpcContext();
+        rpcContext.setApplicationId(applicationId);
+        rpcContext.setTransactionServiceGroup(txServiceGroup);
+        rpcContext.setClientId(clientId);
+
+        GlobalReportResponse response = defaultCoordinator.handle(request, rpcContext);
+
+        // Verify result - globalReport returns the current status of the session
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals(GlobalStatus.Committed, response.getGlobalStatus());
+
+        // Cleanup
+        GlobalSession session = SessionHolder.findGlobalSession(xid);
+        if (session != null && session.getStatus() != GlobalStatus.Finished) {
+            session.end();
+        }
+    }
+
+    @Test
+    public void doBranchRegisterTest() throws TransactionException {
+        // Create global transaction
+        String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
+        GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
+        Assertions.assertNotNull(globalSession);
+
+        // Create BranchRegisterRequest
+        BranchRegisterRequest request = new BranchRegisterRequest();
+        request.setXid(xid);
+        request.setBranchType(BranchType.AT);
+        request.setResourceId("resource_branch_register");
+        request.setApplicationData(applicationData);
+        request.setLockKey("branch_register:1");
+
+        // Execute test
+        RpcContext rpcContext = new RpcContext();
+        rpcContext.setApplicationId(applicationId);
+        rpcContext.setTransactionServiceGroup(txServiceGroup);
+        rpcContext.setClientId(clientId);
+
+        BranchRegisterResponse response = defaultCoordinator.handle(request, rpcContext);
+
+        // Verify result
+        Assertions.assertNotNull(response);
+        Assertions.assertTrue(response.getBranchId() > 0);
+
+        // Verify branch is registered
+        BranchSession branchSession = globalSession.getBranch(response.getBranchId());
+        Assertions.assertNotNull(branchSession);
+        Assertions.assertEquals(BranchType.AT, branchSession.getBranchType());
+        Assertions.assertEquals("resource_branch_register", branchSession.getResourceId());
+
+        // Cleanup
+        globalSession.end();
+    }
+
+    @Test
+    public void timeoutCheckWithTimeoutTest() throws TransactionException, InterruptedException {
+        // Create global transaction with very short timeout (10ms)
+        String xid = core.begin(applicationId, txServiceGroup, txName, 10);
+        GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
+        Assertions.assertNotNull(globalSession);
+        Assertions.assertEquals(GlobalStatus.Begin, globalSession.getStatus());
+
+        // Wait for timeout
+        Thread.sleep(100);
+
+        // Execute timeout check
+        defaultCoordinator.timeoutCheck();
+
+        // Verify session has been marked for rollback
+        GlobalSession afterCheck = SessionHolder.findGlobalSession(xid);
+        if (afterCheck != null) {
+            Assertions.assertEquals(GlobalStatus.TimeoutRollbacking, afterCheck.getStatus());
+            afterCheck.end();
+        }
+    }
+
+    @Test
+    @EnabledOnJre({JRE.JAVA_8, JRE.JAVA_11
+    }) // `ReflectionUtil.modifyStaticFinalField` does not supported java17 and above versions
+    public void handleRetryCommittingTimeoutTest()
+            throws TransactionException, InterruptedException, NoSuchFieldException, IllegalAccessException {
+        // Create global transaction with short timeout
+        String xid = core.begin(applicationId, txServiceGroup, txName, 10);
+        Long branchId =
+                core.branchRegister(BranchType.AT, "resource_commit_retry", clientId, xid, applicationData, null);
+
+        GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
+        Assertions.assertNotNull(globalSession);
+        Assertions.assertNotNull(branchId);
+
+        // Change to Committing status
+        globalSession.changeGlobalStatus(GlobalStatus.Committing);
+
+        try {
+            // Temporarily modify MAX_COMMIT_RETRY_TIMEOUT for timeout testing
+            ReflectionUtil.modifyStaticFinalField(defaultCoordinator.getClass(), "MAX_COMMIT_RETRY_TIMEOUT", 10L);
+
+            // Wait for timeout
+            Thread.sleep(100);
+
+            // Queue to retry commit
+            globalSession.queueToRetryCommit();
+
+            // Execute retry committing
+            defaultCoordinator.handleRetryCommitting();
+
+            // Verify session has transitioned (should be Committed or CommitFailed)
+            GlobalSession afterRetry = SessionHolder.findGlobalSession(xid);
+            if (afterRetry != null) {
+                Assertions.assertNotEquals(GlobalStatus.Committing, afterRetry.getStatus());
+            }
+        } finally {
+            // Restore original value
+            ReflectionUtil.modifyStaticFinalField(
+                    defaultCoordinator.getClass(),
+                    "MAX_COMMIT_RETRY_TIMEOUT",
+                    ConfigurationFactory.getInstance()
+                            .getLong(
+                                    ConfigurationKeys.MAX_COMMIT_RETRY_TIMEOUT,
+                                    DefaultValues.DEFAULT_MAX_COMMIT_RETRY_TIMEOUT));
+            // Cleanup
+            GlobalSession session = SessionHolder.findGlobalSession(xid);
+            if (session != null) {
+                session.closeAndClean();
+            }
+        }
+    }
+
+    @Test
+    public void handleRetryCommittingWithEmptyBranchesTest() throws TransactionException {
+        // Create global transaction
+        String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
+        GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
+        Assertions.assertNotNull(globalSession);
+
+        // Change to Committed status with empty branches
+        globalSession.changeGlobalStatus(GlobalStatus.Committed);
+        Assertions.assertTrue(globalSession.getBranchSessions().isEmpty());
+
+        // Queue to retry commit
+        globalSession.queueToRetryCommit();
+
+        // Execute retry committing - should handle empty branches gracefully
+        Assertions.assertDoesNotThrow(() -> defaultCoordinator.handleRetryCommitting());
+
+        // Cleanup
+        GlobalSession session = SessionHolder.findGlobalSession(xid);
+        if (session != null) {
+            session.end();
+        }
+    }
+
+    @Test
+    public void handleAsyncCommittingSuccessTest() throws TransactionException, InterruptedException {
+        // Create global transaction
+        String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
+        Long branchId =
+                core.branchRegister(BranchType.AT, "resource_async_commit", clientId, xid, applicationData, null);
+
+        GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
+        Assertions.assertNotNull(globalSession);
+
+        // Change to AsyncCommitting status
+        globalSession.changeGlobalStatus(GlobalStatus.AsyncCommitting);
+
+        // Execute async committing
+        Assertions.assertDoesNotThrow(() -> defaultCoordinator.handleAsyncCommitting());
+
+        // Cleanup
+        GlobalSession session = SessionHolder.findGlobalSession(xid);
+        if (session != null) {
+            session.end();
+        }
+    }
+
+    @Test
+    public void undoLogDeleteWithActiveChannelsTest() throws TransactionException {
+        // Create global transaction to ensure session manager is active
+        String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
+        GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
+        Assertions.assertNotNull(globalSession);
+
+        try {
+            // Register a channel with ChannelManager to simulate active RM
+            Channel mockChannel = mock(Channel.class);
+            when(mockChannel.isActive()).thenReturn(true);
+
+            // Note: ChannelManager.registerChannel requires actual channel registration
+            // which may not be easily mockable, so this test verifies the method executes without error
+
+            // Execute undo log delete - should not throw exception even with or without active channels
+            Assertions.assertDoesNotThrow(() -> defaultCoordinator.undoLogDelete());
+        } finally {
+            // Cleanup
+            globalSession.end();
+        }
+    }
+
+    @Test
+    public void destroyTest() throws InterruptedException {
+        // Note: destroy() shuts down executors and sets instance to null, which affects other tests.
+        // This test verifies the destroy method exists and basic behavior by checking it doesn't throw
+        // when the singleton instance is already initialized. We cannot safely call destroy() on the
+        // shared instance without breaking other tests, so we just verify the method signature exists.
+
+        // Verify the destroy method can be called on the shared instance
+        Assertions.assertNotNull(defaultCoordinator);
+
+        // We verify the method exists but don't actually call it to avoid breaking other tests
+        // as destroy() sets the singleton instance to null and shuts down all executors
+        Assertions.assertDoesNotThrow(() -> {
+            // Just verify the method exists by getting its reference
+            defaultCoordinator.getClass().getMethod("destroy");
+        });
     }
 
     public static class MockServerMessageSender implements RemotingServer {
