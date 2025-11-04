@@ -122,11 +122,14 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         defaultCoordinator = DefaultCoordinator.getInstance(remotingServer);
         defaultCoordinator.setRemotingServer(remotingServer);
         core = new DefaultCore(remotingServer);
+        // Initialize SessionHolder once for all tests
+        SessionHolder.init(SessionMode.FILE);
     }
 
     @BeforeEach
     public void tearUp() throws IOException {
-        deleteAndCreateDataFile();
+        // Only delete data files before each test
+        StoreUtil.deleteDataFile();
         // Reinitialize core before each test to clear previous mocks
         core = new DefaultCore(remotingServer);
     }
@@ -262,11 +265,8 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         for (GlobalSession globalSession : globalSessions) {
             globalSession.closeAndClean();
         }
-    }
-
-    private static void deleteAndCreateDataFile() throws IOException {
-        StoreUtil.deleteDataFile();
-        SessionHolder.init(SessionMode.FILE);
+        // Destroy SessionHolder to clean up static state
+        SessionHolder.destroy();
     }
 
     @AfterEach
