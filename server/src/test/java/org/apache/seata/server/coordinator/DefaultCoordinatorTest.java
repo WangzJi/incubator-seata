@@ -648,7 +648,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         // Create SAGA type global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-        
+
         // Create SAGA type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
@@ -656,15 +656,15 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         branchSession.setBranchType(BranchType.SAGA);
         branchSession.setResourceId("saga_resource");
         branchSession.setApplicationData(applicationData);
-        
+
         globalSession.addBranch(branchSession);
-        
+
         // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-        
+
         // Verify result - SAGA type should return true directly
         Assertions.assertTrue(result);
-        
+
         // Cleanup
         globalSession.end();
     }
@@ -674,7 +674,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         // Create global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-        
+
         // Create AT type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
@@ -682,21 +682,21 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         branchSession.setBranchType(BranchType.AT);
         branchSession.setResourceId("at_resource");
         branchSession.setApplicationData(applicationData);
-        
+
         globalSession.addBranch(branchSession);
-        
+
         // Mock AT Core returns PhaseTwo_Committed (AT delete success status)
         AbstractCore mockATCore = mock(AbstractCore.class);
         when(mockATCore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_Committed);
         core.mockCore(BranchType.AT, mockATCore);
-        
+
         // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-        
+
         // Verify result - AT branch delete success should return true
         Assertions.assertTrue(result);
-        
+
         // Cleanup
         globalSession.end();
     }
@@ -706,7 +706,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         // Create global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-        
+
         // Create AT type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
@@ -714,21 +714,21 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         branchSession.setBranchType(BranchType.AT);
         branchSession.setResourceId("at_resource");
         branchSession.setApplicationData(applicationData);
-        
+
         globalSession.addBranch(branchSession);
-        
+
         // Mock AT Core returns PhaseTwo_CommitFailed_Retryable (AT delete failure status)
         AbstractCore mockATCore = mock(AbstractCore.class);
         when(mockATCore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_CommitFailed_Retryable);
         core.mockCore(BranchType.AT, mockATCore);
-        
+
         // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-        
+
         // Verify result - AT branch delete failure should return false
         Assertions.assertFalse(result);
-        
+
         // Cleanup
         globalSession.end();
     }
@@ -738,7 +738,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         // Create global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-        
+
         // Create TCC type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
@@ -746,21 +746,21 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         branchSession.setBranchType(BranchType.TCC);
         branchSession.setResourceId("tcc_resource");
         branchSession.setApplicationData(applicationData);
-        
+
         globalSession.addBranch(branchSession);
-        
+
         // Mock TCC Core returns PhaseTwo_Rollbacked (TCC delete success status)
         AbstractCore mockTCCCore = mock(AbstractCore.class);
         when(mockTCCCore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_Rollbacked);
         core.mockCore(BranchType.TCC, mockTCCCore);
-        
+
         // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-        
+
         // Verify result - TCC branch delete success should return true
         Assertions.assertTrue(result);
-        
+
         // Cleanup
         globalSession.end();
     }
@@ -770,7 +770,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         // Create global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-        
+
         // Create TCC type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
@@ -778,21 +778,21 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         branchSession.setBranchType(BranchType.TCC);
         branchSession.setResourceId("tcc_resource");
         branchSession.setApplicationData(applicationData);
-        
+
         globalSession.addBranch(branchSession);
-        
+
         // Mock TCC Core returns PhaseTwo_RollbackFailed_Retryable (TCC delete failure status)
         AbstractCore mockTCCCore = mock(AbstractCore.class);
         when(mockTCCCore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_RollbackFailed_Retryable);
         core.mockCore(BranchType.TCC, mockTCCCore);
-        
+
         // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-        
+
         // Verify result - TCC branch delete failure should return false
         Assertions.assertFalse(result);
-        
+
         // Cleanup
         globalSession.end();
     }
@@ -802,7 +802,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         // Create global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-        
+
         // Create XA type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
@@ -810,21 +810,21 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         branchSession.setBranchType(BranchType.XA);
         branchSession.setResourceId("xa_resource");
         branchSession.setApplicationData(applicationData);
-        
+
         globalSession.addBranch(branchSession);
-        
+
         // Mock XA Core returns PhaseTwo_Rollbacked (XA delete success status)
         AbstractCore mockXACore = mock(AbstractCore.class);
         when(mockXACore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_Rollbacked);
         core.mockCore(BranchType.XA, mockXACore);
-        
+
         // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-        
+
         // Verify result - XA branch delete success should return true
         Assertions.assertTrue(result);
-        
+
         // Cleanup
         globalSession.end();
     }
@@ -837,7 +837,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         // Create global session with short timeout (10ms)
         String xid = core.begin(applicationId, txServiceGroup, txName, 10);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-        
+
         // Create XA type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
@@ -845,26 +845,27 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         branchSession.setBranchType(BranchType.XA);
         branchSession.setResourceId("xa_resource");
         branchSession.setApplicationData(applicationData);
-        
+
         globalSession.addBranch(branchSession);
-        
+
         // Mock XA Core returns PhaseTwo_RollbackFailed_XAER_NOTA_Retryable
         AbstractCore mockXACore = mock(AbstractCore.class);
         when(mockXACore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_RollbackFailed_XAER_NOTA_Retryable);
         core.mockCore(BranchType.XA, mockXACore);
-        
+
         try {
             // Temporarily modify RETRY_XAER_NOTA_TIMEOUT to small value for timeout testing
             ReflectionUtil.modifyStaticFinalField(core.getClass(), "RETRY_XAER_NOTA_TIMEOUT", 10);
-            
-            // Wait for timeout: timeout condition is currentTime > beginTime + timeout + max(RETRY_XAER_NOTA_TIMEOUT, timeout)
+
+            // Wait for timeout: timeout condition is currentTime > beginTime + timeout + max(RETRY_XAER_NOTA_TIMEOUT,
+            // timeout)
             // = beginTime + 10 + max(10, 10) = beginTime + 20ms, so waiting 25ms is enough to trigger timeout
             Thread.sleep(25);
-            
+
             // Execute test
             Boolean result = core.doBranchDelete(globalSession, branchSession);
-            
+
             // Verify result - XAER_NOTA timeout should return true
             Assertions.assertTrue(result);
         } finally {
@@ -884,7 +885,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         // Create global session with long timeout
         String xid = core.begin(applicationId, txServiceGroup, txName, 30000);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-        
+
         // Create XA type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
@@ -892,21 +893,21 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         branchSession.setBranchType(BranchType.XA);
         branchSession.setResourceId("xa_resource");
         branchSession.setApplicationData(applicationData);
-        
+
         globalSession.addBranch(branchSession);
-        
+
         // Mock XA Core returns PhaseTwo_RollbackFailed_XAER_NOTA_Retryable
         AbstractCore mockXACore = mock(AbstractCore.class);
         when(mockXACore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_RollbackFailed_XAER_NOTA_Retryable);
         core.mockCore(BranchType.XA, mockXACore);
-        
+
         // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-        
+
         // Verify result - XAER_NOTA not timed out should return false
         Assertions.assertFalse(result);
-        
+
         // Cleanup
         globalSession.end();
     }
@@ -916,7 +917,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         // Create global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-        
+
         // Create XA type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
@@ -924,21 +925,21 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         branchSession.setBranchType(BranchType.XA);
         branchSession.setResourceId("xa_resource");
         branchSession.setApplicationData(applicationData);
-        
+
         globalSession.addBranch(branchSession);
-        
+
         // Mock XA Core returns PhaseTwo_RollbackFailed_Retryable (XA delete failure status)
         AbstractCore mockXACore = mock(AbstractCore.class);
         when(mockXACore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_RollbackFailed_Retryable);
         core.mockCore(BranchType.XA, mockXACore);
-        
+
         // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-        
+
         // Verify result - XA branch delete failure should return false
         Assertions.assertFalse(result);
-        
+
         // Cleanup
         globalSession.end();
     }
@@ -948,7 +949,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         // Create global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-        
+
         // Create AT type branch session
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
@@ -956,21 +957,21 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         branchSession.setBranchType(BranchType.AT);
         branchSession.setResourceId("at_resource");
         branchSession.setApplicationData(applicationData);
-        
+
         globalSession.addBranch(branchSession);
-        
+
         // Mock Core returns PhaseTwo_RollbackFailed_Unretryable (unretryable status)
         AbstractCore mockATCore = mock(AbstractCore.class);
         when(mockATCore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseTwo_RollbackFailed_Unretryable);
         core.mockCore(BranchType.AT, mockATCore);
-        
+
         // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-        
+
         // Verify result - unretryable status should return true (stop retry and delete)
         Assertions.assertTrue(result);
-        
+
         // Cleanup
         globalSession.end();
     }
@@ -980,7 +981,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         // Create global session
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
-        
+
         // Create an unknown type branch session (using AT type but returns mismatched status)
         BranchSession branchSession = new BranchSession();
         branchSession.setXid(xid);
@@ -988,21 +989,21 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
         branchSession.setBranchType(BranchType.AT);
         branchSession.setResourceId("at_resource");
         branchSession.setApplicationData(applicationData);
-        
+
         globalSession.addBranch(branchSession);
-        
+
         // Mock Core returns PhaseOne_Failed (general failure status)
         AbstractCore mockATCore = mock(AbstractCore.class);
         when(mockATCore.branchDelete(any(GlobalSession.class), any(BranchSession.class)))
                 .thenReturn(BranchStatus.PhaseOne_Failed);
         core.mockCore(BranchType.AT, mockATCore);
-        
+
         // Execute test
         Boolean result = core.doBranchDelete(globalSession, branchSession);
-        
+
         // Verify result - general failure scenario should return false
         Assertions.assertFalse(result);
-        
+
         // Cleanup
         globalSession.end();
     }
