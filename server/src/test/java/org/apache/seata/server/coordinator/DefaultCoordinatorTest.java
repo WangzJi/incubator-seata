@@ -1214,8 +1214,7 @@ public class DefaultCoordinatorTest extends BaseSpringBootTest {
     public void handleAsyncCommittingSuccessTest() throws TransactionException, InterruptedException {
         // Create global transaction
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
-        Long branchId =
-                core.branchRegister(BranchType.AT, "resource_async_commit", clientId, xid, applicationData, null);
+        core.branchRegister(BranchType.AT, "resource_async_commit", clientId, xid, applicationData, null);
 
         GlobalSession globalSession = SessionHolder.findGlobalSession(xid);
         Assertions.assertNotNull(globalSession);
