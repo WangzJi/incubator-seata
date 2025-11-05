@@ -180,8 +180,8 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
 
     @Test
     public void testConstructorInRaftMode() {
-        StoreConfig.setStartupParameter(SessionMode.RAFT.getName(), SessionMode.RAFT.getName(),
-                SessionMode.RAFT.getName());
+        StoreConfig.setStartupParameter(
+                SessionMode.RAFT.getName(), SessionMode.RAFT.getName(), SessionMode.RAFT.getName());
 
         RaftStateMachine raftModeStateMachine = new RaftStateMachine("raft-group");
 

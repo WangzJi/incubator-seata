@@ -57,10 +57,8 @@ public class RaftTaskUtilTest {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         future.completeExceptionally(new InterruptedException("Test interruption"));
 
-        GlobalTransactionException exception = assertThrows(
-                GlobalTransactionException.class,
-                () -> RaftTaskUtil.futureGet(future)
-        );
+        GlobalTransactionException exception =
+                assertThrows(GlobalTransactionException.class, () -> RaftTaskUtil.futureGet(future));
 
         assertEquals(TransactionExceptionCode.FailedWriteSession, exception.getCode());
         assertTrue(exception.getMessage().contains("Fail to store global session"));
@@ -69,16 +67,11 @@ public class RaftTaskUtilTest {
     @Test
     public void testFutureGetWithTransactionExceptionInExecutionException() {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
-        TransactionException cause = new TransactionException(
-                TransactionExceptionCode.BranchRegisterFailed,
-                "Branch registration failed"
-        );
+        TransactionException cause =
+                new TransactionException(TransactionExceptionCode.BranchRegisterFailed, "Branch registration failed");
         future.completeExceptionally(cause);
 
-        TransactionException exception = assertThrows(
-                TransactionException.class,
-                () -> RaftTaskUtil.futureGet(future)
-        );
+        TransactionException exception = assertThrows(TransactionException.class, () -> RaftTaskUtil.futureGet(future));
 
         assertEquals(TransactionExceptionCode.BranchRegisterFailed, exception.getCode());
         assertTrue(exception.getMessage().contains("Branch registration failed"));
@@ -88,15 +81,11 @@ public class RaftTaskUtilTest {
     public void testFutureGetWithGlobalTransactionExceptionInExecutionException() {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         GlobalTransactionException cause = new GlobalTransactionException(
-                TransactionExceptionCode.GlobalTransactionNotExist,
-                "Global transaction does not exist"
-        );
+                TransactionExceptionCode.GlobalTransactionNotExist, "Global transaction does not exist");
         future.completeExceptionally(cause);
 
-        GlobalTransactionException exception = assertThrows(
-                GlobalTransactionException.class,
-                () -> RaftTaskUtil.futureGet(future)
-        );
+        GlobalTransactionException exception =
+                assertThrows(GlobalTransactionException.class, () -> RaftTaskUtil.futureGet(future));
 
         assertEquals(TransactionExceptionCode.GlobalTransactionNotExist, exception.getCode());
         assertTrue(exception.getMessage().contains("Global transaction does not exist"));
@@ -108,10 +97,8 @@ public class RaftTaskUtilTest {
         RuntimeException cause = new RuntimeException("Unexpected error");
         future.completeExceptionally(cause);
 
-        GlobalTransactionException exception = assertThrows(
-                GlobalTransactionException.class,
-                () -> RaftTaskUtil.futureGet(future)
-        );
+        GlobalTransactionException exception =
+                assertThrows(GlobalTransactionException.class, () -> RaftTaskUtil.futureGet(future));
 
         assertEquals(TransactionExceptionCode.FailedWriteSession, exception.getCode());
         assertTrue(exception.getMessage().contains("Fail to store global session"));
@@ -122,10 +109,8 @@ public class RaftTaskUtilTest {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         future.completeExceptionally(new ExecutionException("Error message", null));
 
-        GlobalTransactionException exception = assertThrows(
-                GlobalTransactionException.class,
-                () -> RaftTaskUtil.futureGet(future)
-        );
+        GlobalTransactionException exception =
+                assertThrows(GlobalTransactionException.class, () -> RaftTaskUtil.futureGet(future));
 
         assertEquals(TransactionExceptionCode.FailedWriteSession, exception.getCode());
     }
@@ -146,16 +131,11 @@ public class RaftTaskUtilTest {
     @Test
     public void testFutureGetPreservesTransactionExceptionCode() {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
-        TransactionException cause = new TransactionException(
-                TransactionExceptionCode.LockKeyConflict,
-                "Lock conflict detected"
-        );
+        TransactionException cause =
+                new TransactionException(TransactionExceptionCode.LockKeyConflict, "Lock conflict detected");
         future.completeExceptionally(cause);
 
-        TransactionException exception = assertThrows(
-                TransactionException.class,
-                () -> RaftTaskUtil.futureGet(future)
-        );
+        TransactionException exception = assertThrows(TransactionException.class, () -> RaftTaskUtil.futureGet(future));
 
         assertEquals(TransactionExceptionCode.LockKeyConflict, exception.getCode());
         assertEquals("Lock conflict detected", exception.getMessage());
@@ -166,15 +146,12 @@ public class RaftTaskUtilTest {
         // Test with various TransactionException subclasses
         CompletableFuture<Boolean> future1 = new CompletableFuture<>();
         future1.completeExceptionally(
-                new GlobalTransactionException(TransactionExceptionCode.FailedToSendBranchCommitRequest)
-        );
+                new GlobalTransactionException(TransactionExceptionCode.FailedToSendBranchCommitRequest));
 
         assertThrows(GlobalTransactionException.class, () -> RaftTaskUtil.futureGet(future1));
 
         CompletableFuture<Boolean> future2 = new CompletableFuture<>();
-        future2.completeExceptionally(
-                new TransactionException(TransactionExceptionCode.FailedToAddBranch)
-        );
+        future2.completeExceptionally(new TransactionException(TransactionExceptionCode.FailedToAddBranch));
 
         assertThrows(TransactionException.class, () -> RaftTaskUtil.futureGet(future2));
     }
@@ -205,10 +182,8 @@ public class RaftTaskUtilTest {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         future.completeExceptionally(new InterruptedException("Specific interruption reason"));
 
-        GlobalTransactionException exception = assertThrows(
-                GlobalTransactionException.class,
-                () -> RaftTaskUtil.futureGet(future)
-        );
+        GlobalTransactionException exception =
+                assertThrows(GlobalTransactionException.class, () -> RaftTaskUtil.futureGet(future));
 
         // The exception message should contain reference to the failure
         assertTrue(exception.getMessage().contains("Fail to store global session"));
@@ -218,17 +193,14 @@ public class RaftTaskUtilTest {
     @Test
     public void testFutureGetWithNestedExecutionException() {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
-        ExecutionException nested = new ExecutionException(
-                new TransactionException(TransactionExceptionCode.BeginFailed, "Begin failed")
-        );
+        ExecutionException nested =
+                new ExecutionException(new TransactionException(TransactionExceptionCode.BeginFailed, "Begin failed"));
         future.completeExceptionally(nested);
 
         // The ExecutionException's cause is another ExecutionException,
         // which is not a TransactionException, so should be wrapped
-        GlobalTransactionException exception = assertThrows(
-                GlobalTransactionException.class,
-                () -> RaftTaskUtil.futureGet(future)
-        );
+        GlobalTransactionException exception =
+                assertThrows(GlobalTransactionException.class, () -> RaftTaskUtil.futureGet(future));
 
         // Should wrap the ExecutionException since it's not TransactionException
         assertEquals(TransactionExceptionCode.FailedWriteSession, exception.getCode());

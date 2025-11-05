@@ -14,13 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.seata.server.raft;
+package org.apache.seata.server.cluster.raft;
 
 import org.apache.seata.common.ConfigurationKeys;
 import org.apache.seata.common.XID;
 import org.apache.seata.config.ConfigurationCache;
 import org.apache.seata.server.BaseSpringBootTest;
-import org.apache.seata.server.cluster.raft.RaftServerManager;
 import org.apache.seata.server.lock.LockerManagerFactory;
 import org.apache.seata.server.session.SessionHolder;
 import org.apache.seata.server.store.StoreConfig;
@@ -68,10 +67,8 @@ public class RaftServerManagerEdgeCaseTest extends BaseSpringBootTest {
         System.setProperty(ConfigurationKeys.SERVER_RAFT_SERVER_ADDR, "invalid-format-no-port");
         StoreConfig.setStartupParameter("raft", "raft", "raft");
 
-        IllegalArgumentException exception = Assertions.assertThrows(
-                IllegalArgumentException.class,
-                RaftServerManager::init
-        );
+        IllegalArgumentException exception =
+                Assertions.assertThrows(IllegalArgumentException.class, RaftServerManager::init);
         Assertions.assertTrue(exception.getMessage().contains("fail to parse initConf"));
     }
 
@@ -81,14 +78,10 @@ public class RaftServerManagerEdgeCaseTest extends BaseSpringBootTest {
         System.setProperty(ConfigurationKeys.SERVER_RAFT_SERVER_ADDR, "   ");
         StoreConfig.setStartupParameter("raft", "raft", "raft");
 
-        IllegalArgumentException exception = Assertions.assertThrows(
-                IllegalArgumentException.class,
-                RaftServerManager::init
-        );
-        Assertions.assertTrue(
-                exception.getMessage().contains("Raft store mode must config") ||
-                exception.getMessage().contains("fail to parse")
-        );
+        IllegalArgumentException exception =
+                Assertions.assertThrows(IllegalArgumentException.class, RaftServerManager::init);
+        Assertions.assertTrue(exception.getMessage().contains("Raft store mode must config")
+                || exception.getMessage().contains("fail to parse"));
     }
 
     @Test
@@ -97,8 +90,8 @@ public class RaftServerManagerEdgeCaseTest extends BaseSpringBootTest {
         System.setProperty("server.raftPort", "0");
         System.setProperty(
                 ConfigurationKeys.SERVER_RAFT_SERVER_ADDR,
-                "192.0.2.1:9091,192.0.2.2:9092,192.0.2.3:9093"  // TEST-NET-1 addresses that won't match
-        );
+                "192.0.2.1:9091,192.0.2.2:9092,192.0.2.3:9093" // TEST-NET-1 addresses that won't match
+                );
         StoreConfig.setStartupParameter("raft", "raft", "raft");
 
         // This should fail because no peer IP matches the local IP when port is 0
@@ -110,8 +103,7 @@ public class RaftServerManagerEdgeCaseTest extends BaseSpringBootTest {
         System.setProperty("server.raftPort", "9091");
         System.setProperty(
                 ConfigurationKeys.SERVER_RAFT_SERVER_ADDR,
-                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093"
-        );
+                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093");
         StoreConfig.setStartupParameter("raft", "raft", "raft");
 
         RaftServerManager.init();
@@ -123,8 +115,7 @@ public class RaftServerManagerEdgeCaseTest extends BaseSpringBootTest {
         System.setProperty("server.raftPort", "9091");
         System.setProperty(
                 ConfigurationKeys.SERVER_RAFT_SERVER_ADDR,
-                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093"
-        );
+                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093");
         StoreConfig.setStartupParameter("raft", "raft", "raft");
 
         RaftServerManager.init();
@@ -136,8 +127,7 @@ public class RaftServerManagerEdgeCaseTest extends BaseSpringBootTest {
         System.setProperty("server.raftPort", "9091");
         System.setProperty(
                 ConfigurationKeys.SERVER_RAFT_SERVER_ADDR,
-                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093"
-        );
+                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093");
         StoreConfig.setStartupParameter("raft", "raft", "raft");
 
         RaftServerManager.init();
@@ -150,8 +140,7 @@ public class RaftServerManagerEdgeCaseTest extends BaseSpringBootTest {
         System.setProperty("server.raftPort", "9091");
         System.setProperty(
                 ConfigurationKeys.SERVER_RAFT_SERVER_ADDR,
-                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093"
-        );
+                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093");
         StoreConfig.setStartupParameter("raft", "raft", "raft");
 
         RaftServerManager.init();
@@ -165,8 +154,7 @@ public class RaftServerManagerEdgeCaseTest extends BaseSpringBootTest {
         System.setProperty("server.raftPort", "9091");
         System.setProperty(
                 ConfigurationKeys.SERVER_RAFT_SERVER_ADDR,
-                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093"
-        );
+                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093");
         System.setProperty(ConfigurationKeys.SERVER_RAFT_GROUP, "custom-group");
         StoreConfig.setStartupParameter("raft", "raft", "raft");
 
@@ -180,8 +168,7 @@ public class RaftServerManagerEdgeCaseTest extends BaseSpringBootTest {
         System.setProperty("server.raftPort", "9091");
         System.setProperty(
                 ConfigurationKeys.SERVER_RAFT_SERVER_ADDR,
-                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093"
-        );
+                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093");
         System.setProperty(ConfigurationKeys.SERVER_RAFT_ELECTION_TIMEOUT_MS, "2000");
         StoreConfig.setStartupParameter("raft", "raft", "raft");
 
@@ -193,8 +180,7 @@ public class RaftServerManagerEdgeCaseTest extends BaseSpringBootTest {
         System.setProperty("server.raftPort", "9091");
         System.setProperty(
                 ConfigurationKeys.SERVER_RAFT_SERVER_ADDR,
-                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093"
-        );
+                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093");
         System.setProperty(ConfigurationKeys.SERVER_RAFT_SNAPSHOT_INTERVAL, "300");
         StoreConfig.setStartupParameter("raft", "raft", "raft");
 
@@ -206,8 +192,7 @@ public class RaftServerManagerEdgeCaseTest extends BaseSpringBootTest {
         System.setProperty("server.raftPort", "9091");
         System.setProperty(
                 ConfigurationKeys.SERVER_RAFT_SERVER_ADDR,
-                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093"
-        );
+                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093");
         System.setProperty(ConfigurationKeys.SERVER_RAFT_APPLY_BATCH, "64");
         System.setProperty(ConfigurationKeys.SERVER_RAFT_MAX_APPEND_BUFFER_SIZE, "524288");
         System.setProperty(ConfigurationKeys.SERVER_RAFT_DISRUPTOR_BUFFER_SIZE, "8192");
@@ -229,8 +214,7 @@ public class RaftServerManagerEdgeCaseTest extends BaseSpringBootTest {
         System.setProperty("server.raftPort", "9091");
         System.setProperty(
                 ConfigurationKeys.SERVER_RAFT_SERVER_ADDR,
-                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093"
-        );
+                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093");
         StoreConfig.setStartupParameter("raft", "raft", "raft");
 
         RaftServerManager.init();
@@ -243,8 +227,7 @@ public class RaftServerManagerEdgeCaseTest extends BaseSpringBootTest {
         System.setProperty("server.raftPort", "9091");
         System.setProperty(
                 ConfigurationKeys.SERVER_RAFT_SERVER_ADDR,
-                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093"
-        );
+                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093");
         StoreConfig.setStartupParameter("raft", "raft", "raft");
 
         RaftServerManager.init();
@@ -259,8 +242,7 @@ public class RaftServerManagerEdgeCaseTest extends BaseSpringBootTest {
         System.setProperty("server.raftPort", "9091");
         System.setProperty(
                 ConfigurationKeys.SERVER_RAFT_SERVER_ADDR,
-                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093"
-        );
+                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093");
         StoreConfig.setStartupParameter("raft", "raft", "raft");
 
         RaftServerManager.init();
@@ -275,8 +257,7 @@ public class RaftServerManagerEdgeCaseTest extends BaseSpringBootTest {
         System.setProperty("server.raftPort", "9091");
         System.setProperty(
                 ConfigurationKeys.SERVER_RAFT_SERVER_ADDR,
-                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093"
-        );
+                XID.getIpAddress() + ":9091," + XID.getIpAddress() + ":9092," + XID.getIpAddress() + ":9093");
         StoreConfig.setStartupParameter("raft", "raft", "raft");
 
         RaftServerManager.init();
