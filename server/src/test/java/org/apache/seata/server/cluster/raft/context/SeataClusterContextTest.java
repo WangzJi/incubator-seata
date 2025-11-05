@@ -20,6 +20,8 @@ import org.apache.seata.server.BaseSpringBootTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -156,7 +158,9 @@ public class SeataClusterContextTest extends BaseSpringBootTest {
 
     @Test
     public void testBindGroupWithVeryLongName() {
-        String longGroup = "very-long-group-name-" + "a".repeat(100);
+        char[] chars = new char[100];
+        Arrays.fill(chars, 'a');
+        String longGroup = "very-long-group-name-" + new String(chars);
         SeataClusterContext.bindGroup(longGroup);
         assertEquals(longGroup, SeataClusterContext.getGroup());
     }
