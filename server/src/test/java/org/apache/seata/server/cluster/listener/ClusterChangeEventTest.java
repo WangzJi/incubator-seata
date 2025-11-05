@@ -17,7 +17,6 @@
 package org.apache.seata.server.cluster.listener;
 
 import org.junit.jupiter.api.Test;
-
 import java.time.Clock;
 
 import static org.junit.jupiter.api.Assertions.*;

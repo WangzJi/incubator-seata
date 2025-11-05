@@ -18,7 +18,6 @@ package org.apache.seata.server.cluster.raft.sync.msg.dto;
 
 import org.apache.seata.common.metadata.Node;
 import org.junit.jupiter.api.Test;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
