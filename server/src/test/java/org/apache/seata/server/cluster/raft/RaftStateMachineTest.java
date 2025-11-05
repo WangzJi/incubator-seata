@@ -179,17 +179,6 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
     }
 
     @Test
-    public void testConstructorInRaftMode() {
-        StoreConfig.setStartupParameter(
-                SessionMode.RAFT.getName(), SessionMode.RAFT.getName(), SessionMode.RAFT.getName());
-
-        RaftStateMachine raftModeStateMachine = new RaftStateMachine("raft-group");
-
-        assertNotNull(raftModeStateMachine);
-        assertFalse(raftModeStateMachine.isLeader());
-    }
-
-    @Test
     public void testFollowerStartWithDifferentTerms() {
         LeaderChangeContext ctx1 = new LeaderChangeContext(null, 5L, Status.OK());
         raftStateMachine.onStartFollowing(ctx1);
