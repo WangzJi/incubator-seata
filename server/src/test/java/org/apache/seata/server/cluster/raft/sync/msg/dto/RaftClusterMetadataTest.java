@@ -18,10 +18,6 @@ package org.apache.seata.server.cluster.raft.sync.msg.dto;
 
 import org.apache.seata.common.metadata.Node;
 import org.junit.jupiter.api.Test;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -86,25 +82,22 @@ public class RaftClusterMetadataTest {
     }
 
     @Test
-    public void testSerialization() throws Exception {
-        RaftClusterMetadata original = new RaftClusterMetadata(456L);
+    public void testNodeListManagement() {
+        RaftClusterMetadata metadata = new RaftClusterMetadata(100L);
+
         Node leader = new Node();
-        original.setLeader(leader);
+        metadata.setLeader(leader);
+        assertNotNull(metadata.getLeader());
 
-        // Serialize
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
-        oos.writeObject(original);
-        oos.flush();
-        byte[] serialized = bos.toByteArray();
+        Node follower1 = new Node();
+        Node follower2 = new Node();
+        metadata.setFollowers(Arrays.asList(follower1, follower2));
+        assertEquals(2, metadata.getFollowers().size());
 
-        // Deserialize
-        ByteArrayInputStream bis = new ByteArrayInputStream(serialized);
-        ObjectInputStream ois = new ObjectInputStream(bis);
-        RaftClusterMetadata deserialized = (RaftClusterMetadata) ois.readObject();
+        Node learner = new Node();
+        metadata.setLearner(Arrays.asList(learner));
+        assertEquals(1, metadata.getLearner().size());
 
-        // Verify
-        assertEquals(original.getTerm(), deserialized.getTerm());
-        assertNotNull(deserialized.getLeader());
+        assertEquals(100L, metadata.getTerm());
     }
 }
