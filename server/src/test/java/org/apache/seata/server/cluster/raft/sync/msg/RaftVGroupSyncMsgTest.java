@@ -37,7 +37,9 @@ public class RaftVGroupSyncMsgTest {
 
     @Test
     public void testConstructorWithParameters() {
-        MappingDO mappingDO = new MappingDO("vgroup", "cluster");
+        MappingDO mappingDO = new MappingDO();
+        mappingDO.setVGroup("vgroup");
+        mappingDO.setCluster("cluster");
         RaftVGroupSyncMsg msg = new RaftVGroupSyncMsg(mappingDO, RaftSyncMsgType.ADD_VGROUP_MAPPING);
 
         assertEquals(RaftSyncMsgType.ADD_VGROUP_MAPPING, msg.getMsgType());
@@ -47,7 +49,9 @@ public class RaftVGroupSyncMsgTest {
     @Test
     public void testSetAndGetMappingDO() {
         RaftVGroupSyncMsg msg = new RaftVGroupSyncMsg();
-        MappingDO mappingDO = new MappingDO("vgroup2", "cluster2");
+        MappingDO mappingDO = new MappingDO();
+        mappingDO.setVGroup("vgroup2");
+        mappingDO.setCluster("cluster2");
         msg.setMappingDO(mappingDO);
 
         assertEquals(mappingDO, msg.getMappingDO());
@@ -55,7 +59,9 @@ public class RaftVGroupSyncMsgTest {
 
     @Test
     public void testSerialization() throws Exception {
-        MappingDO mappingDO = new MappingDO("test-vgroup", "test-cluster");
+        MappingDO mappingDO = new MappingDO();
+        mappingDO.setVGroup("test-vgroup");
+        mappingDO.setCluster("test-cluster");
         RaftVGroupSyncMsg original = new RaftVGroupSyncMsg(mappingDO, RaftSyncMsgType.REMOVE_VGROUP_MAPPING);
 
         // Serialize
