@@ -73,7 +73,7 @@ public class RaftTaskUtilTest {
                 TransactionExceptionCode.BranchRegisterFailed,
                 "Branch registration failed"
         );
-        future.completeExceptionally(new ExecutionException(cause));
+        future.completeExceptionally(cause);
 
         TransactionException exception = assertThrows(
                 TransactionException.class,
@@ -91,7 +91,7 @@ public class RaftTaskUtilTest {
                 TransactionExceptionCode.GlobalTransactionNotExist,
                 "Global transaction does not exist"
         );
-        future.completeExceptionally(new ExecutionException(cause));
+        future.completeExceptionally(cause);
 
         GlobalTransactionException exception = assertThrows(
                 GlobalTransactionException.class,
@@ -106,7 +106,7 @@ public class RaftTaskUtilTest {
     public void testFutureGetWithNonTransactionExceptionInExecutionException() {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         RuntimeException cause = new RuntimeException("Unexpected error");
-        future.completeExceptionally(new ExecutionException(cause));
+        future.completeExceptionally(cause);
 
         GlobalTransactionException exception = assertThrows(
                 GlobalTransactionException.class,
@@ -150,7 +150,7 @@ public class RaftTaskUtilTest {
                 TransactionExceptionCode.LockKeyConflict,
                 "Lock conflict detected"
         );
-        future.completeExceptionally(new ExecutionException(cause));
+        future.completeExceptionally(cause);
 
         TransactionException exception = assertThrows(
                 TransactionException.class,
@@ -165,16 +165,16 @@ public class RaftTaskUtilTest {
     public void testFutureGetWithDifferentTransactionExceptionTypes() {
         // Test with various TransactionException subclasses
         CompletableFuture<Boolean> future1 = new CompletableFuture<>();
-        future1.completeExceptionally(new ExecutionException(
+        future1.completeExceptionally(
                 new GlobalTransactionException(TransactionExceptionCode.FailedToSendBranchCommitRequest)
-        ));
+        );
 
         assertThrows(GlobalTransactionException.class, () -> RaftTaskUtil.futureGet(future1));
 
         CompletableFuture<Boolean> future2 = new CompletableFuture<>();
-        future2.completeExceptionally(new ExecutionException(
+        future2.completeExceptionally(
                 new TransactionException(TransactionExceptionCode.FailedToAddBranch)
-        ));
+        );
 
         assertThrows(TransactionException.class, () -> RaftTaskUtil.futureGet(future2));
     }
@@ -221,16 +221,16 @@ public class RaftTaskUtilTest {
         ExecutionException nested = new ExecutionException(
                 new TransactionException(TransactionExceptionCode.BeginFailed, "Begin failed")
         );
-        future.completeExceptionally(new ExecutionException(nested));
+        future.completeExceptionally(nested);
 
-        // The outer ExecutionException's cause is another ExecutionException,
-        // but futureGet should handle it and extract the TransactionException
+        // The ExecutionException's cause is another ExecutionException,
+        // which is not a TransactionException, so should be wrapped
         GlobalTransactionException exception = assertThrows(
                 GlobalTransactionException.class,
                 () -> RaftTaskUtil.futureGet(future)
         );
 
-        // Should wrap the nested ExecutionException since its cause is not TransactionException
+        // Should wrap the ExecutionException since it's not TransactionException
         assertEquals(TransactionExceptionCode.FailedWriteSession, exception.getCode());
     }
 }

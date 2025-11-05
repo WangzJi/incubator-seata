@@ -19,6 +19,7 @@ package org.apache.seata.server.cluster.raft;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.entity.LeaderChangeContext;
 import org.apache.seata.common.store.SessionMode;
+import org.apache.seata.server.BaseSpringBootTest;
 import org.apache.seata.server.cluster.raft.snapshot.StoreSnapshotFile;
 import org.apache.seata.server.cluster.raft.snapshot.metadata.LeaderMetadataSnapshotFile;
 import org.apache.seata.server.cluster.raft.sync.msg.dto.RaftClusterMetadata;
@@ -32,7 +33,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class RaftStateMachineTest {
+public class RaftStateMachineTest extends BaseSpringBootTest {
 
     private RaftStateMachine raftStateMachine;
     private static final String TEST_GROUP = "test-group";

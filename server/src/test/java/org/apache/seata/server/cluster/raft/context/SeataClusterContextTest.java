@@ -16,6 +16,7 @@
  */
 package org.apache.seata.server.cluster.raft.context;
 
+import org.apache.seata.server.BaseSpringBootTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 /**
  * Unit tests for SeataClusterContext covering context management logic.
  */
-public class SeataClusterContextTest {
+public class SeataClusterContextTest extends BaseSpringBootTest {
 
     @AfterEach
     public void cleanup() {
