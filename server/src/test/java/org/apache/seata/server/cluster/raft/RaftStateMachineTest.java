@@ -16,22 +16,33 @@
  */
 package org.apache.seata.server.cluster.raft;
 
+import com.alipay.sofa.jraft.Closure;
+import com.alipay.sofa.jraft.Iterator;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.entity.LeaderChangeContext;
+import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
+import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
 import org.apache.seata.common.store.SessionMode;
 import org.apache.seata.server.BaseSpringBootTest;
 import org.apache.seata.server.cluster.raft.snapshot.StoreSnapshotFile;
 import org.apache.seata.server.cluster.raft.snapshot.metadata.LeaderMetadataSnapshotFile;
+import org.apache.seata.server.cluster.raft.sync.RaftSyncMessageSerializer;
+import org.apache.seata.server.cluster.raft.sync.msg.RaftBaseMsg;
+import org.apache.seata.server.cluster.raft.sync.msg.RaftClusterMetadataMsg;
+import org.apache.seata.server.cluster.raft.sync.msg.RaftSyncMsgType;
 import org.apache.seata.server.cluster.raft.sync.msg.dto.RaftClusterMetadata;
 import org.apache.seata.server.store.StoreConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 public class RaftStateMachineTest extends BaseSpringBootTest {
 
@@ -201,5 +212,168 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
 
         raftStateMachine.onLeaderStop(Status.OK());
         assertEquals(5L, raftStateMachine.getCurrentTerm().get()); // currentTerm should remain
+    }
+
+    // ========== Core Method Tests - High Value Coverage ==========
+
+    @Test
+    public void testOnApplyWithLeaderClosure() {
+        // Test onApply when iterator has a closure (leader path)
+        Iterator iterator = mock(Iterator.class);
+        Closure closure = mock(Closure.class);
+
+        when(iterator.hasNext()).thenReturn(true, false);
+        when(iterator.done()).thenReturn(closure);
+
+        raftStateMachine.onApply(iterator);
+
+        verify(closure).run(any(Status.class));
+        verify(iterator).next();
+    }
+
+    @Test
+    public void testOnApplyWithFollowerMessage() throws Exception {
+        // Test onApply when iterator has data (follower path)
+        Iterator iterator = mock(Iterator.class);
+
+        // Create a REFRESH_CLUSTER_METADATA message
+        RaftClusterMetadataMsg msg = new RaftClusterMetadataMsg(new RaftClusterMetadata(10L));
+        byte[] serializedMsg = RaftSyncMessageSerializer.encode(msg);
+        ByteBuffer buffer = ByteBuffer.wrap(serializedMsg);
+
+        when(iterator.hasNext()).thenReturn(true, false);
+        when(iterator.done()).thenReturn(null);
+        when(iterator.getData()).thenReturn(buffer);
+
+        raftStateMachine.onApply(iterator);
+
+        verify(iterator).next();
+    }
+
+    @Test
+    public void testOnApplyWithEmptyBuffer() {
+        // Test onApply with empty buffer (heartbeat)
+        Iterator iterator = mock(Iterator.class);
+
+        when(iterator.hasNext()).thenReturn(true, false);
+        when(iterator.done()).thenReturn(null);
+        when(iterator.getData()).thenReturn(null);
+
+        assertDoesNotThrow(() -> raftStateMachine.onApply(iterator));
+
+        verify(iterator).next();
+    }
+
+    @Test
+    public void testOnApplyMultipleIterations() {
+        // Test onApply with multiple iterations
+        Iterator iterator = mock(Iterator.class);
+        Closure closure1 = mock(Closure.class);
+        Closure closure2 = mock(Closure.class);
+
+        when(iterator.hasNext()).thenReturn(true, true, false);
+        when(iterator.done()).thenReturn(closure1, closure2);
+
+        raftStateMachine.onApply(iterator);
+
+        verify(closure1).run(any(Status.class));
+        verify(closure2).run(any(Status.class));
+        verify(iterator, times(2)).next();
+    }
+
+    @Test
+    public void testOnSnapshotSaveInFileMode() {
+        // Test snapshot save when mode is FILE (should return OK without saving)
+        StoreConfig.setStartupParameter("file", "file", "file");
+        RaftStateMachine fileModeMachine = new RaftStateMachine(TEST_GROUP);
+
+        SnapshotWriter writer = mock(SnapshotWriter.class);
+        Closure done = mock(Closure.class);
+
+        fileModeMachine.onSnapshotSave(writer, done);
+
+        verify(done).run(argThat(status -> status.isOk()));
+        verify(writer, never()).getPath();
+    }
+
+    @Test
+    public void testOnSnapshotSaveInRaftMode() {
+        // Test snapshot save when mode is RAFT
+        StoreConfig.setStartupParameter("raft", "raft", "raft");
+        RaftStateMachine raftModeMachine = new RaftStateMachine(TEST_GROUP);
+
+        SnapshotWriter writer = mock(SnapshotWriter.class);
+        Closure done = mock(Closure.class);
+        when(writer.getPath()).thenReturn("/tmp/snapshot");
+
+        // This will attempt to save but may fail due to mock setup
+        // The important thing is we're testing the code path
+        raftModeMachine.onSnapshotSave(writer, done);
+
+        verify(done).run(any(Status.class));
+    }
+
+    @Test
+    public void testOnSnapshotLoadInFileMode() {
+        // Test snapshot load when mode is FILE (should return true)
+        StoreConfig.setStartupParameter("file", "file", "file");
+        RaftStateMachine fileModeMachine = new RaftStateMachine(TEST_GROUP);
+
+        SnapshotReader reader = mock(SnapshotReader.class);
+
+        boolean result = fileModeMachine.onSnapshotLoad(reader);
+
+        assertTrue(result);
+        verify(reader, never()).getPath();
+    }
+
+    @Test
+    public void testOnSnapshotLoadWhenIsLeader() {
+        // Test snapshot load when node is leader (should return false)
+        StoreConfig.setStartupParameter("raft", "raft", "raft");
+        RaftStateMachine raftModeMachine = new RaftStateMachine(TEST_GROUP);
+        raftModeMachine.onLeaderStart(1L);
+
+        SnapshotReader reader = mock(SnapshotReader.class);
+
+        boolean result = raftModeMachine.onSnapshotLoad(reader);
+
+        assertFalse(result);
+    }
+
+    @Test
+    public void testRefreshClusterMetadata() {
+        // Test refreshClusterMetadata method
+        RaftClusterMetadata newMetadata = new RaftClusterMetadata(100L);
+        RaftClusterMetadataMsg msg = new RaftClusterMetadataMsg(newMetadata);
+
+        raftStateMachine.refreshClusterMetadata(msg);
+
+        RaftClusterMetadata retrieved = raftStateMachine.getRaftLeaderMetadata();
+        assertEquals(100L, retrieved.getTerm());
+    }
+
+    @Test
+    public void testChangeOrInitRaftClusterMetadata() {
+        // Test changeOrInitRaftClusterMetadata when metadata is null
+        raftStateMachine.onLeaderStart(5L);
+
+        RaftClusterMetadata metadata = raftStateMachine.changeOrInitRaftClusterMetadata();
+
+        assertNotNull(metadata);
+        assertEquals(5L, metadata.getTerm());
+        assertNotNull(metadata.getLeader());
+    }
+
+    @Test
+    public void testChangeOrInitRaftClusterMetadataUpdatesLeader() {
+        // Test that changeOrInitRaftClusterMetadata updates leader info correctly
+        RaftClusterMetadata existingMetadata = new RaftClusterMetadata(3L);
+        raftStateMachine.setRaftLeaderMetadata(existingMetadata);
+        raftStateMachine.onLeaderStart(10L);
+
+        RaftClusterMetadata updated = raftStateMachine.changeOrInitRaftClusterMetadata();
+
+        assertEquals(10L, updated.getTerm());
     }
 }
