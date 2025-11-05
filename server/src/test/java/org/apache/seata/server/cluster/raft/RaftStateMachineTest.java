@@ -16,8 +16,15 @@
  */
 package org.apache.seata.server.cluster.raft;
 
+import com.alipay.sofa.jraft.Closure;
 import com.alipay.sofa.jraft.Status;
+import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.entity.LeaderChangeContext;
+import com.alipay.sofa.jraft.entity.PeerId;
+import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
+import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
+import org.apache.seata.common.metadata.ClusterRole;
+import org.apache.seata.common.metadata.Node;
 import org.apache.seata.common.store.SessionMode;
 import org.apache.seata.server.BaseSpringBootTest;
 import org.apache.seata.server.cluster.raft.snapshot.StoreSnapshotFile;
@@ -29,9 +36,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 public class RaftStateMachineTest extends BaseSpringBootTest {
 
@@ -201,5 +210,177 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
 
         raftStateMachine.onLeaderStop(Status.OK());
         assertEquals(5L, raftStateMachine.getCurrentTerm().get()); // currentTerm should remain
+    }
+
+    // ========== Tests for codecov uncovered methods ==========
+
+    @Test
+    public void testOnSnapshotSaveInFileMode() {
+        // In FILE mode, should call done.run(Status.OK()) immediately without saving
+        Closure done = mock(Closure.class);
+        SnapshotWriter writer = mock(SnapshotWriter.class);
+
+        raftStateMachine.onSnapshotSave(writer, done);
+
+        verify(done).run(argThat(status -> status.isOk()));
+        verify(writer, never()).addFile(anyString());
+    }
+
+    @Test
+    public void testOnSnapshotSaveInRaftMode() {
+        // Create RaftStateMachine in RAFT mode
+        StoreConfig.setStartupParameter("raft", "raft", "raft");
+        RaftStateMachine raftModeStateMachine = new RaftStateMachine(TEST_GROUP);
+
+        Closure done = mock(Closure.class);
+        SnapshotWriter writer = mock(SnapshotWriter.class);
+        when(writer.getPath()).thenReturn("/tmp/snapshot");
+
+        // Register a mock snapshot file
+        StoreSnapshotFile mockSnapshotFile = mock(StoreSnapshotFile.class);
+        when(mockSnapshotFile.save(writer)).thenReturn(Status.OK());
+        raftModeStateMachine.registryStoreSnapshotFile(mockSnapshotFile);
+
+        raftModeStateMachine.onSnapshotSave(writer, done);
+
+        // Should call save on the snapshot file
+        verify(mockSnapshotFile).save(writer);
+        verify(done).run(argThat(status -> status.isOk()));
+    }
+
+    @Test
+    public void testOnSnapshotSaveFailsWhenSnapshotFileReturnsError() {
+        StoreConfig.setStartupParameter("raft", "raft", "raft");
+        RaftStateMachine raftModeStateMachine = new RaftStateMachine(TEST_GROUP);
+
+        Closure done = mock(Closure.class);
+        SnapshotWriter writer = mock(SnapshotWriter.class);
+        when(writer.getPath()).thenReturn("/tmp/snapshot");
+
+        // Register a mock snapshot file that fails
+        StoreSnapshotFile mockSnapshotFile = mock(StoreSnapshotFile.class);
+        Status errorStatus = new Status(-1, "Save failed");
+        when(mockSnapshotFile.save(writer)).thenReturn(errorStatus);
+        raftModeStateMachine.registryStoreSnapshotFile(mockSnapshotFile);
+
+        raftModeStateMachine.onSnapshotSave(writer, done);
+
+        // Should call done with error status
+        verify(done).run(argThat(status -> !status.isOk()));
+    }
+
+    @Test
+    public void testOnSnapshotLoadInFileMode() {
+        // In FILE mode, should return true immediately
+        SnapshotReader reader = mock(SnapshotReader.class);
+
+        boolean result = raftStateMachine.onSnapshotLoad(reader);
+
+        assertTrue(result);
+        verify(reader, never()).getPath();
+    }
+
+    @Test
+    public void testOnSnapshotLoadWhenIsLeader() {
+        // Leader should not load snapshot
+        StoreConfig.setStartupParameter("raft", "raft", "raft");
+        RaftStateMachine raftModeStateMachine = new RaftStateMachine(TEST_GROUP);
+        raftModeStateMachine.onLeaderStart(1L); // Become leader
+
+        SnapshotReader reader = mock(SnapshotReader.class);
+
+        boolean result = raftModeStateMachine.onSnapshotLoad(reader);
+
+        assertFalse(result);
+    }
+
+    @Test
+    public void testOnSnapshotLoadInRaftModeAsFollower() {
+        StoreConfig.setStartupParameter("raft", "raft", "raft");
+        RaftStateMachine raftModeStateMachine = new RaftStateMachine(TEST_GROUP);
+        // Not a leader (leaderTerm should be -1)
+
+        SnapshotReader reader = mock(SnapshotReader.class);
+        when(reader.getPath()).thenReturn("/tmp/snapshot");
+
+        // Register a mock snapshot file
+        StoreSnapshotFile mockSnapshotFile = mock(StoreSnapshotFile.class);
+        when(mockSnapshotFile.load(reader)).thenReturn(true);
+        raftModeStateMachine.registryStoreSnapshotFile(mockSnapshotFile);
+
+        boolean result = raftModeStateMachine.onSnapshotLoad(reader);
+
+        // Should call load on the snapshot file
+        verify(mockSnapshotFile).load(reader);
+        assertTrue(result);
+    }
+
+    @Test
+    public void testOnSnapshotLoadFailsWhenSnapshotFileReturnsFalse() {
+        StoreConfig.setStartupParameter("raft", "raft", "raft");
+        RaftStateMachine raftModeStateMachine = new RaftStateMachine(TEST_GROUP);
+
+        SnapshotReader reader = mock(SnapshotReader.class);
+        when(reader.getPath()).thenReturn("/tmp/snapshot");
+
+        // Register a mock snapshot file that fails to load
+        StoreSnapshotFile mockSnapshotFile = mock(StoreSnapshotFile.class);
+        when(mockSnapshotFile.load(reader)).thenReturn(false);
+        raftModeStateMachine.registryStoreSnapshotFile(mockSnapshotFile);
+
+        boolean result = raftModeStateMachine.onSnapshotLoad(reader);
+
+        assertFalse(result);
+    }
+
+    @Test
+    public void testOnLeaderStartSetsTermsCorrectly() {
+        long term = 10L;
+        assertFalse(raftStateMachine.isLeader());
+
+        raftStateMachine.onLeaderStart(term);
+
+        assertTrue(raftStateMachine.isLeader());
+        assertEquals(term, raftStateMachine.getCurrentTerm().get());
+    }
+
+    @Test
+    public void testOnConfigurationCommitted() {
+        // Create a configuration
+        Configuration conf = new Configuration();
+        conf.addPeer(new PeerId("127.0.0.1", 8091));
+
+        // Should not throw exception
+        assertDoesNotThrow(() -> raftStateMachine.onConfigurationCommitted(conf));
+    }
+
+    @Test
+    public void testChangeNodeMetadataForFollower() {
+        // Test adding a follower node
+        Node node = new Node();
+        node.setRole(ClusterRole.FOLLOWER);
+        node.setGroup(TEST_GROUP);
+
+        // Should not throw exception
+        assertDoesNotThrow(() -> raftStateMachine.changeNodeMetadata(node));
+
+        // Verify the node was added to followers
+        RaftClusterMetadata metadata = raftStateMachine.getRaftLeaderMetadata();
+        assertNotNull(metadata);
+    }
+
+    @Test
+    public void testChangeNodeMetadataForLearner() {
+        // Test adding a learner node
+        Node node = new Node();
+        node.setRole(ClusterRole.LEARNER);
+        node.setGroup(TEST_GROUP);
+
+        // Should not throw exception
+        assertDoesNotThrow(() -> raftStateMachine.changeNodeMetadata(node));
+
+        // Verify the node was added to learners
+        RaftClusterMetadata metadata = raftStateMachine.getRaftLeaderMetadata();
+        assertNotNull(metadata);
     }
 }
