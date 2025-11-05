@@ -532,7 +532,7 @@ public class DefaultCoreTest extends BaseSpringBootTest {
     @Test
     public void commitAsyncCommitTest() throws Exception {
         String xid = core.begin(applicationId, txServiceGroup, txName, timeout);
-        Long branchId = core.branchRegister(BranchType.AT, resourceId, clientId, xid, applicationData, lockKeys_1);
+        core.branchRegister(BranchType.AT, resourceId, clientId, xid, applicationData, lockKeys_1);
         globalSession = SessionHolder.findGlobalSession(xid);
 
         core.mockCore(BranchType.AT, new MockCore(BranchStatus.PhaseTwo_Committed, BranchStatus.PhaseTwo_Rollbacked) {
