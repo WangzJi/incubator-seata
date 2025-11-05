@@ -18,6 +18,7 @@ package org.apache.seata.server.cluster.raft.sync.msg.dto;
 
 import org.apache.seata.common.metadata.Node;
 import org.junit.jupiter.api.Test;
+
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;

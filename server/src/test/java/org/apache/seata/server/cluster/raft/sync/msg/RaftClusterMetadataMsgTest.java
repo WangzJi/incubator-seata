@@ -18,6 +18,7 @@ package org.apache.seata.server.cluster.raft.sync.msg;
 
 import org.apache.seata.server.cluster.raft.sync.msg.dto.RaftClusterMetadata;
 import org.junit.jupiter.api.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -81,6 +82,8 @@ public class RaftClusterMetadataMsgTest {
 
         // Verify
         assertEquals(original.getMsgType(), deserialized.getMsgType());
-        assertEquals(original.getRaftClusterMetadata().getTerm(), deserialized.getRaftClusterMetadata().getTerm());
+        assertEquals(
+                original.getRaftClusterMetadata().getTerm(),
+                deserialized.getRaftClusterMetadata().getTerm());
     }
 }
