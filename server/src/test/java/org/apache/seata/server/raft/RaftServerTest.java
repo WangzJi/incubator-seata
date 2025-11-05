@@ -96,4 +96,42 @@ public class RaftServerTest extends BaseSpringBootTest {
         StoreConfig.setStartupParameter("raft", "raft", "raft");
         Assertions.assertThrows(IllegalArgumentException.class, RaftServerManager::init);
     }
+
+    @Test
+    public void testIsRaftModeWhenNotInitialized() {
+        Assertions.assertFalse(RaftServerManager.isRaftMode());
+    }
+
+    @Test
+    public void testGetRaftServerWhenNotInitialized() {
+        Assertions.assertNull(RaftServerManager.getRaftServer("default"));
+    }
+
+    @Test
+    public void testGetRaftServersWhenNotInitialized() {
+        Assertions.assertNotNull(RaftServerManager.getRaftServers());
+        Assertions.assertTrue(RaftServerManager.getRaftServers().isEmpty());
+    }
+
+    @Test
+    public void testGroupsWhenNotInitialized() {
+        Assertions.assertNotNull(RaftServerManager.groups());
+        Assertions.assertTrue(RaftServerManager.groups().isEmpty());
+    }
+
+    @Test
+    public void testIsLeaderWhenNotInRaftMode() {
+        StoreConfig.setStartupParameter("file", "file", "file");
+        Assertions.assertTrue(RaftServerManager.isLeader("default"));
+    }
+
+    @Test
+    public void testCliServiceInstance() {
+        Assertions.assertNotNull(RaftServerManager.getCliServiceInstance());
+    }
+
+    @Test
+    public void testCliClientServiceInstance() {
+        Assertions.assertNotNull(RaftServerManager.getCliClientServiceInstance());
+    }
 }
