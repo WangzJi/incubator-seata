@@ -18,6 +18,7 @@ package org.apache.seata.server.cluster.raft.sync.msg;
 
 import org.apache.seata.server.cluster.raft.sync.msg.dto.BranchTransactionDTO;
 import org.junit.jupiter.api.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -40,8 +41,7 @@ public class RaftBranchSessionSyncMsgTest {
     @Test
     public void testConstructorWithParameters() {
         BranchTransactionDTO dto = new BranchTransactionDTO("xid:123", 456L);
-        RaftBranchSessionSyncMsg msg = new RaftBranchSessionSyncMsg(
-                RaftSyncMsgType.ADD_BRANCH_SESSION, dto);
+        RaftBranchSessionSyncMsg msg = new RaftBranchSessionSyncMsg(RaftSyncMsgType.ADD_BRANCH_SESSION, dto);
 
         assertEquals(RaftSyncMsgType.ADD_BRANCH_SESSION, msg.getMsgType());
         assertEquals(dto, msg.getBranchSession());
@@ -66,8 +66,7 @@ public class RaftBranchSessionSyncMsgTest {
     @Test
     public void testToString() {
         BranchTransactionDTO dto = new BranchTransactionDTO("xid:123", 456L);
-        RaftBranchSessionSyncMsg msg = new RaftBranchSessionSyncMsg(
-                RaftSyncMsgType.UPDATE_BRANCH_SESSION_STATUS, dto);
+        RaftBranchSessionSyncMsg msg = new RaftBranchSessionSyncMsg(RaftSyncMsgType.UPDATE_BRANCH_SESSION_STATUS, dto);
 
         String str = msg.toString();
         assertNotNull(str);
@@ -78,8 +77,7 @@ public class RaftBranchSessionSyncMsgTest {
     public void testSerialization() throws Exception {
         BranchTransactionDTO dto = new BranchTransactionDTO("xid:123", 456L);
         dto.setLockKey("table:1,2,3");
-        RaftBranchSessionSyncMsg original = new RaftBranchSessionSyncMsg(
-                RaftSyncMsgType.ADD_BRANCH_SESSION, dto);
+        RaftBranchSessionSyncMsg original = new RaftBranchSessionSyncMsg(RaftSyncMsgType.ADD_BRANCH_SESSION, dto);
         original.setGroup("test-group");
 
         // Serialize
@@ -97,7 +95,11 @@ public class RaftBranchSessionSyncMsgTest {
         // Verify
         assertEquals(original.getMsgType(), deserialized.getMsgType());
         assertEquals(original.getGroup(), deserialized.getGroup());
-        assertEquals(original.getBranchSession().getXid(), deserialized.getBranchSession().getXid());
-        assertEquals(original.getBranchSession().getBranchId(), deserialized.getBranchSession().getBranchId());
+        assertEquals(
+                original.getBranchSession().getXid(),
+                deserialized.getBranchSession().getXid());
+        assertEquals(
+                original.getBranchSession().getBranchId(),
+                deserialized.getBranchSession().getBranchId());
     }
 }

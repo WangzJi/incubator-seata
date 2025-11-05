@@ -18,6 +18,7 @@ package org.apache.seata.server.cluster.raft.sync.msg;
 
 import org.apache.seata.server.cluster.raft.sync.msg.dto.GlobalTransactionDTO;
 import org.junit.jupiter.api.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -38,8 +39,7 @@ public class RaftGlobalSessionSyncMsgTest {
     @Test
     public void testConstructorWithParameters() {
         GlobalTransactionDTO dto = new GlobalTransactionDTO("xid:123456");
-        RaftGlobalSessionSyncMsg msg = new RaftGlobalSessionSyncMsg(
-                RaftSyncMsgType.ADD_GLOBAL_SESSION, dto);
+        RaftGlobalSessionSyncMsg msg = new RaftGlobalSessionSyncMsg(RaftSyncMsgType.ADD_GLOBAL_SESSION, dto);
 
         assertEquals(RaftSyncMsgType.ADD_GLOBAL_SESSION, msg.getMsgType());
         assertEquals(dto, msg.getGlobalSession());
@@ -57,8 +57,7 @@ public class RaftGlobalSessionSyncMsgTest {
     @Test
     public void testToString() {
         GlobalTransactionDTO dto = new GlobalTransactionDTO("xid:123");
-        RaftGlobalSessionSyncMsg msg = new RaftGlobalSessionSyncMsg(
-                RaftSyncMsgType.REMOVE_GLOBAL_SESSION, dto);
+        RaftGlobalSessionSyncMsg msg = new RaftGlobalSessionSyncMsg(RaftSyncMsgType.REMOVE_GLOBAL_SESSION, dto);
 
         String str = msg.toString();
         assertNotNull(str);
@@ -68,8 +67,8 @@ public class RaftGlobalSessionSyncMsgTest {
     @Test
     public void testSerialization() throws Exception {
         GlobalTransactionDTO dto = new GlobalTransactionDTO("xid:123456");
-        RaftGlobalSessionSyncMsg original = new RaftGlobalSessionSyncMsg(
-                RaftSyncMsgType.UPDATE_GLOBAL_SESSION_STATUS, dto);
+        RaftGlobalSessionSyncMsg original =
+                new RaftGlobalSessionSyncMsg(RaftSyncMsgType.UPDATE_GLOBAL_SESSION_STATUS, dto);
 
         // Serialize
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -85,6 +84,8 @@ public class RaftGlobalSessionSyncMsgTest {
 
         // Verify
         assertEquals(original.getMsgType(), deserialized.getMsgType());
-        assertEquals(original.getGlobalSession().getXid(), deserialized.getGlobalSession().getXid());
+        assertEquals(
+                original.getGlobalSession().getXid(),
+                deserialized.getGlobalSession().getXid());
     }
 }
