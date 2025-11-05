@@ -227,10 +227,11 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
     }
 
     @Test
-    public void testOnSnapshotSaveInRaftMode() {
-        // Create RaftStateMachine in RAFT mode
-        StoreConfig.setStartupParameter("raft", "raft", "raft");
-        RaftStateMachine raftModeStateMachine = new RaftStateMachine(TEST_GROUP);
+    public void testOnSnapshotSaveInRaftMode() throws Exception {
+        // Use reflection to change mode to RAFT without triggering singleton initialization
+        Field modeField = RaftStateMachine.class.getDeclaredField("mode");
+        modeField.setAccessible(true);
+        modeField.set(raftStateMachine, "raft");
 
         Closure done = mock(Closure.class);
         SnapshotWriter writer = mock(SnapshotWriter.class);
@@ -239,9 +240,9 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
         // Register a mock snapshot file
         StoreSnapshotFile mockSnapshotFile = mock(StoreSnapshotFile.class);
         when(mockSnapshotFile.save(writer)).thenReturn(Status.OK());
-        raftModeStateMachine.registryStoreSnapshotFile(mockSnapshotFile);
+        raftStateMachine.registryStoreSnapshotFile(mockSnapshotFile);
 
-        raftModeStateMachine.onSnapshotSave(writer, done);
+        raftStateMachine.onSnapshotSave(writer, done);
 
         // Should call save on the snapshot file
         verify(mockSnapshotFile).save(writer);
@@ -249,9 +250,11 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
     }
 
     @Test
-    public void testOnSnapshotSaveFailsWhenSnapshotFileReturnsError() {
-        StoreConfig.setStartupParameter("raft", "raft", "raft");
-        RaftStateMachine raftModeStateMachine = new RaftStateMachine(TEST_GROUP);
+    public void testOnSnapshotSaveFailsWhenSnapshotFileReturnsError() throws Exception {
+        // Use reflection to change mode to RAFT
+        Field modeField = RaftStateMachine.class.getDeclaredField("mode");
+        modeField.setAccessible(true);
+        modeField.set(raftStateMachine, "raft");
 
         Closure done = mock(Closure.class);
         SnapshotWriter writer = mock(SnapshotWriter.class);
@@ -261,9 +264,9 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
         StoreSnapshotFile mockSnapshotFile = mock(StoreSnapshotFile.class);
         Status errorStatus = new Status(-1, "Save failed");
         when(mockSnapshotFile.save(writer)).thenReturn(errorStatus);
-        raftModeStateMachine.registryStoreSnapshotFile(mockSnapshotFile);
+        raftStateMachine.registryStoreSnapshotFile(mockSnapshotFile);
 
-        raftModeStateMachine.onSnapshotSave(writer, done);
+        raftStateMachine.onSnapshotSave(writer, done);
 
         // Should call done with error status
         verify(done).run(argThat(status -> !status.isOk()));
@@ -281,23 +284,28 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
     }
 
     @Test
-    public void testOnSnapshotLoadWhenIsLeader() {
+    public void testOnSnapshotLoadWhenIsLeader() throws Exception {
         // Leader should not load snapshot
-        StoreConfig.setStartupParameter("raft", "raft", "raft");
-        RaftStateMachine raftModeStateMachine = new RaftStateMachine(TEST_GROUP);
-        raftModeStateMachine.onLeaderStart(1L); // Become leader
+        // Use reflection to change mode to RAFT
+        Field modeField = RaftStateMachine.class.getDeclaredField("mode");
+        modeField.setAccessible(true);
+        modeField.set(raftStateMachine, "raft");
+
+        raftStateMachine.onLeaderStart(1L); // Become leader
 
         SnapshotReader reader = mock(SnapshotReader.class);
 
-        boolean result = raftModeStateMachine.onSnapshotLoad(reader);
+        boolean result = raftStateMachine.onSnapshotLoad(reader);
 
         assertFalse(result);
     }
 
     @Test
-    public void testOnSnapshotLoadInRaftModeAsFollower() {
-        StoreConfig.setStartupParameter("raft", "raft", "raft");
-        RaftStateMachine raftModeStateMachine = new RaftStateMachine(TEST_GROUP);
+    public void testOnSnapshotLoadInRaftModeAsFollower() throws Exception {
+        // Use reflection to change mode to RAFT
+        Field modeField = RaftStateMachine.class.getDeclaredField("mode");
+        modeField.setAccessible(true);
+        modeField.set(raftStateMachine, "raft");
         // Not a leader (leaderTerm should be -1)
 
         SnapshotReader reader = mock(SnapshotReader.class);
@@ -306,9 +314,9 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
         // Register a mock snapshot file
         StoreSnapshotFile mockSnapshotFile = mock(StoreSnapshotFile.class);
         when(mockSnapshotFile.load(reader)).thenReturn(true);
-        raftModeStateMachine.registryStoreSnapshotFile(mockSnapshotFile);
+        raftStateMachine.registryStoreSnapshotFile(mockSnapshotFile);
 
-        boolean result = raftModeStateMachine.onSnapshotLoad(reader);
+        boolean result = raftStateMachine.onSnapshotLoad(reader);
 
         // Should call load on the snapshot file
         verify(mockSnapshotFile).load(reader);
@@ -316,9 +324,11 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
     }
 
     @Test
-    public void testOnSnapshotLoadFailsWhenSnapshotFileReturnsFalse() {
-        StoreConfig.setStartupParameter("raft", "raft", "raft");
-        RaftStateMachine raftModeStateMachine = new RaftStateMachine(TEST_GROUP);
+    public void testOnSnapshotLoadFailsWhenSnapshotFileReturnsFalse() throws Exception {
+        // Use reflection to change mode to RAFT
+        Field modeField = RaftStateMachine.class.getDeclaredField("mode");
+        modeField.setAccessible(true);
+        modeField.set(raftStateMachine, "raft");
 
         SnapshotReader reader = mock(SnapshotReader.class);
         when(reader.getPath()).thenReturn("/tmp/snapshot");
@@ -326,9 +336,9 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
         // Register a mock snapshot file that fails to load
         StoreSnapshotFile mockSnapshotFile = mock(StoreSnapshotFile.class);
         when(mockSnapshotFile.load(reader)).thenReturn(false);
-        raftModeStateMachine.registryStoreSnapshotFile(mockSnapshotFile);
+        raftStateMachine.registryStoreSnapshotFile(mockSnapshotFile);
 
-        boolean result = raftModeStateMachine.onSnapshotLoad(reader);
+        boolean result = raftStateMachine.onSnapshotLoad(reader);
 
         assertFalse(result);
     }
