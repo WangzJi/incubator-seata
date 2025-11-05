@@ -42,7 +42,7 @@ public class RaftCoordinatorTest extends BaseSpringBootTest {
     private static final String ANOTHER_GROUP = "another_group";
 
     @BeforeAll
-    public static void setup(ApplicationContext context) throws Exception {
+    public static void setup() throws Exception {
         SessionHolder.init(SessionMode.FILE);
         remotingServer = new DefaultCoordinatorTest.MockServerMessageSender();
         raftCoordinator = new RaftCoordinator(remotingServer);
