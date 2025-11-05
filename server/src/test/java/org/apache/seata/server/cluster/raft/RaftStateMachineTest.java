@@ -233,6 +233,13 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
         modeField.setAccessible(true);
         modeField.set(raftStateMachine, "raft");
 
+        // Clear default snapshot files and add only our mock
+        Field snapshotFilesField = RaftStateMachine.class.getDeclaredField("snapshotFiles");
+        snapshotFilesField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<StoreSnapshotFile> snapshotFiles = (List<StoreSnapshotFile>) snapshotFilesField.get(raftStateMachine);
+        snapshotFiles.clear();
+
         Closure done = mock(Closure.class);
         SnapshotWriter writer = mock(SnapshotWriter.class);
         when(writer.getPath()).thenReturn("/tmp/snapshot");
@@ -255,6 +262,13 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
         Field modeField = RaftStateMachine.class.getDeclaredField("mode");
         modeField.setAccessible(true);
         modeField.set(raftStateMachine, "raft");
+
+        // Clear default snapshot files
+        Field snapshotFilesField = RaftStateMachine.class.getDeclaredField("snapshotFiles");
+        snapshotFilesField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<StoreSnapshotFile> snapshotFiles = (List<StoreSnapshotFile>) snapshotFilesField.get(raftStateMachine);
+        snapshotFiles.clear();
 
         Closure done = mock(Closure.class);
         SnapshotWriter writer = mock(SnapshotWriter.class);
@@ -308,6 +322,13 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
         modeField.set(raftStateMachine, "raft");
         // Not a leader (leaderTerm should be -1)
 
+        // Clear default snapshot files
+        Field snapshotFilesField = RaftStateMachine.class.getDeclaredField("snapshotFiles");
+        snapshotFilesField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<StoreSnapshotFile> snapshotFiles = (List<StoreSnapshotFile>) snapshotFilesField.get(raftStateMachine);
+        snapshotFiles.clear();
+
         SnapshotReader reader = mock(SnapshotReader.class);
         when(reader.getPath()).thenReturn("/tmp/snapshot");
 
@@ -329,6 +350,13 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
         Field modeField = RaftStateMachine.class.getDeclaredField("mode");
         modeField.setAccessible(true);
         modeField.set(raftStateMachine, "raft");
+
+        // Clear default snapshot files
+        Field snapshotFilesField = RaftStateMachine.class.getDeclaredField("snapshotFiles");
+        snapshotFilesField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<StoreSnapshotFile> snapshotFiles = (List<StoreSnapshotFile>) snapshotFilesField.get(raftStateMachine);
+        snapshotFiles.clear();
 
         SnapshotReader reader = mock(SnapshotReader.class);
         when(reader.getPath()).thenReturn("/tmp/snapshot");
