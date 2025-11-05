@@ -29,6 +29,7 @@ import org.apache.seata.server.cluster.raft.snapshot.metadata.LeaderMetadataSnap
 import org.apache.seata.server.cluster.raft.sync.RaftSyncMessageSerializer;
 import org.apache.seata.server.cluster.raft.sync.msg.RaftBaseMsg;
 import org.apache.seata.server.cluster.raft.sync.msg.RaftClusterMetadataMsg;
+import org.apache.seata.server.cluster.raft.sync.msg.RaftSyncMessage;
 import org.apache.seata.server.cluster.raft.sync.msg.RaftSyncMsgType;
 import org.apache.seata.server.cluster.raft.sync.msg.dto.RaftClusterMetadata;
 import org.apache.seata.server.store.StoreConfig;
@@ -238,7 +239,9 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
 
         // Create a REFRESH_CLUSTER_METADATA message
         RaftClusterMetadataMsg msg = new RaftClusterMetadataMsg(new RaftClusterMetadata(10L));
-        byte[] serializedMsg = RaftSyncMessageSerializer.encode(msg);
+        RaftSyncMessage raftSyncMessage = new RaftSyncMessage();
+        raftSyncMessage.setBody(msg);
+        byte[] serializedMsg = RaftSyncMessageSerializer.encode(raftSyncMessage);
         ByteBuffer buffer = ByteBuffer.wrap(serializedMsg);
 
         when(iterator.hasNext()).thenReturn(true, false);

@@ -77,7 +77,7 @@ class VGroupExecuteTest extends BaseSpringBootTest {
         // Verify the vgroup was added
         RaftVGroupMappingStoreManager manager =
                 (RaftVGroupMappingStoreManager) SessionHolder.getRootVGroupMappingManager();
-        MappingDO retrieved = manager.readVGroup(TEST_VGROUP);
+        MappingDO retrieved = manager.loadVGroupsByUnit(TEST_UNIT).get(TEST_VGROUP);
         Assertions.assertNotNull(retrieved);
         Assertions.assertEquals(TEST_VGROUP, retrieved.getVGroup());
         Assertions.assertEquals(TEST_UNIT, retrieved.getUnit());
@@ -92,7 +92,7 @@ class VGroupExecuteTest extends BaseSpringBootTest {
         manager.localAddVGroup(mappingDO);
 
         // Verify it was added
-        MappingDO retrieved = manager.readVGroup(TEST_VGROUP + "-remove");
+        MappingDO retrieved = manager.loadVGroupsByUnit(TEST_UNIT).get(TEST_VGROUP + "-remove");
         Assertions.assertNotNull(retrieved);
 
         // Now remove it
@@ -104,7 +104,7 @@ class VGroupExecuteTest extends BaseSpringBootTest {
         Assertions.assertTrue(success);
 
         // Verify it was removed
-        retrieved = manager.readVGroup(TEST_VGROUP + "-remove");
+        retrieved = manager.loadVGroupsByUnit(TEST_UNIT).get(TEST_VGROUP + "-remove");
         Assertions.assertNull(retrieved);
     }
 
@@ -130,7 +130,7 @@ class VGroupExecuteTest extends BaseSpringBootTest {
 
         for (int i = 0; i < 5; i++) {
             String vgroup = TEST_VGROUP + "-multi-" + i;
-            MappingDO retrieved = manager.readVGroup(vgroup);
+            MappingDO retrieved = manager.loadVGroupsByUnit(TEST_UNIT).get(vgroup);
             Assertions.assertNotNull(retrieved);
             Assertions.assertEquals(vgroup, retrieved.getVGroup());
         }
@@ -160,11 +160,11 @@ class VGroupExecuteTest extends BaseSpringBootTest {
         RaftVGroupMappingStoreManager manager =
                 (RaftVGroupMappingStoreManager) SessionHolder.getRootVGroupMappingManager();
 
-        MappingDO retrieved1 = manager.readVGroup(vgroup1);
+        MappingDO retrieved1 = manager.loadVGroupsByUnit("unit1").get(vgroup1);
         Assertions.assertNotNull(retrieved1);
         Assertions.assertEquals("unit1", retrieved1.getUnit());
 
-        MappingDO retrieved2 = manager.readVGroup(vgroup2);
+        MappingDO retrieved2 = manager.loadVGroupsByUnit("unit2").get(vgroup2);
         Assertions.assertNotNull(retrieved2);
         Assertions.assertEquals("unit2", retrieved2.getUnit());
     }
@@ -197,20 +197,20 @@ class VGroupExecuteTest extends BaseSpringBootTest {
         syncMsg.setMappingDO(mappingDO);
         Assertions.assertTrue(addExecute.execute(syncMsg));
 
-        MappingDO retrieved = manager.readVGroup(vgroup);
+        MappingDO retrieved = manager.loadVGroupsByUnit(TEST_UNIT).get(vgroup);
         Assertions.assertNotNull(retrieved);
 
         // Remove
         VGroupRemoveExecute removeExecute = new VGroupRemoveExecute();
         Assertions.assertTrue(removeExecute.execute(syncMsg));
 
-        retrieved = manager.readVGroup(vgroup);
+        retrieved = manager.loadVGroupsByUnit(TEST_UNIT).get(vgroup);
         Assertions.assertNull(retrieved);
 
         // Add again
         Assertions.assertTrue(addExecute.execute(syncMsg));
 
-        retrieved = manager.readVGroup(vgroup);
+        retrieved = manager.loadVGroupsByUnit(TEST_UNIT).get(vgroup);
         Assertions.assertNotNull(retrieved);
     }
 
