@@ -25,7 +25,6 @@ import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
 import org.apache.seata.common.metadata.ClusterRole;
 import org.apache.seata.common.metadata.Node;
-import org.apache.seata.common.store.SessionMode;
 import org.apache.seata.server.BaseSpringBootTest;
 import org.apache.seata.server.cluster.raft.snapshot.StoreSnapshotFile;
 import org.apache.seata.server.cluster.raft.snapshot.metadata.LeaderMetadataSnapshotFile;
@@ -36,11 +35,22 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class RaftStateMachineTest extends BaseSpringBootTest {
 
@@ -222,7 +232,7 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
 
         raftStateMachine.onSnapshotSave(writer, done);
 
-        verify(done).run(argThat(status -> status.isOk()));
+        verify(done).run(argThat(Status::isOk));
         verify(writer, never()).addFile(anyString());
     }
 
@@ -253,7 +263,7 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
 
         // Should call save on the snapshot file
         verify(mockSnapshotFile).save(writer);
-        verify(done).run(argThat(status -> status.isOk()));
+        verify(done).run(argThat(Status::isOk));
     }
 
     @Test
@@ -416,7 +426,7 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
         endpoint2.setPort(8092);
         follower2.setInternal(endpoint2);
 
-        metadata.setFollowers(List.of(follower1, follower2));
+        metadata.setFollowers(Arrays.asList(follower1, follower2));
         raftStateMachine.setRaftLeaderMetadata(metadata);
 
         // Create a new configuration with only one peer
@@ -450,7 +460,7 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
         endpoint1.setPort(8093);
         learner1.setInternal(endpoint1);
 
-        metadata.setLearner(List.of(learner1));
+        metadata.setLearner(Collections.singletonList(learner1));
         raftStateMachine.setRaftLeaderMetadata(metadata);
 
         // Create a new configuration with learners
@@ -522,7 +532,7 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
         Field initSyncField = RaftStateMachine.class.getDeclaredField("initSync");
         initSyncField.setAccessible(true);
         java.util.concurrent.atomic.AtomicBoolean initSync =
-            (java.util.concurrent.atomic.AtomicBoolean) initSyncField.get(raftStateMachine);
+                (java.util.concurrent.atomic.AtomicBoolean) initSyncField.get(raftStateMachine);
         assertFalse(initSync.get());
 
         // Invoke the method - it will try to refresh leader and may fail due to test environment
@@ -534,10 +544,10 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
                 // Expected if dependencies are not set up - just ensure it's not a null pointer
                 Throwable cause = e.getCause();
                 // We expect some kind of initialization or configuration error in test environment
-                assertTrue(cause == null ||
-                          cause instanceof NullPointerException ||
-                          cause instanceof IllegalStateException ||
-                          cause instanceof RuntimeException);
+                assertTrue(cause == null
+                        || cause instanceof NullPointerException
+                        || cause instanceof IllegalStateException
+                        || cause instanceof RuntimeException);
             }
         });
     }
@@ -548,7 +558,7 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
         Field initSyncField = RaftStateMachine.class.getDeclaredField("initSync");
         initSyncField.setAccessible(true);
         java.util.concurrent.atomic.AtomicBoolean initSync =
-            (java.util.concurrent.atomic.AtomicBoolean) initSyncField.get(raftStateMachine);
+                (java.util.concurrent.atomic.AtomicBoolean) initSyncField.get(raftStateMachine);
         initSync.set(true);
 
         // Use reflection to access the private method
@@ -591,10 +601,10 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
             } catch (java.lang.reflect.InvocationTargetException e) {
                 // Expected if RaftServerManager is not initialized in test environment
                 Throwable cause = e.getCause();
-                assertTrue(cause == null ||
-                          cause instanceof NullPointerException ||
-                          cause instanceof IllegalStateException ||
-                          cause instanceof RuntimeException);
+                assertTrue(cause == null
+                        || cause instanceof NullPointerException
+                        || cause instanceof IllegalStateException
+                        || cause instanceof RuntimeException);
             }
         });
     }
