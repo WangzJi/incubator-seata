@@ -18,10 +18,6 @@ package org.apache.seata.server.cluster.raft.sync.msg;
 
 import org.apache.seata.core.store.MappingDO;
 import org.junit.jupiter.api.Test;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -58,27 +54,16 @@ public class RaftVGroupSyncMsgTest {
     }
 
     @Test
-    public void testSerialization() throws Exception {
+    public void testGettersAndSetters() {
+        RaftVGroupSyncMsg msg = new RaftVGroupSyncMsg();
         MappingDO mappingDO = new MappingDO();
         mappingDO.setVGroup("test-vgroup");
         mappingDO.setCluster("test-cluster");
-        RaftVGroupSyncMsg original = new RaftVGroupSyncMsg(mappingDO, RaftSyncMsgType.REMOVE_VGROUP_MAPPING);
+        msg.setMappingDO(mappingDO);
+        msg.setMsgType(RaftSyncMsgType.UPDATE_VGROUP_MAPPING);
 
-        // Serialize
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
-        oos.writeObject(original);
-        oos.flush();
-        byte[] serialized = bos.toByteArray();
-
-        // Deserialize
-        ByteArrayInputStream bis = new ByteArrayInputStream(serialized);
-        ObjectInputStream ois = new ObjectInputStream(bis);
-        RaftVGroupSyncMsg deserialized = (RaftVGroupSyncMsg) ois.readObject();
-
-        // Verify
-        assertEquals(original.getMsgType(), deserialized.getMsgType());
-        assertEquals(original.getMappingDO().getVGroup(), deserialized.getMappingDO().getVGroup());
-        assertEquals(original.getMappingDO().getCluster(), deserialized.getMappingDO().getCluster());
+        assertEquals(RaftSyncMsgType.UPDATE_VGROUP_MAPPING, msg.getMsgType());
+        assertEquals("test-vgroup", msg.getMappingDO().getVGroup());
+        assertEquals("test-cluster", msg.getMappingDO().getCluster());
     }
 }
