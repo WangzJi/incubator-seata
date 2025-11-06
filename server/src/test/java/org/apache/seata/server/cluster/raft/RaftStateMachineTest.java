@@ -17,6 +17,7 @@
 package org.apache.seata.server.cluster.raft;
 
 import com.alipay.sofa.jraft.Closure;
+import com.alipay.sofa.jraft.Iterator;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.entity.LeaderChangeContext;
@@ -26,8 +27,14 @@ import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
 import org.apache.seata.common.metadata.ClusterRole;
 import org.apache.seata.common.metadata.Node;
 import org.apache.seata.server.BaseSpringBootTest;
+import org.apache.seata.server.cluster.raft.execute.RaftMsgExecute;
 import org.apache.seata.server.cluster.raft.snapshot.StoreSnapshotFile;
 import org.apache.seata.server.cluster.raft.snapshot.metadata.LeaderMetadataSnapshotFile;
+import org.apache.seata.server.cluster.raft.sync.RaftSyncMessageSerializer;
+import org.apache.seata.server.cluster.raft.sync.msg.RaftBaseMsg;
+import org.apache.seata.server.cluster.raft.sync.msg.RaftClusterMetadataMsg;
+import org.apache.seata.server.cluster.raft.sync.msg.RaftSyncMessage;
+import org.apache.seata.server.cluster.raft.sync.msg.RaftSyncMsgType;
 import org.apache.seata.server.cluster.raft.sync.msg.dto.RaftClusterMetadata;
 import org.apache.seata.server.store.StoreConfig;
 import org.junit.jupiter.api.AfterEach;
@@ -35,20 +42,26 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -657,5 +670,226 @@ public class RaftStateMachineTest extends BaseSpringBootTest {
                 fail("Should not throw when leader is null: " + e.getCause());
             }
         });
+    }
+
+    // ========== Tests for uncovered code paths from codecov ==========
+
+    @Test
+    public void testOnApplyWithFollowerPath() throws Exception {
+        // Test the follower execution path where iterator.done() returns null
+        Iterator iterator = mock(Iterator.class);
+
+        // Create a RaftClusterMetadataMsg wrapped in RaftSyncMessage
+        RaftClusterMetadata metadata = new RaftClusterMetadata(1L);
+        RaftClusterMetadataMsg msg = new RaftClusterMetadataMsg(metadata);
+        RaftSyncMessage syncMessage = new RaftSyncMessage();
+        syncMessage.setBody(msg);
+
+        // Serialize the message
+        byte[] msgBytes = RaftSyncMessageSerializer.encode(syncMessage);
+        ByteBuffer byteBuffer = ByteBuffer.wrap(msgBytes);
+
+        // Set up the iterator to simulate follower behavior
+        when(iterator.hasNext()).thenReturn(true, false); // One entry then stop
+        when(iterator.done()).thenReturn(null); // null means follower path
+        when(iterator.getData()).thenReturn(byteBuffer);
+
+        // Execute onApply
+        assertDoesNotThrow(() -> raftStateMachine.onApply(iterator));
+
+        // Verify iterator methods were called
+        verify(iterator, times(2)).hasNext();
+        verify(iterator).done();
+        verify(iterator).getData();
+        verify(iterator).next();
+    }
+
+    @Test
+    public void testOnApplyWithEmptyByteBuffer() {
+        // Test heartbeat event with empty ByteBuffer
+        Iterator iterator = mock(Iterator.class);
+        ByteBuffer emptyBuffer = ByteBuffer.allocate(0);
+
+        when(iterator.hasNext()).thenReturn(true, false);
+        when(iterator.done()).thenReturn(null);
+        when(iterator.getData()).thenReturn(emptyBuffer);
+
+        // Should not throw exception for empty buffer (heartbeat)
+        assertDoesNotThrow(() -> raftStateMachine.onApply(iterator));
+
+        verify(iterator).next();
+    }
+
+    @Test
+    public void testOnApplyWithNullByteBuffer() {
+        // Test with null ByteBuffer (heartbeat event)
+        Iterator iterator = mock(Iterator.class);
+
+        when(iterator.hasNext()).thenReturn(true, false);
+        when(iterator.done()).thenReturn(null);
+        when(iterator.getData()).thenReturn(null);
+
+        // Should not throw exception for null buffer
+        assertDoesNotThrow(() -> raftStateMachine.onApply(iterator));
+
+        verify(iterator).next();
+    }
+
+    @Test
+    public void testOnApplyWithLeaderPath() {
+        // Test the leader execution path where iterator.done() returns a Closure
+        Iterator iterator = mock(Iterator.class);
+        Closure done = mock(Closure.class);
+
+        when(iterator.hasNext()).thenReturn(true, false);
+        when(iterator.done()).thenReturn(done);
+
+        assertDoesNotThrow(() -> raftStateMachine.onApply(iterator));
+
+        // Verify done.run was called with OK status
+        verify(done).run(argThat(Status::isOk));
+        verify(iterator).next();
+    }
+
+    @Test
+    public void testOnExecuteRaftWithUnknownMessageType() throws Exception {
+        // Test error path when message type is not in EXECUTES map
+        // Create a custom message type that doesn't exist in EXECUTES
+        RaftBaseMsg msg = new RaftBaseMsg() {
+            @Override
+            public RaftSyncMsgType getMsgType() {
+                return null; // Unknown type
+            }
+        };
+
+        // Access the private method
+        java.lang.reflect.Method method = RaftStateMachine.class.getDeclaredMethod("onExecuteRaft", RaftBaseMsg.class);
+        method.setAccessible(true);
+
+        // Should throw RuntimeException for unknown message type
+        assertThrows(java.lang.reflect.InvocationTargetException.class, () -> {
+            method.invoke(raftStateMachine, msg);
+        });
+    }
+
+    @Test
+    public void testOnExecuteRaftWithExecutionException() throws Throwable {
+        // Test error path when execute.execute() throws an exception
+        RaftClusterMetadata metadata = new RaftClusterMetadata(1L);
+        RaftClusterMetadataMsg msg = new RaftClusterMetadataMsg(metadata);
+
+        // Access the EXECUTES map and add a mock that throws exception
+        Field executesField = RaftStateMachine.class.getDeclaredField("EXECUTES");
+        executesField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<RaftSyncMsgType, RaftMsgExecute<?>> executes =
+                (Map<RaftSyncMsgType, RaftMsgExecute<?>>) executesField.get(null);
+
+        // Store original execute
+        RaftMsgExecute<?> originalExecute = executes.get(RaftSyncMsgType.REFRESH_CLUSTER_METADATA);
+
+        try {
+            // Replace with mock that throws exception
+            RaftMsgExecute<?> mockExecute = mock(RaftMsgExecute.class);
+            doThrow(new RuntimeException("Test exception")).when(mockExecute).execute(any());
+            executes.put(RaftSyncMsgType.REFRESH_CLUSTER_METADATA, mockExecute);
+
+            // Access the private method
+            java.lang.reflect.Method method =
+                    RaftStateMachine.class.getDeclaredMethod("onExecuteRaft", RaftBaseMsg.class);
+            method.setAccessible(true);
+
+            // Should wrap exception in RuntimeException
+            assertThrows(java.lang.reflect.InvocationTargetException.class, () -> {
+                method.invoke(raftStateMachine, msg);
+            });
+        } finally {
+            // Restore original execute
+            if (originalExecute != null) {
+                executes.put(RaftSyncMsgType.REFRESH_CLUSTER_METADATA, originalExecute);
+            }
+        }
+    }
+
+    @Test
+    public void testChangeNodeMetadataUpdatesExistingNode() {
+        // Test the path where an existing node is found and updated
+        RaftClusterMetadata metadata = new RaftClusterMetadata(1L);
+
+        // Create an existing follower with internal endpoint
+        Node existingFollower = new Node();
+        existingFollower.setRole(ClusterRole.FOLLOWER);
+        existingFollower.setGroup(TEST_GROUP);
+        Node.Endpoint endpoint = new Node.Endpoint();
+        endpoint.setHost("127.0.0.1");
+        endpoint.setPort(8091);
+        existingFollower.setInternal(endpoint);
+        existingFollower.setVersion("1.0.0");
+
+        metadata.setFollowers(Arrays.asList(existingFollower));
+        raftStateMachine.setRaftLeaderMetadata(metadata);
+
+        // Create a node update with same host/port but different metadata
+        Node updatedNode = new Node();
+        updatedNode.setRole(ClusterRole.FOLLOWER);
+        updatedNode.setGroup(TEST_GROUP);
+        Node.Endpoint updatedEndpoint = new Node.Endpoint();
+        updatedEndpoint.setHost("127.0.0.1");
+        updatedEndpoint.setPort(8091);
+        updatedNode.setInternal(updatedEndpoint);
+        updatedNode.setVersion("2.0.0");
+        updatedNode.setTransaction(new Node.Endpoint());
+        updatedNode.setControl(new Node.Endpoint());
+        updatedNode.setMetadata(Collections.singletonMap("key", "value"));
+
+        // Apply the update
+        raftStateMachine.changeNodeMetadata(updatedNode);
+
+        // Verify the existing node was updated
+        RaftClusterMetadata updatedMetadata = raftStateMachine.getRaftLeaderMetadata();
+        Node resultNode = updatedMetadata.getFollowers().get(0);
+        assertEquals("2.0.0", resultNode.getVersion());
+        assertNotNull(resultNode.getTransaction());
+        assertNotNull(resultNode.getControl());
+        assertNotNull(resultNode.getMetadata());
+        assertEquals(1, updatedMetadata.getFollowers().size()); // Should still be 1, not 2
+    }
+
+    @Test
+    public void testChangeNodeMetadataUpdatesExistingLearner() {
+        // Test updating an existing learner node
+        RaftClusterMetadata metadata = new RaftClusterMetadata(1L);
+
+        // Create an existing learner with internal endpoint
+        Node existingLearner = new Node();
+        existingLearner.setRole(ClusterRole.LEARNER);
+        existingLearner.setGroup(TEST_GROUP);
+        Node.Endpoint endpoint = new Node.Endpoint();
+        endpoint.setHost("127.0.0.1");
+        endpoint.setPort(8093);
+        existingLearner.setInternal(endpoint);
+        existingLearner.setVersion("1.0.0");
+
+        metadata.setLearner(Arrays.asList(existingLearner));
+        raftStateMachine.setRaftLeaderMetadata(metadata);
+
+        // Create a learner update with same host/port
+        Node updatedLearner = new Node();
+        updatedLearner.setRole(ClusterRole.LEARNER);
+        updatedLearner.setGroup(TEST_GROUP);
+        Node.Endpoint updatedEndpoint = new Node.Endpoint();
+        updatedEndpoint.setHost("127.0.0.1");
+        updatedEndpoint.setPort(8093);
+        updatedLearner.setInternal(updatedEndpoint);
+        updatedLearner.setVersion("2.0.0");
+
+        // Apply the update
+        raftStateMachine.changeNodeMetadata(updatedLearner);
+
+        // Verify the existing learner was updated
+        RaftClusterMetadata updatedMetadata = raftStateMachine.getRaftLeaderMetadata();
+        Node resultNode = updatedMetadata.getLearner().get(0);
+        assertEquals("2.0.0", resultNode.getVersion());
+        assertEquals(1, updatedMetadata.getLearner().size()); // Should still be 1, not 2
     }
 }
