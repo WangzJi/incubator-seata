@@ -1,0 +1,67 @@
+---
+# Fluent Bit ConfigMap for Sidecar
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: your-namespace  # 替换为你的 namespace
+  labels:
+    app: fluent-bit
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush         5
+        Daemon        off
+        Log_Level     info
+        Parsers_File  parsers.conf
+
+    [INPUT]
+        Name              tail
+        Path              /var/log/app/*.log
+        Parser            json
+        Tag               app.*
+        Refresh_Interval  5
+        Mem_Buf_Limit     5MB
+        Skip_Long_Lines   On
+
+    [FILTER]
+        Name                kubernetes
+        Match               app.*
+        Kube_URL            https://kubernetes.default.svc:443
+        Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+        Kube_Tag_Prefix     app.var.log.app.
+        Merge_Log           On
+        Keep_Log            Off
+        K8S-Logging.Parser  On
+        K8S-Logging.Exclude On
+        Labels              On
+        Annotations         Off
+
+    [OUTPUT]
+        Name            es
+        Match           *
+        Host            elasticsearch.your-namespace.svc.cluster.local
+        Port            9200
+        Logstash_Format On
+        Logstash_Prefix app-logs
+        Retry_Limit     5
+        Replace_Dots    On
+        Trace_Error     On
+
+  parsers.conf: |
+    [PARSER]
+        Name        json
+        Format      json
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+        Time_Keep   On
+        Decode_Field_As escaped_utf8 log do_next
+        Decode_Field_As json log
+
+    [PARSER]
+        Name        docker
+        Format      json
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+        Time_Keep   On

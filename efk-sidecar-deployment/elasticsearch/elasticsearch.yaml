@@ -1,0 +1,74 @@
+---
+# Elasticsearch Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  namespace: your-namespace  # 替换为你的 namespace
+  labels:
+    app: elasticsearch
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9200
+    targetPort: 9200
+    name: http
+  - port: 9300
+    targetPort: 9300
+    name: transport
+  selector:
+    app: elasticsearch
+---
+# Elasticsearch StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+  namespace: your-namespace  # 替换为你的 namespace
+spec:
+  serviceName: elasticsearch
+  replicas: 1  # 测试环境单节点即可
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+      - name: elasticsearch
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+        ports:
+        - containerPort: 9200
+          name: http
+        - containerPort: 9300
+          name: transport
+        env:
+        - name: discovery.type
+          value: single-node
+        - name: ES_JAVA_OPTS
+          value: "-Xms512m -Xmx512m"  # 测试环境适度配置
+        - name: xpack.security.enabled
+          value: "false"  # 测试环境简化配置，生产环境建议启用
+        - name: xpack.security.http.ssl.enabled
+          value: "false"
+        resources:
+          limits:
+            memory: 1Gi
+            cpu: 1000m
+          requests:
+            memory: 512Mi
+            cpu: 500m
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi  # 根据需要调整
+      # storageClassName: your-storage-class  # 如果需要指定 StorageClass，取消注释

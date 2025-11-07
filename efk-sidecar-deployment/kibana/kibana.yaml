@@ -1,0 +1,69 @@
+---
+# Kibana Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+  namespace: your-namespace  # 替换为你的 namespace
+  labels:
+    app: kibana
+spec:
+  type: NodePort  # 或 ClusterIP，根据访问需求选择
+  ports:
+  - port: 5601
+    targetPort: 5601
+    nodePort: 30601  # 如果使用 NodePort，可以指定端口；ClusterIP 请删除此行
+    name: http
+  selector:
+    app: kibana
+---
+# Kibana Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: your-namespace  # 替换为你的 namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+      - name: kibana
+        image: docker.elastic.co/kibana/kibana:8.11.0
+        ports:
+        - containerPort: 5601
+          name: http
+        env:
+        - name: ELASTICSEARCH_HOSTS
+          value: "http://elasticsearch:9200"
+        - name: SERVER_NAME
+          value: "kibana"
+        - name: SERVER_HOST
+          value: "0.0.0.0"
+        resources:
+          limits:
+            memory: 1Gi
+            cpu: 1000m
+          requests:
+            memory: 512Mi
+            cpu: 500m
+        readinessProbe:
+          httpGet:
+            path: /api/status
+            port: 5601
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /api/status
+            port: 5601
+          initialDelaySeconds: 60
+          periodSeconds: 20
+          timeoutSeconds: 5
