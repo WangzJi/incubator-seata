@@ -102,9 +102,9 @@ class GlobalSessionRedisServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_allSessions() throws Exception {
-        createTestGlobalTransaction("test-xid-001", 1001L, GlobalStatus.Begin);
-        createTestGlobalTransaction("test-xid-002", 1002L, GlobalStatus.Begin);
+    void queryAllSessionsTest() throws Exception {
+        createTestGlobalTransaction("127.0.0.1:8091:1001", 1001L, GlobalStatus.Begin);
+        createTestGlobalTransaction("127.0.0.1:8091:1002", 1002L, GlobalStatus.Begin);
 
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
@@ -122,13 +122,13 @@ class GlobalSessionRedisServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_byXid() throws Exception {
-        createTestGlobalTransaction("test-xid-001", 1001L, GlobalStatus.Begin);
+    void queryByXidTest() throws Exception {
+        createTestGlobalTransaction("127.0.0.1:8091:1001", 1001L, GlobalStatus.Begin);
 
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(10);
-        param.setXid("test-xid-001");
+        param.setXid("127.0.0.1:8091:1001");
         param.setWithBranch(false);
 
         PageResult<GlobalSessionVO> result = globalSessionRedisService.query(param);
@@ -137,12 +137,12 @@ class GlobalSessionRedisServiceImplTest extends BaseSpringBootTest {
         Assertions.assertTrue(result.isSuccess());
         Assertions.assertEquals(1, result.getData().size());
         Assertions.assertEquals(1, result.getTotal());
-        Assertions.assertEquals("test-xid-001", result.getData().get(0).getXid());
+        Assertions.assertEquals("127.0.0.1:8091:1001", result.getData().get(0).getXid());
     }
 
     @Test
-    void testQuery_byStatus() throws Exception {
-        createTestGlobalTransaction("test-xid-001", 1001L, GlobalStatus.Begin);
+    void queryByStatusTest() throws Exception {
+        createTestGlobalTransaction("127.0.0.1:8091:1001", 1001L, GlobalStatus.Begin);
 
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
@@ -159,13 +159,13 @@ class GlobalSessionRedisServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_byXidAndStatus() throws Exception {
-        createTestGlobalTransaction("test-xid-001", 1001L, GlobalStatus.Begin);
+    void queryByXidAndStatusTest() throws Exception {
+        createTestGlobalTransaction("127.0.0.1:8091:1001", 1001L, GlobalStatus.Begin);
 
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(10);
-        param.setXid("test-xid-001");
+        param.setXid("127.0.0.1:8091:1001");
         param.setStatus(GlobalStatus.Begin.getCode());
         param.setWithBranch(false);
 
@@ -178,11 +178,11 @@ class GlobalSessionRedisServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_emptyResult() {
+    void queryEmptyResultTest() {
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(10);
-        param.setXid("non-existent-test-xid-999");
+        param.setXid("127.0.0.1:8091:9999");
         param.setWithBranch(false);
 
         PageResult<GlobalSessionVO> result = globalSessionRedisService.query(param);
@@ -194,7 +194,7 @@ class GlobalSessionRedisServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_timeRangeNotSupported() {
+    void queryTimeRangeNotSupportedTest() {
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(10);
@@ -210,13 +210,13 @@ class GlobalSessionRedisServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_withBranch() throws Exception {
-        createTestGlobalTransaction("test-xid-001", 1001L, GlobalStatus.Begin);
+    void queryWithBranchTest() throws Exception {
+        createTestGlobalTransaction("127.0.0.1:8091:1001", 1001L, GlobalStatus.Begin);
 
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(10);
-        param.setXid("test-xid-001");
+        param.setXid("127.0.0.1:8091:1001");
         param.setWithBranch(true);
 
         PageResult<GlobalSessionVO> result = globalSessionRedisService.query(param);
@@ -227,7 +227,7 @@ class GlobalSessionRedisServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_invalidPageNum() {
+    void queryInvalidPageNumTest() {
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(0);
         param.setPageSize(10);
@@ -238,7 +238,7 @@ class GlobalSessionRedisServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_invalidPageSize() {
+    void queryInvalidPageSizeTest() {
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(0);
@@ -249,7 +249,7 @@ class GlobalSessionRedisServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_allSessionsEmptyResult() {
+    void queryAllSessionsEmptyResultTest() {
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(10);

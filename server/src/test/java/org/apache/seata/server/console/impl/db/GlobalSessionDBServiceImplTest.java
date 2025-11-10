@@ -76,7 +76,7 @@ class GlobalSessionDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_success() throws SQLException {
+    void querySuccessTest() throws SQLException {
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(10);
@@ -119,7 +119,7 @@ class GlobalSessionDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_withBranch() throws SQLException {
+    void queryWithBranchTest() throws SQLException {
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(10);
@@ -171,7 +171,7 @@ class GlobalSessionDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_withMultipleParams() throws SQLException {
+    void queryWithMultipleParamsTest() throws SQLException {
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(10);
@@ -205,7 +205,7 @@ class GlobalSessionDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_emptyResult() throws SQLException {
+    void queryEmptyResultTest() throws SQLException {
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(10);
@@ -231,7 +231,7 @@ class GlobalSessionDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_invalidPageNum() {
+    void queryInvalidPageNumTest() {
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(0);
         param.setPageSize(10);
@@ -242,7 +242,7 @@ class GlobalSessionDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_invalidPageSize() {
+    void queryInvalidPageSizeTest() {
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(0);
@@ -253,7 +253,7 @@ class GlobalSessionDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_sqlException() throws SQLException {
+    void querySqlExceptionTest() throws SQLException {
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(10);

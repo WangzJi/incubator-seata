@@ -74,7 +74,7 @@ class GlobalLockDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_success() throws SQLException {
+    void querySuccessTest() throws SQLException {
         GlobalLockParam param = new GlobalLockParam();
         param.setPageNum(1);
         param.setPageSize(10);
@@ -114,7 +114,7 @@ class GlobalLockDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_withMultipleParams() throws SQLException {
+    void queryWithMultipleParamsTest() throws SQLException {
         GlobalLockParam param = new GlobalLockParam();
         param.setPageNum(1);
         param.setPageSize(10);
@@ -147,7 +147,7 @@ class GlobalLockDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_emptyResult() throws SQLException {
+    void queryEmptyResultTest() throws SQLException {
         GlobalLockParam param = new GlobalLockParam();
         param.setPageNum(1);
         param.setPageSize(10);
@@ -172,7 +172,7 @@ class GlobalLockDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_invalidPageNum() {
+    void queryInvalidPageNumTest() {
         GlobalLockParam param = new GlobalLockParam();
         param.setPageNum(0);
         param.setPageSize(10);
@@ -183,7 +183,7 @@ class GlobalLockDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_invalidPageSize() {
+    void queryInvalidPageSizeTest() {
         GlobalLockParam param = new GlobalLockParam();
         param.setPageNum(1);
         param.setPageSize(0);
@@ -194,7 +194,7 @@ class GlobalLockDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_sqlException() throws SQLException {
+    void querySqlExceptionTest() throws SQLException {
         GlobalLockParam param = new GlobalLockParam();
         param.setPageNum(1);
         param.setPageSize(10);
@@ -213,7 +213,7 @@ class GlobalLockDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testDeleteLock_success() throws SQLException {
+    void deleteLockSuccessTest() throws SQLException {
         GlobalLockParam param = new GlobalLockParam();
         param.setXid("test-xid-001");
         param.setBranchId("2001");
@@ -237,7 +237,7 @@ class GlobalLockDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testDeleteLock_missingXid() {
+    void deleteLockMissingXidTest() {
         GlobalLockParam param = new GlobalLockParam();
         param.setBranchId("2001");
         param.setTableName("tb_order");
@@ -250,7 +250,7 @@ class GlobalLockDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testDeleteLock_missingBranchId() {
+    void deleteLockMissingBranchIdTest() {
         GlobalLockParam param = new GlobalLockParam();
         param.setXid("test-xid-001");
         param.setTableName("tb_order");
@@ -263,7 +263,7 @@ class GlobalLockDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testDeleteLock_missingTableName() {
+    void deleteLockMissingTableNameTest() {
         GlobalLockParam param = new GlobalLockParam();
         param.setXid("test-xid-001");
         param.setBranchId("2001");
@@ -276,7 +276,7 @@ class GlobalLockDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testDeleteLock_missingPk() {
+    void deleteLockMissingPkTest() {
         GlobalLockParam param = new GlobalLockParam();
         param.setXid("test-xid-001");
         param.setBranchId("2001");
@@ -289,7 +289,7 @@ class GlobalLockDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testDeleteLock_missingResourceId() {
+    void deleteLockMissingResourceIdTest() {
         GlobalLockParam param = new GlobalLockParam();
         param.setXid("test-xid-001");
         param.setBranchId("2001");
@@ -302,7 +302,7 @@ class GlobalLockDBServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testDeleteLock_sqlException() throws SQLException {
+    void deleteLockSqlExceptionTest() throws SQLException {
         GlobalLockParam param = new GlobalLockParam();
         param.setXid("test-xid-001");
         param.setBranchId("2001");

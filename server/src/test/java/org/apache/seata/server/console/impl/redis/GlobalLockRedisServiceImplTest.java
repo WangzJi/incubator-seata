@@ -73,7 +73,7 @@ class GlobalLockRedisServiceImplTest extends BaseSpringBootTest {
         String tableName = "tb_order";
 
         String rowKey1 = DEFAULT_REDIS_SEATA_ROW_LOCK_PREFIX + resourceId + SPLIT + tableName + SPLIT + "1";
-        jedis.hset(rowKey1, "xid", "test-xid-001");
+        jedis.hset(rowKey1, "xid", "127.0.0.1:8091:1001");
         jedis.hset(rowKey1, "branchId", "2001");
         jedis.hset(rowKey1, "tableName", tableName);
         jedis.hset(rowKey1, "pk", "1");
@@ -81,14 +81,14 @@ class GlobalLockRedisServiceImplTest extends BaseSpringBootTest {
         jedis.hset(rowKey1, "rowKey", tableName + ":1");
 
         String rowKey2 = DEFAULT_REDIS_SEATA_ROW_LOCK_PREFIX + resourceId + SPLIT + tableName + SPLIT + "2";
-        jedis.hset(rowKey2, "xid", "test-xid-001");
+        jedis.hset(rowKey2, "xid", "127.0.0.1:8091:1001");
         jedis.hset(rowKey2, "branchId", "2002");
         jedis.hset(rowKey2, "tableName", tableName);
         jedis.hset(rowKey2, "pk", "2");
         jedis.hset(rowKey2, "resourceId", resourceId);
         jedis.hset(rowKey2, "rowKey", tableName + ":2");
 
-        String globalLockKey = DEFAULT_REDIS_SEATA_GLOBAL_LOCK_PREFIX + "test-xid-001";
+        String globalLockKey = DEFAULT_REDIS_SEATA_GLOBAL_LOCK_PREFIX + "127.0.0.1:8091:1001";
         jedis.hset(globalLockKey, "2001", rowKey1);
         jedis.hset(globalLockKey, "2002", rowKey2);
     }
@@ -110,7 +110,7 @@ class GlobalLockRedisServiceImplTest extends BaseSpringBootTest {
         GlobalLockParam param = new GlobalLockParam();
         param.setPageNum(1);
         param.setPageSize(10);
-        param.setXid("test-xid-001");
+        param.setXid("127.0.0.1:8091:1001");
 
         PageResult<GlobalLockVO> result = globalLockRedisService.query(param);
 
@@ -125,7 +125,7 @@ class GlobalLockRedisServiceImplTest extends BaseSpringBootTest {
         GlobalLockParam param = new GlobalLockParam();
         param.setPageNum(1);
         param.setPageSize(10);
-        param.setXid("test-xid-002");
+        param.setXid("127.0.0.1:8091:1002");
 
         PageResult<GlobalLockVO> result = globalLockRedisService.query(param);
 
@@ -150,7 +150,7 @@ class GlobalLockRedisServiceImplTest extends BaseSpringBootTest {
         Assertions.assertTrue(result.isSuccess());
         Assertions.assertEquals(1, result.getData().size());
         Assertions.assertEquals(1, result.getTotal());
-        Assertions.assertEquals("test-xid-001", result.getData().get(0).getXid());
+        Assertions.assertEquals("127.0.0.1:8091:1001", result.getData().get(0).getXid());
         Assertions.assertEquals("tb_order", result.getData().get(0).getTableName());
     }
 
@@ -191,7 +191,7 @@ class GlobalLockRedisServiceImplTest extends BaseSpringBootTest {
         GlobalLockParam param = new GlobalLockParam();
         param.setPageNum(0);
         param.setPageSize(10);
-        param.setXid("test-xid-001");
+        param.setXid("127.0.0.1:8091:1001");
 
         IllegalArgumentException exception =
                 Assertions.assertThrows(IllegalArgumentException.class, () -> globalLockRedisService.query(param));
@@ -203,7 +203,7 @@ class GlobalLockRedisServiceImplTest extends BaseSpringBootTest {
         GlobalLockParam param = new GlobalLockParam();
         param.setPageNum(1);
         param.setPageSize(0);
-        param.setXid("test-xid-001");
+        param.setXid("127.0.0.1:8091:1001");
 
         IllegalArgumentException exception =
                 Assertions.assertThrows(IllegalArgumentException.class, () -> globalLockRedisService.query(param));
@@ -213,7 +213,7 @@ class GlobalLockRedisServiceImplTest extends BaseSpringBootTest {
     @Test
     void deleteLockSuccessTest() throws TransactionException {
         GlobalLockParam param = new GlobalLockParam();
-        param.setXid("test-xid-001");
+        param.setXid("127.0.0.1:8091:1001");
         param.setBranchId("2001");
         param.setTableName("tb_order");
         param.setPk("1");
@@ -241,7 +241,7 @@ class GlobalLockRedisServiceImplTest extends BaseSpringBootTest {
     @Test
     void deleteLockMissingBranchIdTest() {
         GlobalLockParam param = new GlobalLockParam();
-        param.setXid("test-xid-001");
+        param.setXid("127.0.0.1:8091:1001");
         param.setTableName("tb_order");
         param.setPk("1");
         param.setResourceId("jdbc:mysql://localhost:3306/test");
@@ -254,7 +254,7 @@ class GlobalLockRedisServiceImplTest extends BaseSpringBootTest {
     @Test
     void deleteLockMissingTableNameTest() {
         GlobalLockParam param = new GlobalLockParam();
-        param.setXid("test-xid-001");
+        param.setXid("127.0.0.1:8091:1001");
         param.setBranchId("2001");
         param.setPk("1");
         param.setResourceId("jdbc:mysql://localhost:3306/test");
@@ -267,7 +267,7 @@ class GlobalLockRedisServiceImplTest extends BaseSpringBootTest {
     @Test
     void deleteLockMissingPkTest() {
         GlobalLockParam param = new GlobalLockParam();
-        param.setXid("test-xid-001");
+        param.setXid("127.0.0.1:8091:1001");
         param.setBranchId("2001");
         param.setTableName("tb_order");
         param.setResourceId("jdbc:mysql://localhost:3306/test");
@@ -280,7 +280,7 @@ class GlobalLockRedisServiceImplTest extends BaseSpringBootTest {
     @Test
     void deleteLockMissingResourceIdTest() {
         GlobalLockParam param = new GlobalLockParam();
-        param.setXid("test-xid-001");
+        param.setXid("127.0.0.1:8091:1001");
         param.setBranchId("2001");
         param.setTableName("tb_order");
         param.setPk("1");
