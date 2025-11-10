@@ -19,24 +19,23 @@ package org.apache.seata.server.console.impl.redis;
 import org.apache.seata.common.exception.FrameworkErrorCode;
 import org.apache.seata.common.result.PageResult;
 import org.apache.seata.core.model.GlobalStatus;
+import org.apache.seata.core.store.GlobalTransactionDO;
 import org.apache.seata.server.BaseSpringBootTest;
 import org.apache.seata.server.console.entity.param.GlobalSessionParam;
 import org.apache.seata.server.console.entity.vo.GlobalSessionVO;
-import org.apache.seata.server.session.GlobalSession;
+import org.apache.seata.server.storage.redis.JedisPooledFactory;
 import org.apache.seata.server.storage.redis.store.RedisTransactionStoreManager;
 import org.apache.seata.server.storage.redis.store.RedisTransactionStoreManagerFactory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
+import redis.clients.jedis.Jedis;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import java.util.Set;
 
 /**
  * Test for GlobalSessionRedisServiceImpl
@@ -51,40 +50,66 @@ class GlobalSessionRedisServiceImplTest extends BaseSpringBootTest {
     private GlobalSessionRedisServiceImpl globalSessionRedisService;
 
     private RedisTransactionStoreManager redisTransactionStoreManager;
+    private Jedis jedis;
 
     @BeforeEach
     void setUp() {
         redisTransactionStoreManager = RedisTransactionStoreManagerFactory.getInstance();
+        jedis = JedisPooledFactory.getJedisInstance();
+        cleanupRedisSessionData();
+    }
+
+    @AfterEach
+    void tearDown() {
+        cleanupRedisSessionData();
+        if (jedis != null) {
+            jedis.close();
+        }
+    }
+
+    private void cleanupRedisSessionData() {
+        Set<String> keys = jedis.keys("SEATA_GLOBAL_*");
+        if (keys != null && !keys.isEmpty()) {
+            jedis.del(keys.toArray(new String[0]));
+        }
+
+        keys = jedis.keys("SEATA_STATUS_*");
+        if (keys != null && !keys.isEmpty()) {
+            for (String key : keys) {
+                jedis.del(key);
+            }
+        }
+
+        jedis.del("SEATA_BEGIN_TRANSACTIONS");
+    }
+
+    private void createTestGlobalTransaction(String xid, long transactionId, GlobalStatus status) throws Exception {
+        GlobalTransactionDO globalTransactionDO = new GlobalTransactionDO();
+        globalTransactionDO.setXid(xid);
+        globalTransactionDO.setTransactionId(transactionId);
+        globalTransactionDO.setStatus(status.getCode());
+        globalTransactionDO.setApplicationId("test-app");
+        globalTransactionDO.setTransactionServiceGroup("default_tx_group");
+        globalTransactionDO.setTransactionName("test-transaction-" + transactionId);
+        globalTransactionDO.setTimeout(60000);
+        globalTransactionDO.setBeginTime(System.currentTimeMillis());
+
+        java.lang.reflect.Method method = redisTransactionStoreManager
+                .getClass()
+                .getDeclaredMethod("insertGlobalTransactionDO", GlobalTransactionDO.class);
+        method.setAccessible(true);
+        method.invoke(redisTransactionStoreManager, globalTransactionDO);
     }
 
     @Test
-    void testQuery_allSessions() {
+    void testQuery_allSessions() throws Exception {
+        createTestGlobalTransaction("test-xid-001", 1001L, GlobalStatus.Begin);
+        createTestGlobalTransaction("test-xid-002", 1002L, GlobalStatus.Begin);
+
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(10);
         param.setWithBranch(false);
-
-        List<GlobalSession> globalSessions = new ArrayList<>();
-        GlobalSession session1 = mock(GlobalSession.class);
-        when(session1.getXid()).thenReturn("test-xid-001");
-        when(session1.getStatus()).thenReturn(GlobalStatus.Begin);
-        when(session1.getApplicationId()).thenReturn("test-app");
-        when(session1.getTransactionServiceGroup()).thenReturn("default_tx_group");
-        when(session1.getTransactionName()).thenReturn("test-transaction");
-        when(session1.getTimeout()).thenReturn(60000);
-        when(session1.getBeginTime()).thenReturn(System.currentTimeMillis());
-
-        GlobalSession session2 = mock(GlobalSession.class);
-        when(session2.getXid()).thenReturn("test-xid-002");
-        when(session2.getStatus()).thenReturn(GlobalStatus.Begin);
-        when(session2.getApplicationId()).thenReturn("test-app");
-        when(session2.getTransactionServiceGroup()).thenReturn("default_tx_group");
-        when(session2.getTransactionName()).thenReturn("test-transaction-2");
-        when(session2.getTimeout()).thenReturn(60000);
-        when(session2.getBeginTime()).thenReturn(System.currentTimeMillis());
-
-        globalSessions.add(session1);
-        globalSessions.add(session2);
 
         PageResult<GlobalSessionVO> result = globalSessionRedisService.query(param);
 
@@ -97,24 +122,14 @@ class GlobalSessionRedisServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_byXid() {
+    void testQuery_byXid() throws Exception {
+        createTestGlobalTransaction("test-xid-001", 1001L, GlobalStatus.Begin);
+
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(10);
         param.setXid("test-xid-001");
         param.setWithBranch(false);
-
-        List<GlobalSession> globalSessions = new ArrayList<>();
-        GlobalSession session = mock(GlobalSession.class);
-        when(session.getXid()).thenReturn("test-xid-001");
-        when(session.getStatus()).thenReturn(GlobalStatus.Begin);
-        when(session.getApplicationId()).thenReturn("test-app");
-        when(session.getTransactionServiceGroup()).thenReturn("default_tx_group");
-        when(session.getTransactionName()).thenReturn("test-transaction");
-        when(session.getTimeout()).thenReturn(60000);
-        when(session.getBeginTime()).thenReturn(System.currentTimeMillis());
-
-        globalSessions.add(session);
 
         PageResult<GlobalSessionVO> result = globalSessionRedisService.query(param);
 
@@ -126,24 +141,14 @@ class GlobalSessionRedisServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_byStatus() {
+    void testQuery_byStatus() throws Exception {
+        createTestGlobalTransaction("test-xid-001", 1001L, GlobalStatus.Begin);
+
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(10);
         param.setStatus(GlobalStatus.Begin.getCode());
         param.setWithBranch(false);
-
-        List<GlobalSession> globalSessions = new ArrayList<>();
-        GlobalSession session = mock(GlobalSession.class);
-        when(session.getXid()).thenReturn("test-xid-001");
-        when(session.getStatus()).thenReturn(GlobalStatus.Begin);
-        when(session.getApplicationId()).thenReturn("test-app");
-        when(session.getTransactionServiceGroup()).thenReturn("default_tx_group");
-        when(session.getTransactionName()).thenReturn("test-transaction");
-        when(session.getTimeout()).thenReturn(60000);
-        when(session.getBeginTime()).thenReturn(System.currentTimeMillis());
-
-        globalSessions.add(session);
 
         PageResult<GlobalSessionVO> result = globalSessionRedisService.query(param);
 
@@ -154,25 +159,15 @@ class GlobalSessionRedisServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_byXidAndStatus() {
+    void testQuery_byXidAndStatus() throws Exception {
+        createTestGlobalTransaction("test-xid-001", 1001L, GlobalStatus.Begin);
+
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(10);
         param.setXid("test-xid-001");
         param.setStatus(GlobalStatus.Begin.getCode());
         param.setWithBranch(false);
-
-        List<GlobalSession> globalSessions = new ArrayList<>();
-        GlobalSession session = mock(GlobalSession.class);
-        when(session.getXid()).thenReturn("test-xid-001");
-        when(session.getStatus()).thenReturn(GlobalStatus.Begin);
-        when(session.getApplicationId()).thenReturn("test-app");
-        when(session.getTransactionServiceGroup()).thenReturn("default_tx_group");
-        when(session.getTransactionName()).thenReturn("test-transaction");
-        when(session.getTimeout()).thenReturn(60000);
-        when(session.getBeginTime()).thenReturn(System.currentTimeMillis());
-
-        globalSessions.add(session);
 
         PageResult<GlobalSessionVO> result = globalSessionRedisService.query(param);
 
@@ -215,24 +210,14 @@ class GlobalSessionRedisServiceImplTest extends BaseSpringBootTest {
     }
 
     @Test
-    void testQuery_withBranch() {
+    void testQuery_withBranch() throws Exception {
+        createTestGlobalTransaction("test-xid-001", 1001L, GlobalStatus.Begin);
+
         GlobalSessionParam param = new GlobalSessionParam();
         param.setPageNum(1);
         param.setPageSize(10);
         param.setXid("test-xid-001");
         param.setWithBranch(true);
-
-        List<GlobalSession> globalSessions = new ArrayList<>();
-        GlobalSession session = mock(GlobalSession.class);
-        when(session.getXid()).thenReturn("test-xid-001");
-        when(session.getStatus()).thenReturn(GlobalStatus.Begin);
-        when(session.getApplicationId()).thenReturn("test-app");
-        when(session.getTransactionServiceGroup()).thenReturn("default_tx_group");
-        when(session.getTransactionName()).thenReturn("test-transaction");
-        when(session.getTimeout()).thenReturn(60000);
-        when(session.getBeginTime()).thenReturn(System.currentTimeMillis());
-
-        globalSessions.add(session);
 
         PageResult<GlobalSessionVO> result = globalSessionRedisService.query(param);
 
@@ -269,8 +254,6 @@ class GlobalSessionRedisServiceImplTest extends BaseSpringBootTest {
         param.setPageNum(1);
         param.setPageSize(10);
         param.setWithBranch(false);
-
-        List<GlobalSession> globalSessions = new ArrayList<>();
 
         PageResult<GlobalSessionVO> result = globalSessionRedisService.query(param);
 

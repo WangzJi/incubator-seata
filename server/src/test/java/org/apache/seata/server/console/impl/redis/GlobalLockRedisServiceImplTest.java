@@ -23,14 +23,21 @@ import org.apache.seata.core.exception.TransactionException;
 import org.apache.seata.server.BaseSpringBootTest;
 import org.apache.seata.server.console.entity.param.GlobalLockParam;
 import org.apache.seata.server.console.entity.vo.GlobalLockVO;
-import org.apache.seata.server.lock.LockManager;
+import org.apache.seata.server.storage.redis.JedisPooledFactory;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.util.ReflectionTestUtils;
+import redis.clients.jedis.Jedis;
+
+import java.util.Set;
+
+import static org.apache.seata.core.constants.RedisKeyConstants.DEFAULT_REDIS_SEATA_GLOBAL_LOCK_PREFIX;
+import static org.apache.seata.core.constants.RedisKeyConstants.DEFAULT_REDIS_SEATA_ROW_LOCK_PREFIX;
+import static org.apache.seata.core.constants.RedisKeyConstants.SPLIT;
 
 /**
  * Test for GlobalLockRedisServiceImpl
@@ -44,13 +51,58 @@ class GlobalLockRedisServiceImplTest extends BaseSpringBootTest {
     @Autowired
     private GlobalLockRedisServiceImpl globalLockRedisService;
 
-    @Autowired
-    private LockManager lockManager;
+    private Jedis jedis;
 
     @BeforeEach
     void setUp() {
-        // Inject lockManager to service (already autowired by Spring)
-        ReflectionTestUtils.setField(globalLockRedisService, "lockManager", lockManager);
+        jedis = JedisPooledFactory.getJedisInstance();
+        cleanupRedisLockData();
+        setupTestLockData();
+    }
+
+    @AfterEach
+    void tearDown() {
+        cleanupRedisLockData();
+        if (jedis != null) {
+            jedis.close();
+        }
+    }
+
+    private void setupTestLockData() {
+        String resourceId = "jdbc:mysql://localhost:3306/test";
+        String tableName = "tb_order";
+
+        String rowKey1 = DEFAULT_REDIS_SEATA_ROW_LOCK_PREFIX + resourceId + SPLIT + tableName + SPLIT + "1";
+        jedis.hset(rowKey1, "xid", "test-xid-001");
+        jedis.hset(rowKey1, "branchId", "2001");
+        jedis.hset(rowKey1, "tableName", tableName);
+        jedis.hset(rowKey1, "pk", "1");
+        jedis.hset(rowKey1, "resourceId", resourceId);
+        jedis.hset(rowKey1, "rowKey", tableName + ":1");
+
+        String rowKey2 = DEFAULT_REDIS_SEATA_ROW_LOCK_PREFIX + resourceId + SPLIT + tableName + SPLIT + "2";
+        jedis.hset(rowKey2, "xid", "test-xid-001");
+        jedis.hset(rowKey2, "branchId", "2002");
+        jedis.hset(rowKey2, "tableName", tableName);
+        jedis.hset(rowKey2, "pk", "2");
+        jedis.hset(rowKey2, "resourceId", resourceId);
+        jedis.hset(rowKey2, "rowKey", tableName + ":2");
+
+        String globalLockKey = DEFAULT_REDIS_SEATA_GLOBAL_LOCK_PREFIX + "test-xid-001";
+        jedis.hset(globalLockKey, "2001", rowKey1);
+        jedis.hset(globalLockKey, "2002", rowKey2);
+    }
+
+    private void cleanupRedisLockData() {
+        Set<String> keys = jedis.keys(DEFAULT_REDIS_SEATA_ROW_LOCK_PREFIX + "*");
+        if (keys != null && !keys.isEmpty()) {
+            jedis.del(keys.toArray(new String[0]));
+        }
+
+        keys = jedis.keys(DEFAULT_REDIS_SEATA_GLOBAL_LOCK_PREFIX + "*");
+        if (keys != null && !keys.isEmpty()) {
+            jedis.del(keys.toArray(new String[0]));
+        }
     }
 
     @Test
