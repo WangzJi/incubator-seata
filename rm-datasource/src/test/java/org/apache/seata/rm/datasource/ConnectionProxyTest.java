@@ -132,4 +132,79 @@ public class ConnectionProxyTest {
         Assertions.assertThrows(LockWaitTimeoutException.class, connectionProxy::commit);
         branchRollbackFlagField.set(null, oldBranchRollbackFlag);
     }
+
+    @Test
+    public void testGetContext() {
+        ConnectionProxy connectionProxy =
+                new ConnectionProxy(dataSourceProxy, new MockConnection(new MockDriver(), "", null));
+        Assertions.assertNotNull(connectionProxy.getContext());
+    }
+
+    @Test
+    public void testBindXid() {
+        ConnectionProxy connectionProxy =
+                new ConnectionProxy(dataSourceProxy, new MockConnection(new MockDriver(), "", null));
+        connectionProxy.bind(TEST_XID);
+        Assertions.assertEquals(TEST_XID, connectionProxy.getContext().getXid());
+    }
+
+    @Test
+    public void testSetGlobalLockRequire() {
+        ConnectionProxy connectionProxy =
+                new ConnectionProxy(dataSourceProxy, new MockConnection(new MockDriver(), "", null));
+        connectionProxy.setGlobalLockRequire(true);
+        Assertions.assertTrue(connectionProxy.isGlobalLockRequire());
+        connectionProxy.setGlobalLockRequire(false);
+        Assertions.assertFalse(connectionProxy.isGlobalLockRequire());
+    }
+
+    @Test
+    public void testAppendUndoLog() {
+        ConnectionProxy connectionProxy =
+                new ConnectionProxy(dataSourceProxy, new MockConnection(new MockDriver(), "", null));
+        SQLUndoLog undoLog = new SQLUndoLog();
+        connectionProxy.appendUndoLog(undoLog);
+        Assertions.assertEquals(1, connectionProxy.getContext().getUndoItems().size());
+    }
+
+    @Test
+    public void testAppendLockKey() {
+        ConnectionProxy connectionProxy =
+                new ConnectionProxy(dataSourceProxy, new MockConnection(new MockDriver(), "", null));
+        connectionProxy.appendLockKey("test:1");
+        connectionProxy.appendLockKey("test:2");
+        Assertions.assertNotNull(connectionProxy.getContext());
+    }
+
+    @Test
+    public void testGetTargetConnection() {
+        MockConnection mockConnection = new MockConnection(new MockDriver(), "", null);
+        ConnectionProxy connectionProxy = new ConnectionProxy(dataSourceProxy, mockConnection);
+        Assertions.assertEquals(mockConnection, connectionProxy.getTargetConnection());
+    }
+
+    @Test
+    public void testGetDataSourceProxy() {
+        ConnectionProxy connectionProxy =
+                new ConnectionProxy(dataSourceProxy, new MockConnection(new MockDriver(), "", null));
+        Assertions.assertEquals(dataSourceProxy, connectionProxy.getDataSourceProxy());
+    }
+
+    @Test
+    public void testCheckLockWithBlankLockKeys() throws Exception {
+        ConnectionProxy connectionProxy =
+                new ConnectionProxy(dataSourceProxy, new MockConnection(new MockDriver(), "", null));
+        connectionProxy.bind(TEST_XID);
+        connectionProxy.checkLock("");
+        connectionProxy.checkLock(null);
+    }
+
+    @Test
+    public void testLockQueryWithBlankLockKeys() throws Exception {
+        ConnectionProxy connectionProxy =
+                new ConnectionProxy(dataSourceProxy, new MockConnection(new MockDriver(), "", null));
+        connectionProxy.bind(TEST_XID);
+        boolean result = connectionProxy.lockQuery("");
+        Assertions.assertFalse(result);
+    }
 }

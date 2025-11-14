@@ -18,6 +18,7 @@ package org.apache.seata.rm.datasource.exec;
 
 import com.google.common.collect.Lists;
 import org.apache.seata.common.exception.NotSupportYetException;
+import org.apache.seata.common.exception.ShouldNeverHappenException;
 import org.apache.seata.rm.datasource.ConnectionProxy;
 import org.apache.seata.rm.datasource.PreparedStatementProxy;
 import org.apache.seata.rm.datasource.StatementProxy;
@@ -169,6 +170,130 @@ public class MySQLInsertOnDuplicateUpdateExecutorTest {
         Assertions.assertThrows(NotSupportYetException.class, () -> {
             insertOrUpdateExecutor.beforeImage();
         });
+    }
+
+    @Test
+    public void testBuildImageParametersWithUpdatePrimaryKey() {
+        mockParameters();
+        mockInsertColumns();
+        List<String> duplicateKeyUpdateColumns = new ArrayList<>();
+        duplicateKeyUpdateColumns.add("id");
+        when(sqlInsertRecognizer.getDuplicateKeyUpdate()).thenReturn(duplicateKeyUpdateColumns);
+
+        mockAllIndexes();
+        doReturn(tableMeta).when(insertOrUpdateExecutor).getTableMeta();
+        doReturn(pkIndexMap).when(insertOrUpdateExecutor).getPkIndex();
+
+        List<List<Object>> rows = new ArrayList<>();
+        rows.add(Arrays.asList("?", "?", "?", "?"));
+        when(sqlInsertRecognizer.getInsertRows(pkIndexMap.values())).thenReturn(rows);
+
+        Assertions.assertThrows(ShouldNeverHappenException.class, () -> {
+            insertOrUpdateExecutor.buildImageParameters(sqlInsertRecognizer);
+        });
+    }
+
+    @Test
+    public void testBuildImageParametersWithEmptyInsertColumns() {
+        mockParameters();
+        when(sqlInsertRecognizer.getInsertColumns()).thenReturn(null);
+
+        Map<String, ColumnMeta> allColumns = new LinkedHashMap<>();
+        allColumns.put("id", new ColumnMeta());
+        allColumns.put("user_id", new ColumnMeta());
+        allColumns.put("user_name", new ColumnMeta());
+        allColumns.put("user_status", new ColumnMeta());
+        when(tableMeta.getAllColumns()).thenReturn(allColumns);
+
+        List<List<Object>> rows = new ArrayList<>();
+        rows.add(Arrays.asList("?", "?", "?", "?"));
+        when(sqlInsertRecognizer.getInsertRows(pkIndexMap.values())).thenReturn(rows);
+
+        doReturn(tableMeta).when(insertOrUpdateExecutor).getTableMeta();
+        doReturn(pkIndexMap).when(insertOrUpdateExecutor).getPkIndex();
+
+        Map<String, ArrayList<Object>> result = insertOrUpdateExecutor.buildImageParameters(sqlInsertRecognizer);
+        Assertions.assertNotNull(result);
+    }
+
+    @Test
+    public void testBuildImageSQLWithDefaultValue() {
+        mockParameters();
+        mockInsertColumns();
+        doReturn(pkIndexMap).when(insertOrUpdateExecutor).getPkIndex();
+
+        Map<String, IndexMeta> allIndex = new HashMap<>();
+        IndexMeta primary = new IndexMeta();
+        primary.setIndextype(IndexType.PRIMARY);
+        ColumnMeta columnMeta = new ColumnMeta();
+        columnMeta.setColumnName("id");
+        columnMeta.setColumnDef("AUTO_INCREMENT");
+        primary.setValues(Lists.newArrayList(columnMeta));
+        allIndex.put("PRIMARY", primary);
+        when(tableMeta.getAllIndexes()).thenReturn(allIndex);
+
+        List<List<Object>> insertRows = new ArrayList<>();
+        insertRows.add(Arrays.asList("?", "?", "?", "?"));
+        when(sqlInsertRecognizer.getInsertRows(pkIndexMap.values())).thenReturn(insertRows);
+
+        String sql = insertOrUpdateExecutor.buildImageSQL(tableMeta);
+        Assertions.assertTrue(sql.contains("DEFAULT"));
+    }
+
+    @Test
+    public void testBuildTableRecords2WithEmptyParamAppenderList() {
+        doReturn(tableMeta).when(insertOrUpdateExecutor).getTableMeta();
+
+        Assertions.assertThrows(NotSupportYetException.class, () -> {
+            insertOrUpdateExecutor.buildTableRecords2(
+                    tableMeta, "SELECT * FROM test", new ArrayList<>(), Collections.emptyList());
+        });
+    }
+
+    @Test
+    public void testBuildImageParametersWithRowSizeMismatch() {
+        mockParameters();
+        mockInsertColumns();
+        doReturn(pkIndexMap).when(insertOrUpdateExecutor).getPkIndex();
+
+        List<List<Object>> rows = new ArrayList<>();
+        rows.add(Arrays.asList("?", "?"));
+        when(sqlInsertRecognizer.getInsertRows(pkIndexMap.values())).thenReturn(rows);
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            insertOrUpdateExecutor.buildImageParameters(sqlInsertRecognizer);
+        });
+    }
+
+    @Test
+    public void testGetSelectSQL() {
+        mockParameters();
+        mockInsertColumns();
+        mockAllIndexes();
+        doReturn(pkIndexMap).when(insertOrUpdateExecutor).getPkIndex();
+
+        List<List<Object>> insertRows = new ArrayList<>();
+        insertRows.add(Arrays.asList("?", "?", "?", "?"));
+        when(sqlInsertRecognizer.getInsertRows(pkIndexMap.values())).thenReturn(insertRows);
+
+        insertOrUpdateExecutor.buildImageSQL(tableMeta);
+        Assertions.assertNotNull(insertOrUpdateExecutor.getSelectSQL());
+    }
+
+    @Test
+    public void testGetParamAppenderList() {
+        mockParameters();
+        mockInsertColumns();
+        mockAllIndexes();
+        doReturn(pkIndexMap).when(insertOrUpdateExecutor).getPkIndex();
+
+        List<List<Object>> insertRows = new ArrayList<>();
+        insertRows.add(Arrays.asList("?", "?", "?", "?"));
+        when(sqlInsertRecognizer.getInsertRows(pkIndexMap.values())).thenReturn(insertRows);
+
+        insertOrUpdateExecutor.buildImageSQL(tableMeta);
+        Assertions.assertNotNull(insertOrUpdateExecutor.getParamAppenderList());
+        Assertions.assertTrue(insertOrUpdateExecutor.getParamAppenderList().size() > 0);
     }
 
     protected void mockAllIndexes() {
