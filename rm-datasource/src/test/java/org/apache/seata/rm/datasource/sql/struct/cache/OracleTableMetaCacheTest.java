@@ -98,8 +98,9 @@ public class OracleTableMetaCacheTest {
     @Test
     public void testGetTableMetaWithNoIndexThrowsException() throws SQLException {
         Object[][] emptyIndexMetas = new Object[][] {};
+        Object[][] tableMetasForTest = new Object[][] {new Object[] {"", "t", "ot2"}};
 
-        MockDriver mockDriver = new MockDriver(columnMetas, emptyIndexMetas, pkMetas, tableMetas);
+        MockDriver mockDriver = new MockDriver(columnMetas, emptyIndexMetas, pkMetas, tableMetasForTest);
         DruidDataSource dataSource = new DruidDataSource();
         dataSource.setUrl("jdbc:mock:xxx");
         dataSource.setDriver(mockDriver);
@@ -108,7 +109,7 @@ public class OracleTableMetaCacheTest {
         TableMetaCache tableMetaCache = TableMetaCacheFactory.getTableMetaCache(JdbcConstants.ORACLE);
 
         Assertions.assertThrows(ShouldNeverHappenException.class, () -> {
-            tableMetaCache.getTableMeta(proxy.getPlainConnection(), "t.ot1", proxy.getResourceId());
+            tableMetaCache.getTableMeta(proxy.getPlainConnection(), "t.ot2", proxy.getResourceId());
         });
     }
 
