@@ -19,6 +19,7 @@ package org.apache.seata.rm.datasource.exec;
 import com.google.common.collect.Lists;
 import org.apache.seata.common.exception.NotSupportYetException;
 import org.apache.seata.common.exception.ShouldNeverHappenException;
+import org.apache.seata.common.util.LowerCaseLinkHashMap;
 import org.apache.seata.rm.datasource.ConnectionProxy;
 import org.apache.seata.rm.datasource.PreparedStatementProxy;
 import org.apache.seata.rm.datasource.StatementProxy;
@@ -218,9 +219,14 @@ public class MySQLInsertOnDuplicateUpdateExecutorTest {
 
     @Test
     public void testBuildImageSQLWithDefaultValue() {
-        mockParameters();
-        mockInsertColumns();
-        doReturn(pkIndexMap).when(insertOrUpdateExecutor).getPkIndex();
+        mockParametersWithoutPkColumn();
+        List<String> columns = new ArrayList<>();
+        columns.add(USER_ID_COLUMN);
+        columns.add(USER_NAME_COLUMN);
+        columns.add(USER_STATUS_COLUMN);
+        when(sqlInsertRecognizer.getInsertColumns()).thenReturn(columns);
+        Map<String, Integer> pkIndexWithoutId = new HashMap<>();
+        doReturn(pkIndexWithoutId).when(insertOrUpdateExecutor).getPkIndex();
 
         Map<String, IndexMeta> allIndex = new HashMap<>();
         IndexMeta primary = new IndexMeta();
@@ -233,8 +239,8 @@ public class MySQLInsertOnDuplicateUpdateExecutorTest {
         when(tableMeta.getAllIndexes()).thenReturn(allIndex);
 
         List<List<Object>> insertRows = new ArrayList<>();
-        insertRows.add(Arrays.asList("?", "?", "?", "?"));
-        when(sqlInsertRecognizer.getInsertRows(pkIndexMap.values())).thenReturn(insertRows);
+        insertRows.add(Arrays.asList("?", "?", "?"));
+        when(sqlInsertRecognizer.getInsertRows(pkIndexWithoutId.values())).thenReturn(insertRows);
 
         String sql = insertOrUpdateExecutor.buildImageSQL(tableMeta);
         Assertions.assertTrue(sql.contains("DEFAULT"));
@@ -297,20 +303,20 @@ public class MySQLInsertOnDuplicateUpdateExecutorTest {
     }
 
     protected void mockAllIndexes() {
-        Map<String, IndexMeta> allIndex = new HashMap<>();
+        Map<String, IndexMeta> allIndex = new LowerCaseLinkHashMap<>();
+        IndexMeta unique = new IndexMeta();
+        unique.setIndextype(IndexType.UNIQUE);
+        ColumnMeta columnMetaUnique = new ColumnMeta();
+        columnMetaUnique.setColumnName("user_id");
+        unique.setValues(Lists.newArrayList(columnMetaUnique));
+        allIndex.put("user_id_unique", unique);
+
         IndexMeta primary = new IndexMeta();
         primary.setIndextype(IndexType.PRIMARY);
         ColumnMeta columnMeta = new ColumnMeta();
         columnMeta.setColumnName("id");
         primary.setValues(Lists.newArrayList(columnMeta));
-        allIndex.put("id", primary);
-
-        IndexMeta unique = new IndexMeta();
-        unique.setIndextype(IndexType.PRIMARY);
-        ColumnMeta columnMetaUnique = new ColumnMeta();
-        columnMetaUnique.setColumnName("user_id");
-        unique.setValues(Lists.newArrayList(columnMetaUnique));
-        allIndex.put("user_id", unique);
+        allIndex.put("PRIMARY", primary);
         when(tableMeta.getAllIndexes()).thenReturn(allIndex);
     }
 
@@ -420,5 +426,30 @@ public class MySQLInsertOnDuplicateUpdateExecutorTest {
         List<List<Object>> rows = new ArrayList<>();
         rows.add(Arrays.asList("?", "?", "?", "?"));
         when(sqlInsertRecognizer.getInsertRows(pkIndexMap.values())).thenReturn(rows);
+    }
+
+    protected void mockParametersWithoutPkColumn() {
+        Map<Integer, ArrayList<Object>> parameters = new HashMap<>(4);
+        ArrayList<Object> userId1 = new ArrayList<>();
+        userId1.add("userId1");
+        ArrayList<Object> userName1 = new ArrayList<>();
+        userName1.add("userName1");
+        ArrayList<Object> userStatus1 = new ArrayList<>();
+        userStatus1.add("userStatus1");
+        parameters.put(1, userId1);
+        parameters.put(2, userName1);
+        parameters.put(3, userStatus1);
+
+        ArrayList<Object> userId2 = new ArrayList<>();
+        userId2.add("userId2");
+        ArrayList<Object> userName2 = new ArrayList<>();
+        userName2.add("userName2");
+        ArrayList<Object> userStatus2 = new ArrayList<>();
+        userStatus2.add("userStatus2");
+        parameters.put(4, userId2);
+        parameters.put(5, userName2);
+        parameters.put(6, userStatus2);
+        PreparedStatementProxy psp = (PreparedStatementProxy) this.statementProxy;
+        when(psp.getParameters()).thenReturn(parameters);
     }
 }
