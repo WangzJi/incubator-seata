@@ -24,8 +24,13 @@ import org.apache.seata.rm.datasource.ConnectionProxy;
 import org.apache.seata.rm.datasource.PreparedStatementProxy;
 import org.apache.seata.rm.datasource.StatementProxy;
 import org.apache.seata.rm.datasource.exec.mysql.MySQLInsertOnDuplicateUpdateExecutor;
+import org.apache.seata.rm.datasource.sql.struct.Field;
+import org.apache.seata.rm.datasource.sql.struct.KeyType;
+import org.apache.seata.rm.datasource.sql.struct.Row;
 import org.apache.seata.rm.datasource.sql.struct.TableRecords;
+import org.apache.seata.rm.datasource.undo.SQLUndoLog;
 import org.apache.seata.sqlparser.SQLInsertRecognizer;
+import org.apache.seata.sqlparser.SQLType;
 import org.apache.seata.sqlparser.struct.ColumnMeta;
 import org.apache.seata.sqlparser.struct.IndexMeta;
 import org.apache.seata.sqlparser.struct.IndexType;
@@ -36,6 +41,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,8 +51,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class MySQLInsertOnDuplicateUpdateExecutorTest {
@@ -451,5 +461,393 @@ public class MySQLInsertOnDuplicateUpdateExecutorTest {
         parameters.put(6, userStatus2);
         PreparedStatementProxy psp = (PreparedStatementProxy) this.statementProxy;
         when(psp.getParameters()).thenReturn(parameters);
+    }
+
+    @Test
+    public void executeAutoCommitFalseInsertScenarioTest() throws Exception {
+        mockParameters();
+        mockInsertColumns();
+        mockAllIndexes();
+        doReturn(pkIndexMap).when(insertOrUpdateExecutor).getPkIndex();
+        doReturn(tableMeta).when(insertOrUpdateExecutor).getTableMeta();
+        when(tableMeta.getPrimaryKeyOnlyName()).thenReturn(Collections.singletonList(ID_COLUMN));
+
+        TableRecords emptyBeforeImage = TableRecords.empty(tableMeta);
+        TableRecords afterImage = new TableRecords(tableMeta);
+        doReturn(emptyBeforeImage).when(insertOrUpdateExecutor).beforeImage();
+
+        PreparedStatementProxy psp = (PreparedStatementProxy) statementProxy;
+        when(psp.getUpdateCount()).thenReturn(2);
+
+        StatementCallback callback = mock(StatementCallback.class);
+        when(callback.execute(any(), any())).thenReturn(null);
+        MySQLInsertOnDuplicateUpdateExecutor executor =
+                spy(new MySQLInsertOnDuplicateUpdateExecutor(statementProxy, callback, sqlInsertRecognizer));
+        doReturn(pkIndexMap).when(executor).getPkIndex();
+        doReturn(tableMeta).when(executor).getTableMeta();
+        doReturn("SELECT * FROM test_table WHERE id = ?").when(executor).buildImageSQL(any(TableMeta.class));
+        doReturn(emptyBeforeImage).when(executor).beforeImage();
+        doReturn(afterImage)
+                .when(executor)
+                .buildTableRecords2(any(TableMeta.class), any(String.class), any(ArrayList.class), any(List.class));
+        doReturn("test_lock_key").when(executor).buildLockKey(any(TableRecords.class));
+
+        java.lang.reflect.Field selectSQLField =
+                MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredField("selectSQL");
+        selectSQLField.setAccessible(true);
+        selectSQLField.set(executor, "SELECT * FROM test_table WHERE id = ?");
+
+        java.lang.reflect.Field paramAppenderListField =
+                MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredField("paramAppenderList");
+        paramAppenderListField.setAccessible(true);
+        ArrayList<List<Object>> paramList = new ArrayList<>();
+        paramList.add(Arrays.asList(100));
+        paramAppenderListField.set(executor, paramList);
+
+        Method method =
+                MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredMethod("executeAutoCommitFalse", Object[].class);
+        method.setAccessible(true);
+        Object result = method.invoke(executor, (Object) new Object[] {});
+
+        Assertions.assertNull(result);
+        verify(executor, times(1)).beforeImage();
+    }
+
+    @Test
+    public void executeAutoCommitFalseUpdateScenarioTest() throws Exception {
+        mockParameters();
+        mockInsertColumns();
+        mockAllIndexes();
+        doReturn(pkIndexMap).when(insertOrUpdateExecutor).getPkIndex();
+        doReturn(tableMeta).when(insertOrUpdateExecutor).getTableMeta();
+        when(tableMeta.getPrimaryKeyOnlyName()).thenReturn(Collections.singletonList(ID_COLUMN));
+
+        TableRecords beforeImage = new TableRecords(tableMeta);
+        TableRecords afterImage = new TableRecords(tableMeta);
+        doReturn(beforeImage).when(insertOrUpdateExecutor).beforeImage();
+
+        PreparedStatementProxy psp = (PreparedStatementProxy) statementProxy;
+        when(psp.getUpdateCount()).thenReturn(1);
+
+        StatementCallback callback = mock(StatementCallback.class);
+        when(callback.execute(any(), any())).thenReturn(null);
+        MySQLInsertOnDuplicateUpdateExecutor executor =
+                spy(new MySQLInsertOnDuplicateUpdateExecutor(statementProxy, callback, sqlInsertRecognizer));
+        doReturn(pkIndexMap).when(executor).getPkIndex();
+        doReturn(tableMeta).when(executor).getTableMeta();
+        doReturn("SELECT * FROM test_table WHERE id = ?").when(executor).buildImageSQL(any(TableMeta.class));
+        doReturn(beforeImage).when(executor).beforeImage();
+        doReturn(afterImage)
+                .when(executor)
+                .buildTableRecords2(any(TableMeta.class), any(String.class), any(ArrayList.class), any(List.class));
+        doReturn("test_lock_key").when(executor).buildLockKey(any(TableRecords.class));
+
+        java.lang.reflect.Field selectSQLField =
+                MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredField("selectSQL");
+        selectSQLField.setAccessible(true);
+        selectSQLField.set(executor, "SELECT * FROM test_table WHERE id = ?");
+
+        java.lang.reflect.Field paramAppenderListField =
+                MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredField("paramAppenderList");
+        paramAppenderListField.setAccessible(true);
+        ArrayList<List<Object>> paramList = new ArrayList<>();
+        paramList.add(Arrays.asList(100));
+        paramAppenderListField.set(executor, paramList);
+
+        Method method =
+                MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredMethod("executeAutoCommitFalse", Object[].class);
+        method.setAccessible(true);
+        Object result = method.invoke(executor, (Object) new Object[] {});
+
+        Assertions.assertNull(result);
+        verify(executor, times(1)).beforeImage();
+    }
+
+    @Test
+    public void executeAutoCommitFalseZeroUpdateCountTest() throws Exception {
+        mockParameters();
+        mockInsertColumns();
+        mockAllIndexes();
+        doReturn(pkIndexMap).when(insertOrUpdateExecutor).getPkIndex();
+        doReturn(tableMeta).when(insertOrUpdateExecutor).getTableMeta();
+        when(tableMeta.getPrimaryKeyOnlyName()).thenReturn(Collections.singletonList(ID_COLUMN));
+
+        TableRecords emptyBeforeImage = TableRecords.empty(tableMeta);
+        doReturn(emptyBeforeImage).when(insertOrUpdateExecutor).beforeImage();
+
+        PreparedStatementProxy psp = (PreparedStatementProxy) statementProxy;
+        when(psp.getUpdateCount()).thenReturn(0);
+
+        StatementCallback callback = mock(StatementCallback.class);
+        when(callback.execute(any(), any())).thenReturn(null);
+        MySQLInsertOnDuplicateUpdateExecutor executor =
+                spy(new MySQLInsertOnDuplicateUpdateExecutor(statementProxy, callback, sqlInsertRecognizer));
+        doReturn(pkIndexMap).when(executor).getPkIndex();
+        doReturn(tableMeta).when(executor).getTableMeta();
+        doReturn("SELECT * FROM test_table WHERE id = ?").when(executor).buildImageSQL(any(TableMeta.class));
+        doReturn(emptyBeforeImage).when(executor).beforeImage();
+
+        Method method =
+                MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredMethod("executeAutoCommitFalse", Object[].class);
+        method.setAccessible(true);
+        Object result = method.invoke(executor, (Object) new Object[] {});
+
+        Assertions.assertNull(result);
+        verify(executor, times(1)).beforeImage();
+    }
+
+    @Test
+    public void executeAutoCommitFalseMultiPkNonMySQLTest() throws Exception {
+        ConnectionProxy oracleConnectionProxy = mock(ConnectionProxy.class);
+        when(oracleConnectionProxy.getDbType()).thenReturn(JdbcConstants.ORACLE);
+
+        StatementProxy oracleStatementProxy = mock(PreparedStatementProxy.class);
+        when(oracleStatementProxy.getConnectionProxy()).thenReturn(oracleConnectionProxy);
+
+        TableMeta multiPkTableMeta = mock(TableMeta.class);
+        when(multiPkTableMeta.getPrimaryKeyOnlyName()).thenReturn(Arrays.asList("id", "user_id"));
+
+        StatementCallback callback = mock(StatementCallback.class);
+        MySQLInsertOnDuplicateUpdateExecutor executor =
+                spy(new MySQLInsertOnDuplicateUpdateExecutor(oracleStatementProxy, callback, sqlInsertRecognizer));
+        doReturn(multiPkTableMeta).when(executor).getTableMeta();
+        doReturn(JdbcConstants.ORACLE).when(executor).getDbType();
+
+        Method method =
+                MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredMethod("executeAutoCommitFalse", Object[].class);
+        method.setAccessible(true);
+
+        Assertions.assertThrows(java.lang.reflect.InvocationTargetException.class, () -> {
+            method.invoke(executor, (Object) new Object[] {});
+        });
+    }
+
+    @Test
+    public void buildUndoItemInsertTypeTest() throws Exception {
+        mockParameters();
+        mockInsertColumns();
+        mockAllIndexes();
+        doReturn(pkIndexMap).when(insertOrUpdateExecutor).getPkIndex();
+        doReturn(tableMeta).when(insertOrUpdateExecutor).getTableMeta();
+        when(sqlInsertRecognizer.getTableName()).thenReturn("test_table");
+
+        TableRecords emptyBeforeImage = TableRecords.empty(tableMeta);
+        TableRecords afterImage = new TableRecords(tableMeta);
+
+        Method method = MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredMethod(
+                "buildUndoItem", SQLType.class, TableRecords.class, TableRecords.class);
+        method.setAccessible(true);
+        SQLUndoLog result =
+                (SQLUndoLog) method.invoke(insertOrUpdateExecutor, SQLType.INSERT, emptyBeforeImage, afterImage);
+
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(SQLType.INSERT, result.getSqlType());
+        Assertions.assertEquals("test_table", result.getTableName());
+        Assertions.assertEquals(emptyBeforeImage, result.getBeforeImage());
+        Assertions.assertEquals(afterImage, result.getAfterImage());
+    }
+
+    @Test
+    public void buildUndoItemUpdateTypeTest() throws Exception {
+        mockParameters();
+        mockInsertColumns();
+        mockAllIndexes();
+        doReturn(pkIndexMap).when(insertOrUpdateExecutor).getPkIndex();
+        doReturn(tableMeta).when(insertOrUpdateExecutor).getTableMeta();
+        when(sqlInsertRecognizer.getTableName()).thenReturn("test_table");
+
+        TableRecords beforeImage = new TableRecords(tableMeta);
+        TableRecords afterImage = new TableRecords(tableMeta);
+
+        Method method = MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredMethod(
+                "buildUndoItem", SQLType.class, TableRecords.class, TableRecords.class);
+        method.setAccessible(true);
+        SQLUndoLog result = (SQLUndoLog) method.invoke(insertOrUpdateExecutor, SQLType.UPDATE, beforeImage, afterImage);
+
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(SQLType.UPDATE, result.getSqlType());
+        Assertions.assertEquals("test_table", result.getTableName());
+        Assertions.assertEquals(beforeImage, result.getBeforeImage());
+        Assertions.assertEquals(afterImage, result.getAfterImage());
+    }
+
+    @Test
+    public void prepareUndoLogAllEmptyImagesTest() throws Exception {
+        mockParameters();
+        mockInsertColumns();
+        mockAllIndexes();
+        doReturn(pkIndexMap).when(insertOrUpdateExecutor).getPkIndex();
+        doReturn(tableMeta).when(insertOrUpdateExecutor).getTableMeta();
+
+        TableRecords emptyBeforeImage = TableRecords.empty(tableMeta);
+        TableRecords emptyAfterImage = TableRecords.empty(tableMeta);
+
+        ConnectionProxy connectionProxy = statementProxy.getConnectionProxy();
+
+        Method method = MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredMethod(
+                "prepareUndoLogAll", TableRecords.class, TableRecords.class);
+        method.setAccessible(true);
+        method.invoke(insertOrUpdateExecutor, emptyBeforeImage, emptyAfterImage);
+
+        verify(connectionProxy, times(0)).appendLockKey(any());
+    }
+
+    @Test
+    public void buildUndoItemAllPureInsertTest() throws Exception {
+        mockParameters();
+        mockInsertColumns();
+        mockAllIndexes();
+        doReturn(pkIndexMap).when(insertOrUpdateExecutor).getPkIndex();
+        doReturn(tableMeta).when(insertOrUpdateExecutor).getTableMeta();
+        when(tableMeta.getTableName()).thenReturn("test_table");
+
+        TableRecords emptyBeforeImage = TableRecords.empty(tableMeta);
+        TableRecords afterImage = new TableRecords(tableMeta);
+        Row afterRow = new Row();
+        Field pkField = new Field("id", java.sql.Types.INTEGER, 100);
+        pkField.setKeyType(KeyType.PRIMARY_KEY);
+        afterRow.add(pkField);
+        afterImage.add(afterRow);
+
+        ConnectionProxy connectionProxy = statementProxy.getConnectionProxy();
+
+        java.lang.reflect.Field isUpdateFlagField =
+                MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredField("isUpdateFlag");
+        isUpdateFlagField.setAccessible(true);
+        isUpdateFlagField.setBoolean(insertOrUpdateExecutor, false);
+
+        Method method = MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredMethod(
+                "buildUndoItemAll", ConnectionProxy.class, TableRecords.class, TableRecords.class);
+        method.setAccessible(true);
+        method.invoke(insertOrUpdateExecutor, connectionProxy, emptyBeforeImage, afterImage);
+
+        verify(connectionProxy, times(1)).appendUndoLog(any(SQLUndoLog.class));
+    }
+
+    @Test
+    public void buildUndoItemAllPureUpdateTest() throws Exception {
+        mockParameters();
+        mockInsertColumns();
+        mockAllIndexes();
+        doReturn(pkIndexMap).when(insertOrUpdateExecutor).getPkIndex();
+        doReturn(tableMeta).when(insertOrUpdateExecutor).getTableMeta();
+        when(tableMeta.getTableName()).thenReturn("test_table");
+
+        TableRecords beforeImage = new TableRecords(tableMeta);
+        Row beforeRow = new Row();
+        Field pkField1 = new Field("id", java.sql.Types.INTEGER, 100);
+        pkField1.setKeyType(KeyType.PRIMARY_KEY);
+        beforeRow.add(pkField1);
+        beforeImage.add(beforeRow);
+
+        TableRecords afterImage = new TableRecords(tableMeta);
+        Row afterRow = new Row();
+        Field pkField2 = new Field("id", java.sql.Types.INTEGER, 100);
+        pkField2.setKeyType(KeyType.PRIMARY_KEY);
+        afterRow.add(pkField2);
+        afterImage.add(afterRow);
+
+        ConnectionProxy connectionProxy = statementProxy.getConnectionProxy();
+
+        java.lang.reflect.Field isUpdateFlagField =
+                MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredField("isUpdateFlag");
+        isUpdateFlagField.setAccessible(true);
+        isUpdateFlagField.setBoolean(insertOrUpdateExecutor, true);
+
+        Method method = MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredMethod(
+                "buildUndoItemAll", ConnectionProxy.class, TableRecords.class, TableRecords.class);
+        method.setAccessible(true);
+        method.invoke(insertOrUpdateExecutor, connectionProxy, beforeImage, afterImage);
+
+        verify(connectionProxy, times(1)).appendUndoLog(any(SQLUndoLog.class));
+    }
+
+    @Test
+    public void buildUndoItemAllMixedTest() throws Exception {
+        mockParameters();
+        mockInsertColumns();
+        mockAllIndexes();
+        doReturn(pkIndexMap).when(insertOrUpdateExecutor).getPkIndex();
+        doReturn(tableMeta).when(insertOrUpdateExecutor).getTableMeta();
+        when(tableMeta.getTableName()).thenReturn("test_table");
+
+        TableRecords beforeImage = new TableRecords(tableMeta);
+        Row beforeRow = new Row();
+        Field pkField1 = new Field("id", java.sql.Types.INTEGER, 100);
+        pkField1.setKeyType(KeyType.PRIMARY_KEY);
+        beforeRow.add(pkField1);
+        beforeImage.add(beforeRow);
+
+        TableRecords afterImage = new TableRecords(tableMeta);
+        Row afterRow1 = new Row();
+        Field pkField2 = new Field("id", java.sql.Types.INTEGER, 100);
+        pkField2.setKeyType(KeyType.PRIMARY_KEY);
+        afterRow1.add(pkField2);
+        afterImage.add(afterRow1);
+
+        Row afterRow2 = new Row();
+        Field pkField3 = new Field("id", java.sql.Types.INTEGER, 101);
+        pkField3.setKeyType(KeyType.PRIMARY_KEY);
+        afterRow2.add(pkField3);
+        afterImage.add(afterRow2);
+
+        ConnectionProxy connectionProxy = statementProxy.getConnectionProxy();
+
+        java.lang.reflect.Field isUpdateFlagField =
+                MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredField("isUpdateFlag");
+        isUpdateFlagField.setAccessible(true);
+        isUpdateFlagField.setBoolean(insertOrUpdateExecutor, true);
+
+        Method method = MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredMethod(
+                "buildUndoItemAll", ConnectionProxy.class, TableRecords.class, TableRecords.class);
+        method.setAccessible(true);
+        method.invoke(insertOrUpdateExecutor, connectionProxy, beforeImage, afterImage);
+
+        verify(connectionProxy, times(2)).appendUndoLog(any(SQLUndoLog.class));
+    }
+
+    @Test
+    public void buildUndoItemAllSizeMismatchTest() throws Exception {
+        mockParameters();
+        mockInsertColumns();
+        mockAllIndexes();
+        doReturn(pkIndexMap).when(insertOrUpdateExecutor).getPkIndex();
+        doReturn(tableMeta).when(insertOrUpdateExecutor).getTableMeta();
+        when(tableMeta.getTableName()).thenReturn("test_table");
+
+        TableRecords beforeImage = new TableRecords(tableMeta);
+        Row beforeRow1 = new Row();
+        Field pkField1 = new Field("id", java.sql.Types.INTEGER, 100);
+        pkField1.setKeyType(KeyType.PRIMARY_KEY);
+        beforeRow1.add(pkField1);
+        beforeImage.add(beforeRow1);
+
+        Row beforeRow2 = new Row();
+        Field pkField2 = new Field("id", java.sql.Types.INTEGER, 101);
+        pkField2.setKeyType(KeyType.PRIMARY_KEY);
+        beforeRow2.add(pkField2);
+        beforeImage.add(beforeRow2);
+
+        TableRecords afterImage = new TableRecords(tableMeta);
+        Row afterRow1 = new Row();
+        Field pkField3 = new Field("id", java.sql.Types.INTEGER, 100);
+        pkField3.setKeyType(KeyType.PRIMARY_KEY);
+        afterRow1.add(pkField3);
+        afterImage.add(afterRow1);
+
+        ConnectionProxy connectionProxy = statementProxy.getConnectionProxy();
+
+        java.lang.reflect.Field isUpdateFlagField =
+                MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredField("isUpdateFlag");
+        isUpdateFlagField.setAccessible(true);
+        isUpdateFlagField.setBoolean(insertOrUpdateExecutor, true);
+
+        Method method = MySQLInsertOnDuplicateUpdateExecutor.class.getDeclaredMethod(
+                "buildUndoItemAll", ConnectionProxy.class, TableRecords.class, TableRecords.class);
+        method.setAccessible(true);
+
+        Assertions.assertThrows(java.lang.reflect.InvocationTargetException.class, () -> {
+            method.invoke(insertOrUpdateExecutor, connectionProxy, beforeImage, afterImage);
+        });
     }
 }
