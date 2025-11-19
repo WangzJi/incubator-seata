@@ -67,7 +67,7 @@ static Stream<Arguments> provideIntegerTestCases() {
 
 #### 步骤 5: 运行测试
 ```bash
-mvn test -Dtest=NumberUtilsTest
+./mvnw test -pl common -Dtest=NumberUtilsTest
 
 [INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
 ```

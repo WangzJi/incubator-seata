@@ -21,8 +21,9 @@ description: 为 Java 项目补充单元测试。当用户需要为指定的 Jav
 - **测试框架**: JUnit 5 (Jupiter)
 - **Mock 框架**: Mockito
 - **断言库**: AssertJ (`assertThat`) 和 JUnit Assertions
-- **构建工具**: Maven
-- **测试目录**: `src/test/java/`
+- **构建工具**: Maven (使用 Maven Wrapper: `./mvnw`)
+- **项目结构**: 多模块 Maven 项目
+- **测试目录**: `<module>/src/test/java/`
 - **许可证**: Apache License 2.0
 
 ## ⚠️ 重要：测试方法命名规范
@@ -55,12 +56,13 @@ void isEmpty()                        // ❌ Wrong: missing Test suffix
 
 **步骤**:
 - 读取待测试的源代码文件
+- 识别代码所属的 Maven 模块（如 common, core, rm-datasource 等）
 - 识别所有 public 和 protected 方法
 - 分析方法的参数、返回值和异常
 - 识别依赖关系（需要 mock 的对象）
 - 理解业务逻辑和边界条件
 
-**输出**: 列出需要测试的方法清单和测试点
+**输出**: 列出需要测试的方法清单、测试点和所属模块名称
 
 ### 2. 检查现有测试
 
@@ -220,14 +222,23 @@ public class ClassNameTest {
 
 **测试命令**:
 ```bash
-# 运行单个测试类
-mvn test -Dtest=ClassNameTest
+# 运行指定模块的单个测试类
+./mvnw test -pl <module-name> -Dtest=ClassNameTest
+
+# 示例：运行 common 模块的 StringUtilsTest
+./mvnw test -pl common -Dtest=StringUtilsTest
 
 # 运行单个测试方法
-mvn test -Dtest=ClassNameTest#testMethodName
+./mvnw test -pl <module-name> -Dtest=ClassNameTest#methodNameTest
+
+# 示例：运行特定测试方法
+./mvnw test -pl common -Dtest=StringUtilsTest#isEmptyTest
+
+# 运行整个模块的所有测试
+./mvnw test -pl <module-name>
 
 # 查看测试覆盖率（如果配置了 jacoco）
-mvn test jacoco:report
+./mvnw test jacoco:report -pl <module-name>
 ```
 
 ### 7. 代码审查和优化
@@ -247,10 +258,12 @@ mvn test jacoco:report
 **目标**: 向用户提供清晰的测试总结
 
 **报告内容**:
+- 所属模块和包路径
 - 为哪些类/方法添加了测试
 - 添加了多少个测试用例
 - 测试覆盖的场景（正常、边界、异常）
 - 测试运行结果
+- 提供具体的运行命令（包含模块路径）
 - 后续建议（如需要补充的场景）
 
 ## 最佳实践
