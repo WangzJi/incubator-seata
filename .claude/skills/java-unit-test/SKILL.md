@@ -208,7 +208,10 @@ public class ClassNameTest {
 - 优先使用 AssertJ 的 `assertThat` 进行断言
 - 对于简单断言可以使用 JUnit 的 `Assertions`
 - 使用 `@BeforeEach` 进行测试前的初始化
+- 如需清理资源，使用 `@AfterEach`
 - 合理使用 Mockito 的 `mock()`, `when()`, `verify()` 等方法
+- 为断言添加描述性消息，帮助定位失败原因
+- 避免测试实现细节，应测试行为和结果
 
 ### 6. 运行测试验证
 
@@ -294,14 +297,47 @@ assertThat(actual).isNotNull();
 assertThat(actual).isTrue();
 assertThat(list).hasSize(3);
 assertThat(list).contains("item");
+
+// With descriptive message
+assertThat(result)
+    .as("User should be active after registration")
+    .isEqualTo(UserStatus.ACTIVE);
 ```
 
-**JUnit Assertions** (简单场景):
+**异常测试最佳实践**:
 ```java
-Assertions.assertTrue(condition);
-Assertions.assertFalse(condition);
-Assertions.assertNull(object);
-Assertions.assertThrows(Exception.class, () -> {...});
+// Using AssertJ - recommended for detailed exception verification
+assertThatThrownBy(() -> service.process(null))
+    .isInstanceOf(IllegalArgumentException.class)
+    .hasMessage("Input cannot be null")
+    .hasNoCause();
+
+// Using JUnit - simple exception verification
+Assertions.assertThrows(IllegalArgumentException.class,
+    () -> service.process(null));
+
+// Verify exception message
+Exception exception = Assertions.assertThrows(
+    IllegalArgumentException.class,
+    () -> service.process(null));
+assertThat(exception.getMessage()).contains("cannot be null");
+```
+
+**集合和字符串断言**:
+```java
+// Collection assertions
+assertThat(list)
+    .isNotEmpty()
+    .hasSize(3)
+    .contains("item1", "item2")
+    .doesNotContainNull();
+
+// String assertions
+assertThat(result)
+    .isNotBlank()
+    .startsWith("prefix")
+    .contains("substring")
+    .matches("regex.*pattern");
 ```
 
 ### Mock 使用指南
@@ -311,19 +347,49 @@ Assertions.assertThrows(Exception.class, () -> {...});
 - 测试复杂对象的交互
 - 隔离被测试单元
 
-**Mock 示例**:
+**Mock 基本用法**:
 ```java
 // Create mock object
 SomeService mockService = Mockito.mock(SomeService.class);
 
 // Setup mock behavior
 when(mockService.getData()).thenReturn(testData);
+when(mockService.process(any())).thenReturn(result);
 when(mockService.process(any())).thenThrow(new RuntimeException());
 
 // Verify mock calls
 verify(mockService, times(1)).getData();
 verify(mockService, never()).delete();
+verify(mockService, atLeastOnce()).process(any());
 ```
+
+**验证传入参数 (ArgumentCaptor)**:
+```java
+// Capture and verify arguments
+ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+verify(userService).saveUser(userCaptor.capture());
+
+User capturedUser = userCaptor.getValue();
+assertThat(capturedUser.getName()).isEqualTo("John");
+assertThat(capturedUser.getAge()).isEqualTo(30);
+```
+
+**Stubbing 连续调用**:
+```java
+// Return different values on consecutive calls
+when(mockService.getData())
+    .thenReturn(data1)
+    .thenReturn(data2)
+    .thenThrow(new RuntimeException());
+
+// First call returns data1, second returns data2, third throws exception
+```
+
+**何时避免 Mock**:
+- 不要 mock 值对象（Value Objects）或数据类
+- 不要 mock 简单的 POJO
+- 过度使用 mock 可能表明设计问题
+- 优先使用真实对象，只在必要时 mock
 
 ### 参数化测试使用
 
@@ -343,6 +409,48 @@ static Stream<Arguments> provideTestCases() {
         Arguments.of(null, null),
         Arguments.of("", "")
     );
+}
+```
+
+### 测试数据构建
+
+**使用工厂方法创建测试数据**:
+```java
+// Create reusable test data builders
+private User createTestUser() {
+    return new User("John Doe", "john@example.com", 30);
+}
+
+private User createTestUserWithAge(int age) {
+    return new User("John Doe", "john@example.com", age);
+}
+
+@Test
+void userAgeValidationTest() {
+    User youngUser = createTestUserWithAge(15);
+    User adultUser = createTestUserWithAge(25);
+
+    assertThat(service.isAdult(youngUser)).isFalse();
+    assertThat(service.isAdult(adultUser)).isTrue();
+}
+```
+
+**避免在测试中使用魔法值**:
+```java
+// Bad - magic values
+void discountCalculationTest() {
+    double result = service.calculateDiscount(1500.0, 0.15);
+    assertThat(result).isEqualTo(1275.0);
+}
+
+// Good - use constants with meaningful names
+void discountCalculationTest() {
+    final double ORIGINAL_PRICE = 1500.0;
+    final double DISCOUNT_RATE = 0.15;
+    final double EXPECTED_PRICE = 1275.0;
+
+    double result = service.calculateDiscount(ORIGINAL_PRICE, DISCOUNT_RATE);
+    assertThat(result).isEqualTo(EXPECTED_PRICE);
 }
 ```
 
@@ -379,6 +487,104 @@ void methodThrowsExceptionTest() {
 3. **性能考虑**: 避免测试中有耗时操作，必要时使用 Mock
 4. **可维护性**: 测试代码也需要高质量，便于后续维护
 5. **文档价值**: 好的测试本身就是最好的文档
+
+## 测试反模式（避免这些常见错误）
+
+### ❌ 测试实现细节而非行为
+```java
+// Bad - testing implementation
+void getUserNameTest() {
+    // Verifying internal field access
+    assertThat(user.firstName).isEqualTo("John");
+    assertThat(user.lastName).isEqualTo("Doe");
+}
+
+// Good - testing behavior
+void getUserNameTest() {
+    assertThat(user.getFullName()).isEqualTo("John Doe");
+}
+```
+
+### ❌ 测试过于依赖执行顺序
+```java
+// Bad - tests depend on each other
+@Test
+void createUserTest() {
+    userId = userService.createUser(user);
+}
+
+@Test
+void updateUserTest() {
+    userService.updateUser(userId, newData); // Depends on createUserTest
+}
+```
+
+### ❌ 过度使用 Mock
+```java
+// Bad - mocking simple objects
+User mockUser = Mockito.mock(User.class);
+when(mockUser.getName()).thenReturn("John");
+
+// Good - use real objects for simple data
+User user = new User("John", 30);
+```
+
+### ❌ 一个测试测试多个场景
+```java
+// Bad - testing multiple things
+void userServiceTest() {
+    // Test creation
+    User user = service.createUser(data);
+    assertThat(user).isNotNull();
+
+    // Test update
+    service.updateUser(user.getId(), newData);
+
+    // Test deletion
+    service.deleteUser(user.getId());
+}
+
+// Good - separate tests for each scenario
+void createUserTest() { /* ... */ }
+void updateUserTest() { /* ... */ }
+void deleteUserTest() { /* ... */ }
+```
+
+### ❌ 忽略异常消息验证
+```java
+// Bad - only checking exception type
+assertThrows(IllegalArgumentException.class,
+    () -> service.process(null));
+
+// Good - verify exception message
+assertThatThrownBy(() -> service.process(null))
+    .isInstanceOf(IllegalArgumentException.class)
+    .hasMessage("Input cannot be null");
+```
+
+### ❌ 测试中有复杂逻辑
+```java
+// Bad - test has complex logic
+void calculateDiscountTest() {
+    double result = service.calculateDiscount(price);
+    double expected = price > 100 ? price * 0.9 : price * 0.95;
+    assertThat(result).isEqualTo(expected);
+}
+
+// Good - explicit expected values
+void calculateDiscountForHighPriceTest() {
+    double result = service.calculateDiscount(150.0);
+    assertThat(result).isEqualTo(135.0); // 150 * 0.9
+}
+```
+
+### ✅ 良好的测试特征
+- **F.I.R.S.T. 原则**:
+  - **Fast**: 测试应该快速运行
+  - **Independent**: 测试之间相互独立
+  - **Repeatable**: 可在任何环境重复执行
+  - **Self-Validating**: 测试有明确的通过/失败结果
+  - **Timely**: 测试应及时编写（理想情况下在代码之前 - TDD）
 
 ## 快速开始
 
