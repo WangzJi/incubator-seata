@@ -359,36 +359,6 @@ void methodThrowsExceptionTest() {
 }
 ```
 
-## 输出示例
-
-完成测试后，提供类似以下的总结：
-
-```
-✅ 单元测试补充完成
-
-📋 测试总结：
-- 目标类: org.apache.seata.common.util.StringUtils
-- 测试文件: org.apache.seata.common.util.StringUtilsTest
-- 新增测试方法: 5 个
-  1. testIsEmpty() - 测试空字符串判断
-  2. testIsEmptyWithNull() - 测试 null 值处理
-  3. testTrim() - 测试字符串修剪
-  4. testSplitWithDelimiter() - 测试字符串分割
-  5. testJoinWithSeparator() - 测试字符串连接
-
-🎯 测试覆盖：
-- ✅ 正常场景: 5 个用例
-- ✅ 边界条件: 3 个用例（null, 空字符串, 空格）
-- ✅ 异常场景: 2 个用例
-
-🧪 测试结果：
-[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0
-
-💡 建议：
-- 考虑添加性能测试用例
-- 可以增加多线程场景测试
-```
-
 ## 注意事项
 
 1. **保持测试独立性**: 每个测试不应依赖其他测试的执行顺序
