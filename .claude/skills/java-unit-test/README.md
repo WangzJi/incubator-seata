@@ -105,7 +105,7 @@ public class ClassNameTest {
     }
 
     @Test
-    void testMethodName() {
+    void methodNameTest() {
         // Arrange
         // Act
         // Assert

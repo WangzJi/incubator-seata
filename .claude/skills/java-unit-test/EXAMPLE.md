@@ -27,28 +27,28 @@
 #### 步骤 3: 设计测试用例
 ```
 需要补充的测试:
-✅ testIsIntegerWithNull() - 测试 null 输入
-✅ testIsIntegerWithEmptyString() - 测试空字符串
-✅ testIsIntegerWithNegativeNumber() - 测试负数
-✅ testParseLongWithInvalidInput() - 测试无效输入
-✅ testParseBooleanWithEdgeCases() - 测试边界情况
+✅ isIntegerWithNullTest() - 测试 null 输入
+✅ isIntegerWithEmptyStringTest() - 测试空字符串
+✅ isIntegerWithNegativeNumberTest() - 测试负数
+✅ parseLongWithInvalidInputTest() - 测试无效输入
+✅ parseBooleanWithEdgeCasesTest() - 测试边界情况
 ```
 
 #### 步骤 4: 生成测试代码
 ```java
 @Test
-void testIsIntegerWithNull() {
+void isIntegerWithNullTest() {
     assertThat(NumberUtils.isInteger(null)).isFalse();
 }
 
 @Test
-void testIsIntegerWithEmptyString() {
+void isIntegerWithEmptyStringTest() {
     assertThat(NumberUtils.isInteger("")).isFalse();
 }
 
 @ParameterizedTest
 @MethodSource("provideIntegerTestCases")
-void testIsInteger(String input, boolean expected) {
+void isIntegerTest(String input, boolean expected) {
     assertThat(NumberUtils.isInteger(input)).isEqualTo(expected);
 }
 
@@ -124,37 +124,37 @@ public class DefaultResourceManagerTest {
     }
 
     @Test
-    void testRegisterResourceSuccess() {
+    void registerResourceSuccessTest() {
         // Arrange
         String resourceId = "test-resource-01";
         BranchRegisterRequest request = new BranchRegisterRequest();
         request.setResourceId(resourceId);
-        
+
         when(mockCache.containsKey(resourceId)).thenReturn(false);
-        
+
         // Act
         resourceManager.registerResource(request);
-        
+
         // Assert
         verify(mockCache, times(1)).put(eq(resourceId), any());
     }
 
     @Test
-    void testRegisterResourceWithNullThrowsException() {
+    void registerResourceWithNullThrowsExceptionTest() {
         // Act & Assert
         Assertions.assertThrows(IllegalArgumentException.class,
             () -> resourceManager.registerResource(null));
     }
 
     @Test
-    void testRegisterResourceAlreadyExists() {
+    void registerResourceAlreadyExistsTest() {
         // Arrange
         String resourceId = "existing-resource";
         when(mockCache.containsKey(resourceId)).thenReturn(true);
-        
+
         BranchRegisterRequest request = new BranchRegisterRequest();
         request.setResourceId(resourceId);
-        
+
         // Act & Assert
         Assertions.assertThrows(TransactionException.class,
             () -> resourceManager.registerResource(request));
@@ -173,7 +173,7 @@ public class DefaultResourceManagerTest {
 ```java
 @ParameterizedTest
 @MethodSource("provideTrimTestCases")
-void testTrim(String input, String expected, String description) {
+void trimTest(String input, String expected, String description) {
     assertThat(StringUtils.trim(input))
         .as(description)
         .isEqualTo(expected);

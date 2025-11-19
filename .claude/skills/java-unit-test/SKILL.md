@@ -25,6 +25,26 @@ description: 为 Java 项目补充单元测试。当用户需要为指定的 Jav
 - **测试目录**: `src/test/java/`
 - **许可证**: Apache License 2.0
 
+## ⚠️ 重要：测试方法命名规范
+
+**所有测试方法必须使用小驼峰命名，并以 `Test` 结尾！**
+
+**正确示例**:
+```java
+void isEmptyTest()                    // ✅ 正确
+void trimToNullTest()                 // ✅ 正确
+void parseIntegerWithNullTest()       // ✅ 正确
+void commitTransactionThrowsExceptionTest()  // ✅ 正确
+```
+
+**错误示例**:
+```java
+void testIsEmpty()                    // ❌ 错误：test 前缀
+void test_is_empty()                  // ❌ 错误：下划线命名
+void IsEmptyTest()                    // ❌ 错误：首字母大写
+void isEmpty()                        // ❌ 错误：缺少 Test 后缀
+```
+
 ## 工作流程
 
 为确保测试质量和一致性，请按照以下步骤执行：
@@ -67,7 +87,7 @@ description: 为 Java 项目补充单元测试。当用户需要为指定的 Jav
 // 参数化测试示例
 @ParameterizedTest
 @MethodSource("provideTestData")
-void testMethod(InputType input, ExpectedType expected) {
+void methodWithMultipleInputsTest(InputType input, ExpectedType expected) {
     assertThat(actualResult).isEqualTo(expected);
 }
 
@@ -80,14 +100,14 @@ static Stream<Arguments> provideTestData() {
 
 // 异常测试示例
 @Test
-void testMethodThrowsException() {
+void methodThrowsExceptionTest() {
     Assertions.assertThrows(ExceptionType.class,
         () -> methodUnderTest(invalidInput));
 }
 
 // Mock 对象示例
 @Test
-void testWithMock() {
+void methodWithMockTest() {
     // Arrange
     SomeService mockService = Mockito.mock(SomeService.class);
     when(mockService.someMethod()).thenReturn(expectedValue);
@@ -167,7 +187,7 @@ public class ClassNameTest {
     }
 
     @Test
-    void testMethodName() {
+    void methodNameTest() {
         // Arrange
         // 准备测试数据
 
@@ -237,10 +257,20 @@ mvn test jacoco:report
 
 ### 测试命名规范
 
-- `testMethodName()` - 测试指定方法
-- `testMethodNameWithCondition()` - 测试特定条件下的方法
-- `testMethodNameThrowsException()` - 测试异常情况
-- `testMethodNameReturnsExpectedValue()` - 测试返回值
+**测试方法命名**: 小驼峰 + Test 结尾
+
+- `methodNameTest()` - 测试指定方法
+- `methodNameWithConditionTest()` - 测试特定条件下的方法
+- `methodNameThrowsExceptionTest()` - 测试异常情况
+- `methodNameReturnsExpectedValueTest()` - 测试返回值
+
+**示例**:
+```java
+void isEmptyTest()  // 测试 isEmpty 方法
+void trimToNullTest()  // 测试 trimToNull 方法
+void parseIntegerWithNullTest()  // 测试 parseInt 方法的 null 场景
+void commitTransactionThrowsExceptionTest()  // 测试异常场景
+```
 
 ### 断言选择
 
@@ -288,7 +318,7 @@ verify(mockService, never()).delete();
 ```java
 @ParameterizedTest
 @MethodSource("provideTestCases")
-void testWithMultipleInputs(String input, String expected) {
+void methodWithMultipleInputsTest(String input, String expected) {
     String result = methodUnderTest(input);
     assertThat(result).isEqualTo(expected);
 }
@@ -323,7 +353,7 @@ static Stream<Arguments> provideTestCases() {
 ### 4. 异常处理测试
 ```java
 @Test
-void testMethodThrowsException() {
+void methodThrowsExceptionTest() {
     Assertions.assertThrows(IllegalArgumentException.class,
         () -> method(invalidInput));
 }
