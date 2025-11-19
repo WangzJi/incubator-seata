@@ -95,7 +95,7 @@ public abstract class AbstractTableMetaCache implements TableMetaCache {
             String key = getCacheKey(connection, tableNameForKey, resourceId);
             if (entry.getKey().equals(key)) {
                 try {
-                    // 直接复用 tableNameForKey，无需再次判断
+                    // Reuse tableNameForKey directly, no need to check again
                     TableMeta tableMeta = fetchSchema(connection, tableNameForKey);
                     if (!tableMeta.equals(entry.getValue())) {
                         TABLE_META_CACHE.put(entry.getKey(), tableMeta);
