@@ -454,6 +454,272 @@ void discountCalculationTest() {
 }
 ```
 
+## 多环境兼容性（重要）
+
+Seata 项目在 CI/CD 中需要在多个环境下运行测试，确保测试的跨平台兼容性至关重要。
+
+### 测试环境矩阵
+
+**操作系统**:
+- Ubuntu 24.04
+- macOS 14
+- Windows 2022
+- ARM64 (Docker)
+
+**Java 版本**:
+- Java 8, 11, 17, 21, 25
+- Spring Boot 3.x 需要 Java 17+
+
+**依赖版本**:
+- Spring Boot: 2.3.x ~ 3.3.x
+- Mockito: 5.3.1 ~ 5.11.0
+- JUnit Jupiter: 5.9.3 ~ 5.10.2
+
+### 跨平台兼容性最佳实践
+
+#### 1. 文件路径处理
+
+```java
+// ❌ Bad - platform-specific path separator
+void readFileTest() {
+    String path = "src/test/resources\\test-data.txt";  // Windows only
+    File file = new File(path);
+}
+
+// ✅ Good - use platform-independent path
+void readFileTest() {
+    Path path = Paths.get("src", "test", "resources", "test-data.txt");
+    File file = path.toFile();
+}
+
+// ✅ Good - use File.separator or Path API
+void createPathTest() {
+    String path = "src" + File.separator + "test" + File.separator + "resources";
+    // Or better: use Path API
+    Path path = Paths.get("src", "test", "resources");
+}
+```
+
+#### 2. 换行符处理
+
+```java
+// ❌ Bad - hardcoded line separator
+void formatTextTest() {
+    String expected = "line1\nline2\nline3";  // Unix only
+    assertThat(result).isEqualTo(expected);
+}
+
+// ✅ Good - use system line separator
+void formatTextTest() {
+    String lineSeparator = System.lineSeparator();
+    String expected = "line1" + lineSeparator +
+                      "line2" + lineSeparator +
+                      "line3";
+    assertThat(result).isEqualTo(expected);
+}
+
+// ✅ Best - normalize line separators before comparison
+void formatTextTest() {
+    String normalized = result.replaceAll("\\r\\n|\\r|\\n", "\n");
+    String expected = "line1\nline2\nline3";
+    assertThat(normalized).isEqualTo(expected);
+}
+```
+
+#### 3. 时区和日期处理
+
+```java
+// ❌ Bad - depends on system timezone
+void dateFormattingTest() {
+    Date date = new Date(2025, 1, 1);
+    String formatted = formatter.format(date);
+    assertThat(formatted).isEqualTo("2025-01-01 00:00:00");  // May fail in different timezones
+}
+
+// ✅ Good - use explicit timezone or UTC
+void dateFormattingTest() {
+    ZonedDateTime date = ZonedDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+    String formatted = formatter.format(date);
+    assertThat(formatted).isEqualTo("2025-01-01 00:00:00");
+}
+
+// ✅ Good - use Instant for timezone-independent tests
+void timestampTest() {
+    Instant instant = Instant.parse("2025-01-01T00:00:00Z");
+    long timestamp = instant.toEpochMilli();
+    assertThat(result).isEqualTo(timestamp);
+}
+```
+
+#### 4. 字符编码处理
+
+```java
+// ❌ Bad - depends on platform default encoding
+void readFileContentTest() throws IOException {
+    String content = new String(Files.readAllBytes(path));  // Uses default encoding
+}
+
+// ✅ Good - explicitly specify UTF-8
+void readFileContentTest() throws IOException {
+    String content = Files.readString(path, StandardCharsets.UTF_8);
+    // Or
+    String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+}
+```
+
+#### 5. 临时文件和目录
+
+```java
+// ❌ Bad - hardcoded temp directory
+void tempFileTest() {
+    File tempFile = new File("/tmp/test.txt");  // Linux/macOS only
+}
+
+// ✅ Good - use system temp directory
+void tempFileTest() throws IOException {
+    Path tempFile = Files.createTempFile("test", ".txt");
+    try {
+        // Use temp file
+    } finally {
+        Files.deleteIfExists(tempFile);
+    }
+}
+
+// ✅ Better - use @TempDir (JUnit 5)
+@TempDir
+Path tempDir;
+
+@Test
+void tempFileTest() throws IOException {
+    Path testFile = tempDir.resolve("test.txt");
+    Files.writeString(testFile, "test content");
+    assertThat(Files.exists(testFile)).isTrue();
+    // Cleanup automatic
+}
+```
+
+#### 6. 进程和命令执行
+
+```java
+// ❌ Bad - platform-specific commands
+void executeCommandTest() {
+    Process process = Runtime.getRuntime().exec("ls -la");  // Unix only
+}
+
+// ✅ Good - check OS before executing platform-specific code
+void executeCommandTest() {
+    String os = System.getProperty("os.name").toLowerCase();
+    String command;
+    if (os.contains("win")) {
+        command = "cmd.exe /c dir";
+    } else {
+        command = "ls -la";
+    }
+    // Or better: avoid OS-specific commands in unit tests
+}
+
+// ✅ Best - mock the command execution in unit tests
+void executeCommandTest() {
+    CommandExecutor executor = Mockito.mock(CommandExecutor.class);
+    when(executor.execute(any())).thenReturn("mocked result");
+    // Test logic without actual OS commands
+}
+```
+
+#### 7. Java 版本兼容性
+
+```java
+// ❌ Bad - uses features from newer Java versions without checks
+void streamTest() {
+    // takeWhile() is Java 9+
+    List<String> result = stream.takeWhile(s -> s.length() < 5).toList();
+}
+
+// ✅ Good - use features available in minimum supported Java version (Java 8)
+void streamTest() {
+    List<String> result = stream
+        .filter(s -> s.length() < 5)
+        .collect(Collectors.toList());  // Java 8 compatible
+}
+
+// ⚠️ Note - if using Java 9+ features, ensure pom.xml targets correct version
+// <maven.compiler.source>17</maven.compiler.source>
+```
+
+#### 8. 浮点数比较
+
+```java
+// ❌ Bad - exact floating-point comparison (may fail due to precision)
+void calculationTest() {
+    double result = 0.1 + 0.2;
+    assertThat(result).isEqualTo(0.3);  // May fail!
+}
+
+// ✅ Good - use delta/offset for floating-point comparison
+void calculationTest() {
+    double result = 0.1 + 0.2;
+    assertThat(result).isCloseTo(0.3, within(0.0001));
+}
+```
+
+#### 9. 环境变量和系统属性
+
+```java
+// ❌ Bad - depends on specific environment variables
+void configTest() {
+    String value = System.getenv("MY_CONFIG");  // May not exist in CI
+    assertThat(value).isEqualTo("expected");
+}
+
+// ✅ Good - provide defaults or mock environment
+void configTest() {
+    String value = System.getenv("MY_CONFIG");
+    if (value == null) {
+        value = "default-value";
+    }
+    assertThat(service.getConfig()).isEqualTo(value);
+}
+
+// ✅ Better - use dependency injection and mock configuration
+void configTest() {
+    Config mockConfig = Mockito.mock(Config.class);
+    when(mockConfig.getValue("key")).thenReturn("expected");
+    // Test with mocked config
+}
+```
+
+### CI/CD 测试矩阵注意事项
+
+根据 Seata 的 GitHub workflow 配置：
+
+1. **Windows 环境当前跳过测试**
+   - 如果编写的测试需要在 Windows 运行，需要特别注意
+   - 优先保证 Linux/macOS 兼容性
+
+2. **Spring Boot 版本矩阵**
+   - 测试应该与 Spring Boot 版本无关
+   - 避免使用特定版本的内部 API
+   - 使用公共 API 确保兼容性
+
+3. **外部服务依赖**
+   - Redis 和 Nacos 仅在 Ubuntu 测试中可用
+   - 单元测试应该 mock 外部服务
+   - 集成测试可以使用真实服务（仅 Ubuntu）
+
+### 跨环境测试检查清单
+
+编写测试时，确保：
+- [ ] 使用 `Path` API 或 `File.separator` 处理文件路径
+- [ ] 使用 `System.lineSeparator()` 或标准化换行符
+- [ ] 明确指定字符编码 (UTF-8)
+- [ ] 使用 UTC 或明确时区处理日期
+- [ ] 浮点数使用 delta 比较
+- [ ] 临时文件使用 `@TempDir` 或系统临时目录
+- [ ] 避免平台特定的命令或进程
+- [ ] 仅使用项目最低 Java 版本支持的特性
+- [ ] Mock 外部服务依赖
+- [ ] 避免硬编码的环境变量或系统属性
+
 ## 常见测试场景
 
 ### 1. 工具类测试
