@@ -31,18 +31,18 @@ description: 为 Java 项目补充单元测试。当用户需要为指定的 Jav
 
 **正确示例**:
 ```java
-void isEmptyTest()                    // ✅ 正确
-void trimToNullTest()                 // ✅ 正确
-void parseIntegerWithNullTest()       // ✅ 正确
-void commitTransactionThrowsExceptionTest()  // ✅ 正确
+void isEmptyTest()                    // ✅ Correct
+void trimToNullTest()                 // ✅ Correct
+void parseIntegerWithNullTest()       // ✅ Correct
+void commitTransactionThrowsExceptionTest()  // ✅ Correct
 ```
 
 **错误示例**:
 ```java
-void testIsEmpty()                    // ❌ 错误：test 前缀
-void test_is_empty()                  // ❌ 错误：下划线命名
-void IsEmptyTest()                    // ❌ 错误：首字母大写
-void isEmpty()                        // ❌ 错误：缺少 Test 后缀
+void testIsEmpty()                    // ❌ Wrong: test prefix
+void test_is_empty()                  // ❌ Wrong: underscore naming
+void IsEmptyTest()                    // ❌ Wrong: capitalized first letter
+void isEmpty()                        // ❌ Wrong: missing Test suffix
 ```
 
 ## 工作流程
@@ -84,7 +84,7 @@ void isEmpty()                        // ❌ 错误：缺少 Test 后缀
 
 **关键模式**:
 ```java
-// 参数化测试示例
+// Parameterized test example
 @ParameterizedTest
 @MethodSource("provideTestData")
 void methodWithMultipleInputsTest(InputType input, ExpectedType expected) {
@@ -98,14 +98,14 @@ static Stream<Arguments> provideTestData() {
     );
 }
 
-// 异常测试示例
+// Exception test example
 @Test
 void methodThrowsExceptionTest() {
     Assertions.assertThrows(ExceptionType.class,
         () -> methodUnderTest(invalidInput));
 }
 
-// Mock 对象示例
+// Mock object example
 @Test
 void methodWithMockTest() {
     // Arrange
@@ -182,20 +182,20 @@ public class ClassNameTest {
 
     @BeforeEach
     void setUp() {
-        // 初始化测试对象
+        // Initialize test object
         classUnderTest = new ClassName();
     }
 
     @Test
     void methodNameTest() {
         // Arrange
-        // 准备测试数据
+        // Prepare test data
 
         // Act
-        // 执行被测试方法
+        // Execute method under test
 
         // Assert
-        // 验证结果
+        // Verify results
         assertThat(result).isEqualTo(expected);
     }
 }
@@ -266,10 +266,10 @@ mvn test jacoco:report
 
 **示例**:
 ```java
-void isEmptyTest()  // 测试 isEmpty 方法
-void trimToNullTest()  // 测试 trimToNull 方法
-void parseIntegerWithNullTest()  // 测试 parseInt 方法的 null 场景
-void commitTransactionThrowsExceptionTest()  // 测试异常场景
+void isEmptyTest()  // Test isEmpty method
+void trimToNullTest()  // Test trimToNull method
+void parseIntegerWithNullTest()  // Test parseInt method with null input
+void commitTransactionThrowsExceptionTest()  // Test exception scenario
 ```
 
 ### 断言选择
@@ -300,14 +300,14 @@ Assertions.assertThrows(Exception.class, () -> {...});
 
 **Mock 示例**:
 ```java
-// 创建 Mock 对象
+// Create mock object
 SomeService mockService = Mockito.mock(SomeService.class);
 
-// 设置 Mock 行为
+// Setup mock behavior
 when(mockService.getData()).thenReturn(testData);
 when(mockService.process(any())).thenThrow(new RuntimeException());
 
-// 验证 Mock 调用
+// Verify mock calls
 verify(mockService, times(1)).getData();
 verify(mockService, never()).delete();
 ```

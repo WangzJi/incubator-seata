@@ -101,7 +101,7 @@ public class ClassNameTest {
 
     @BeforeEach
     void setUp() {
-        // 初始化
+        // Initialize
     }
 
     @Test
