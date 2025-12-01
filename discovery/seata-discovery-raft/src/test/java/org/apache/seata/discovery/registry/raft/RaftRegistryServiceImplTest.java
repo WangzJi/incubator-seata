@@ -26,7 +26,7 @@ import org.apache.seata.common.exception.ParseEndpointException;
 import org.apache.seata.common.metadata.Metadata;
 import org.apache.seata.common.metadata.MetadataResponse;
 import org.apache.seata.common.metadata.Node;
-import org.apache.seata.common.util.*;
+import org.apache.seata.common.util.HttpClientUtil;
 import org.apache.seata.config.ConfigurationFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -40,11 +40,23 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -195,8 +207,6 @@ class RaftRegistryServiceImplTest {
             String transactionEndpointStr = (String) selectTransactionEndpointStrMethod.invoke(null, node);
 
             // Verify endpoints are properly formatted
-            assertNotNull(controlEndpointStr, "Control endpoint should not be null");
-            assertNotNull(transactionEndpointStr, "Transaction endpoint should not be null");
             assertTrue(controlEndpointStr.contains(":"), "Control endpoint should contain port");
             assertTrue(transactionEndpointStr.contains(":"), "Transaction endpoint should contain port");
         }
@@ -452,7 +462,6 @@ class RaftRegistryServiceImplTest {
 
         List<InetSocketAddress> result = instance.lookup("tx");
 
-        assertNotNull(result);
         assertFalse(result.isEmpty(), "Should return non-empty list when metadata exists");
     }
 
@@ -571,7 +580,6 @@ class RaftRegistryServiceImplTest {
 
         InetSocketAddress result = (InetSocketAddress) selectControlEndpointMethod.invoke(null, node);
 
-        assertNotNull(result);
         assertEquals("localhost", result.getHostString());
         assertEquals(7091, result.getPort());
     }
@@ -592,7 +600,6 @@ class RaftRegistryServiceImplTest {
 
         InetSocketAddress result = (InetSocketAddress) selectTransactionEndpointMethod.invoke(null, node);
 
-        assertNotNull(result);
         assertEquals("localhost", result.getHostString());
         assertEquals(8091, result.getPort());
     }
@@ -614,7 +621,6 @@ class RaftRegistryServiceImplTest {
         Node.ExternalEndpoint result =
                 (Node.ExternalEndpoint) createExternalEndpointMethod.invoke(null, externalEndpoint, "10.10.1.1");
 
-        assertNotNull(result);
         assertEquals("10.10.1.1", result.getHost());
         assertEquals(7091, result.getControlPort());
         assertEquals(8091, result.getTransactionPort());
@@ -644,7 +650,6 @@ class RaftRegistryServiceImplTest {
         Method getRaftAddrFileKeyMethod = RaftRegistryServiceImpl.class.getDeclaredMethod("getRaftAddrFileKey");
         getRaftAddrFileKeyMethod.setAccessible(true);
         String result = (String) getRaftAddrFileKeyMethod.invoke(null);
-        assertNotNull(result);
         assertTrue(result.contains("registry"));
         assertTrue(result.contains("raft"));
         assertTrue(result.contains("serverAddr"));
@@ -655,7 +660,6 @@ class RaftRegistryServiceImplTest {
         Method getRaftUserNameKeyMethod = RaftRegistryServiceImpl.class.getDeclaredMethod("getRaftUserNameKey");
         getRaftUserNameKeyMethod.setAccessible(true);
         String result = (String) getRaftUserNameKeyMethod.invoke(null);
-        assertNotNull(result);
         assertTrue(result.contains("registry"));
         assertTrue(result.contains("raft"));
         assertTrue(result.contains("username"));
@@ -666,7 +670,6 @@ class RaftRegistryServiceImplTest {
         Method getRaftPassWordKeyMethod = RaftRegistryServiceImpl.class.getDeclaredMethod("getRaftPassWordKey");
         getRaftPassWordKeyMethod.setAccessible(true);
         String result = (String) getRaftPassWordKeyMethod.invoke(null);
-        assertNotNull(result);
         assertTrue(result.contains("registry"));
         assertTrue(result.contains("raft"));
         assertTrue(result.contains("password"));
@@ -677,7 +680,6 @@ class RaftRegistryServiceImplTest {
         Method getPreferredNetworksMethod = RaftRegistryServiceImpl.class.getDeclaredMethod("getPreferredNetworks");
         getPreferredNetworksMethod.setAccessible(true);
         String result = (String) getPreferredNetworksMethod.invoke(null);
-        assertNotNull(result);
         assertTrue(result.contains("registry"));
         assertTrue(result.contains("preferredNetworks"));
     }
@@ -688,7 +690,6 @@ class RaftRegistryServiceImplTest {
                 RaftRegistryServiceImpl.class.getDeclaredMethod("getTokenExpireTimeInMillisecondsKey");
         getTokenExpireTimeMethod.setAccessible(true);
         String result = (String) getTokenExpireTimeMethod.invoke(null);
-        assertNotNull(result);
         assertTrue(result.contains("registry"));
         assertTrue(result.contains("raft"));
         assertTrue(result.contains("tokenValidityInMilliseconds"));
@@ -699,7 +700,6 @@ class RaftRegistryServiceImplTest {
         Method getMetadataMaxAgeMsMethod = RaftRegistryServiceImpl.class.getDeclaredMethod("getMetadataMaxAgeMs");
         getMetadataMaxAgeMsMethod.setAccessible(true);
         String result = (String) getMetadataMaxAgeMsMethod.invoke(null);
-        assertNotNull(result);
         assertTrue(result.contains("registry"));
         assertTrue(result.contains("raft"));
         assertTrue(result.contains("metadataMaxAgeMs"));
@@ -857,7 +857,6 @@ class RaftRegistryServiceImplTest {
         queryHttpAddressMethod.setAccessible(true);
 
         String result = (String) queryHttpAddressMethod.invoke(null, "default", "default");
-        assertNotNull(result);
         assertTrue(result.contains(":"));
     }
 
@@ -892,7 +891,6 @@ class RaftRegistryServiceImplTest {
         Node.ExternalEndpoint result =
                 (Node.ExternalEndpoint) selectExternalEndpointMethod.invoke(null, node, new String[] {"10.10.*"});
 
-        assertNotNull(result);
         assertEquals("10.10.105.7", result.getHost());
         assertEquals(30071, result.getControlPort());
         assertEquals(30091, result.getTransactionPort());
@@ -1303,7 +1301,6 @@ class RaftRegistryServiceImplTest {
             RaftRegistryServiceImpl instance = RaftRegistryServiceImpl.getInstance();
             List<InetSocketAddress> result = instance.lookup("initFlowGroup");
 
-            assertNotNull(result);
             assertFalse(result.isEmpty(), "Should return non-empty list after complete initialization");
         } finally {
             System.clearProperty("service.vgroupMapping.initFlowGroup");
