@@ -41,7 +41,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -52,7 +52,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class SagaModeExecutor implements TransactionExecutor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SagaModeExecutor.class);
-    private static final Random RANDOM = new Random();
     private static final AtomicLong BUSINESS_KEY_COUNTER = new AtomicLong(0);
 
     private static final String SIMPLE_SAGA_NAME = "benchmarkSimpleSaga";
@@ -209,11 +208,11 @@ public class SagaModeExecutor implements TransactionExecutor {
 
     private Map<String, Object> createStartParams() {
         Map<String, Object> params = new HashMap<>();
-        params.put("userId", "user-" + RANDOM.nextInt(1000));
-        params.put("productId", "product-" + RANDOM.nextInt(100));
-        params.put("quantity", RANDOM.nextInt(10) + 1);
-        params.put("amount", new BigDecimal(RANDOM.nextInt(1000) + 100));
-        params.put("accountId", "account-" + RANDOM.nextInt(1000));
+        params.put("userId", "user-" + ThreadLocalRandom.current().nextInt(1000));
+        params.put("productId", "product-" + ThreadLocalRandom.current().nextInt(100));
+        params.put("quantity", ThreadLocalRandom.current().nextInt(10) + 1);
+        params.put("amount", new BigDecimal(ThreadLocalRandom.current().nextInt(1000) + 100));
+        params.put("accountId", "account-" + ThreadLocalRandom.current().nextInt(1000));
         return params;
     }
 
@@ -230,7 +229,7 @@ public class SagaModeExecutor implements TransactionExecutor {
     }
 
     private boolean shouldRollback() {
-        return RANDOM.nextInt(100) < config.getRollbackPercentage();
+        return ThreadLocalRandom.current().nextInt(100) < config.getRollbackPercentage();
     }
 
     @Override

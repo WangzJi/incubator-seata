@@ -30,6 +30,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * AT mode transaction executor supporting both empty and real transaction modes
@@ -186,13 +187,13 @@ public class ATModeExecutor extends AbstractTransactionExecutor {
             conn.setAutoCommit(false);
 
             // Transfer between two random accounts
-            long fromAccount = (RANDOM.nextInt(BenchmarkConstants.ACCOUNT_COUNT) + 1);
-            long toAccount = (RANDOM.nextInt(BenchmarkConstants.ACCOUNT_COUNT) + 1);
+            long fromAccount = (ThreadLocalRandom.current().nextInt(BenchmarkConstants.ACCOUNT_COUNT) + 1);
+            long toAccount = (ThreadLocalRandom.current().nextInt(BenchmarkConstants.ACCOUNT_COUNT) + 1);
             while (toAccount == fromAccount) {
-                toAccount = (RANDOM.nextInt(BenchmarkConstants.ACCOUNT_COUNT) + 1);
+                toAccount = (ThreadLocalRandom.current().nextInt(BenchmarkConstants.ACCOUNT_COUNT) + 1);
             }
-            int amount =
-                    RANDOM.nextInt(BenchmarkConstants.MAX_TRANSFER_AMOUNT) + BenchmarkConstants.MIN_TRANSFER_AMOUNT;
+            int amount = ThreadLocalRandom.current().nextInt(BenchmarkConstants.MAX_TRANSFER_AMOUNT)
+                    + BenchmarkConstants.MIN_TRANSFER_AMOUNT;
 
             // Debit from source account
             try (PreparedStatement pstmt =

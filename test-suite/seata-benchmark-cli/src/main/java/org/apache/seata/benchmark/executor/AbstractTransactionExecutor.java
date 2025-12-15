@@ -26,7 +26,7 @@ import org.apache.seata.tm.api.GlobalTransactionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Abstract base class for transaction executors implementing common transaction handling logic
@@ -34,7 +34,6 @@ import java.util.Random;
 public abstract class AbstractTransactionExecutor implements TransactionExecutor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractTransactionExecutor.class);
-    protected static final Random RANDOM = new Random();
 
     protected final BenchmarkConfig config;
 
@@ -115,7 +114,7 @@ public abstract class AbstractTransactionExecutor implements TransactionExecutor
      * @return true if should rollback
      */
     protected boolean shouldRollback() {
-        return RANDOM.nextInt(100) < config.getRollbackPercentage();
+        return ThreadLocalRandom.current().nextInt(100) < config.getRollbackPercentage();
     }
 
     /**

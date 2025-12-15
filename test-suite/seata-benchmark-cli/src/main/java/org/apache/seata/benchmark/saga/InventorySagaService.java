@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Inventory Saga Service for benchmark testing.
@@ -29,7 +29,6 @@ import java.util.Random;
 public class InventorySagaService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InventorySagaService.class);
-    private static final Random RANDOM = new Random();
 
     private final int rollbackPercentage;
     private final int simulatedDelayMs;
@@ -86,7 +85,7 @@ public class InventorySagaService {
     private void simulateDelay() {
         if (simulatedDelayMs > 0) {
             try {
-                Thread.sleep(RANDOM.nextInt(simulatedDelayMs));
+                Thread.sleep(ThreadLocalRandom.current().nextInt(simulatedDelayMs));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -94,6 +93,6 @@ public class InventorySagaService {
     }
 
     private boolean shouldFail() {
-        return RANDOM.nextInt(100) < rollbackPercentage;
+        return ThreadLocalRandom.current().nextInt(100) < rollbackPercentage;
     }
 }
