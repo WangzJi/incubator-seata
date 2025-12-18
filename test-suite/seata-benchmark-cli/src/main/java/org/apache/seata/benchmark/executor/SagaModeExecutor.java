@@ -206,6 +206,7 @@ public class SagaModeExecutor implements TransactionExecutor {
         return new TransactionRecord(businessKey, status, duration, branchCount, success);
     }
 
+    @SuppressWarnings("lgtm[java/insecure-randomness]")
     private Map<String, Object> createStartParams() {
         Map<String, Object> params = new HashMap<>();
         params.put("userId", "user-" + ThreadLocalRandom.current().nextInt(1000));
@@ -228,6 +229,7 @@ public class SagaModeExecutor implements TransactionExecutor {
         LOGGER.trace("Executing compensation for branch {}", branchId);
     }
 
+    @SuppressWarnings("lgtm[java/insecure-randomness]")
     private boolean shouldRollback() {
         return ThreadLocalRandom.current().nextInt(100) < config.getRollbackPercentage();
     }

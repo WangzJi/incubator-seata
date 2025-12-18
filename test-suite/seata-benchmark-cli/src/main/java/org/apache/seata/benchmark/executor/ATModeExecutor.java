@@ -181,6 +181,7 @@ public class ATModeExecutor extends AbstractTransactionExecutor {
         }
     }
 
+    @SuppressWarnings("lgtm[java/insecure-randomness]")
     private void executeSingleBranch() throws SQLException {
         // Use DataSourceProxy connection to enable AT mode
         try (Connection conn = dataSourceProxy.getConnection()) {
