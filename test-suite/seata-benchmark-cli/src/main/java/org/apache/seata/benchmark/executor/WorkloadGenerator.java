@@ -21,6 +21,7 @@ import org.apache.seata.benchmark.BenchmarkConstants;
 import org.apache.seata.benchmark.config.BenchmarkConfig;
 import org.apache.seata.benchmark.model.BenchmarkMetrics;
 import org.apache.seata.benchmark.model.TransactionRecord;
+import org.apache.seata.common.thread.NamedThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +29,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -53,7 +55,13 @@ public class WorkloadGenerator {
         this.executor = executor;
         this.metrics = metrics;
         this.rateLimiter = RateLimiter.create(config.getTargetTps());
-        this.executorService = Executors.newFixedThreadPool(config.getThreads());
+        this.executorService = new ThreadPoolExecutor(
+                config.getThreads(),
+                config.getThreads(),
+                0L,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(),
+                new NamedThreadFactory("workload-generator", config.getThreads()));
     }
 
     public void start() {
