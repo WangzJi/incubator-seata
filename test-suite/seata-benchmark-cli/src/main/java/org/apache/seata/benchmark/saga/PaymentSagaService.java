@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -63,7 +64,11 @@ public class PaymentSagaService {
         }
 
         LOGGER.debug("Payment debited successfully: accountId={}, amount={}", accountId, amount);
-        return Map.of("code", "S", "accountId", accountId, "amount", amount.toString());
+        Map<String, Object> result = new HashMap<>();
+        result.put("code", "S");
+        result.put("accountId", accountId);
+        result.put("amount", amount.toString());
+        return result;
     }
 
     /**
@@ -84,7 +89,11 @@ public class PaymentSagaService {
         simulateDelay();
 
         LOGGER.debug("Payment refunded successfully: accountId={}, amount={}", accountId, amount);
-        return Map.of("code", "S", "accountId", accountId, "amount", amount.toString());
+        Map<String, Object> result = new HashMap<>();
+        result.put("code", "S");
+        result.put("accountId", accountId);
+        result.put("amount", amount.toString());
+        return result;
     }
 
     private void simulateDelay() {

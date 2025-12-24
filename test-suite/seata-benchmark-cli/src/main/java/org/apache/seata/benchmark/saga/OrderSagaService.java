@@ -19,6 +19,7 @@ package org.apache.seata.benchmark.saga;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -64,7 +65,12 @@ public class OrderSagaService {
         }
 
         LOGGER.debug("Order created successfully: orderId={}", orderId);
-        return Map.of("code", "S", "orderId", orderId, "userId", userId, "productId", productId);
+        Map<String, Object> result = new HashMap<>();
+        result.put("code", "S");
+        result.put("orderId", orderId);
+        result.put("userId", userId);
+        result.put("productId", productId);
+        return result;
     }
 
     /**
@@ -83,7 +89,10 @@ public class OrderSagaService {
         simulateDelay();
 
         LOGGER.debug("Order cancelled successfully: orderId={}", orderId);
-        return Map.of("code", "S", "orderId", orderId != null ? orderId : "unknown");
+        Map<String, Object> result = new HashMap<>();
+        result.put("code", "S");
+        result.put("orderId", orderId != null ? orderId : "unknown");
+        return result;
     }
 
     private void simulateDelay() {

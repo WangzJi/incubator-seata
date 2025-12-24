@@ -19,6 +19,7 @@ package org.apache.seata.benchmark.saga;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -60,7 +61,11 @@ public class InventorySagaService {
         }
 
         LOGGER.debug("Inventory reserved successfully: productId={}, quantity={}", productId, quantity);
-        return Map.of("code", "S", "productId", productId, "quantity", quantity);
+        Map<String, Object> result = new HashMap<>();
+        result.put("code", "S");
+        result.put("productId", productId);
+        result.put("quantity", quantity);
+        return result;
     }
 
     /**
@@ -79,7 +84,11 @@ public class InventorySagaService {
         simulateDelay();
 
         LOGGER.debug("Inventory released successfully: productId={}, quantity={}", productId, quantity);
-        return Map.of("code", "S", "productId", productId, "quantity", quantity);
+        Map<String, Object> result = new HashMap<>();
+        result.put("code", "S");
+        result.put("productId", productId);
+        result.put("quantity", quantity);
+        return result;
     }
 
     private void simulateDelay() {
