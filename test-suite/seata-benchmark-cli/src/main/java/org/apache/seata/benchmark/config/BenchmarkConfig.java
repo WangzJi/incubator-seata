@@ -16,13 +16,15 @@
  */
 package org.apache.seata.benchmark.config;
 
+import org.apache.seata.core.model.BranchType;
+
 /**
  * Benchmark configuration
  */
 public class BenchmarkConfig {
 
     private String server = "127.0.0.1:8091";
-    private String mode = "AT";
+    private BranchType mode = BranchType.AT;
     private int targetTps = 100;
     private int threads = 10;
     private int duration = 60;
@@ -32,12 +34,16 @@ public class BenchmarkConfig {
     private int rollbackPercentage = 2;
     private int branches = 0;
 
-    public String getMode() {
+    public BranchType getMode() {
         return mode;
     }
 
-    public void setMode(String mode) {
+    public void setMode(BranchType mode) {
         this.mode = mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = BranchType.get(mode);
     }
 
     public int getTargetTps() {
@@ -113,7 +119,7 @@ public class BenchmarkConfig {
     }
 
     public void validate() {
-        if (!"AT".equalsIgnoreCase(mode) && !"TCC".equalsIgnoreCase(mode) && !"SAGA".equalsIgnoreCase(mode)) {
+        if (mode != BranchType.AT && mode != BranchType.TCC && mode != BranchType.SAGA) {
             throw new IllegalArgumentException("Unsupported mode: " + mode + ". Only AT, TCC, and SAGA are supported.");
         }
         if (server == null || server.trim().isEmpty()) {

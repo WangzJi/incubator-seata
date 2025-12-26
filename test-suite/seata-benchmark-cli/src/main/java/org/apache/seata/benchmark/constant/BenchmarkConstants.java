@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.seata.benchmark;
+package org.apache.seata.benchmark.constant;
 
 /**
  * Benchmark constants
@@ -47,4 +47,12 @@ public final class BenchmarkConstants {
 
     // Progress reporting interval
     public static final int PROGRESS_REPORT_INTERVAL_SECONDS = 10;
+
+    // Transaction status constants for benchmark reporting
+    public static final String STATUS_COMMITTED = "Committed";
+    public static final String STATUS_ROLLBACKED = "Rollbacked";
+    public static final String STATUS_COMPENSATED = "Compensated";
+    public static final String STATUS_COMPENSATION_FAILED = "CompensationFailed";
+    public static final String STATUS_FAILED = "Failed";
+    public static final String STATUS_UNKNOWN = "Unknown";
 }

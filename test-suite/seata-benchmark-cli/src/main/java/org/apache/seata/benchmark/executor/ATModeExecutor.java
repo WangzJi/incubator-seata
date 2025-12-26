@@ -18,8 +18,8 @@ package org.apache.seata.benchmark.executor;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import org.apache.seata.benchmark.BenchmarkConstants;
 import org.apache.seata.benchmark.config.BenchmarkConfig;
+import org.apache.seata.benchmark.constant.BenchmarkConstants;
 import org.apache.seata.rm.datasource.DataSourceProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

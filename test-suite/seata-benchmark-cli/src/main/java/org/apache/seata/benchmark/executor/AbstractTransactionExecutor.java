@@ -16,8 +16,8 @@
  */
 package org.apache.seata.benchmark.executor;
 
-import org.apache.seata.benchmark.BenchmarkConstants;
 import org.apache.seata.benchmark.config.BenchmarkConfig;
+import org.apache.seata.benchmark.constant.BenchmarkConstants;
 import org.apache.seata.benchmark.model.TransactionRecord;
 import org.apache.seata.core.exception.TransactionException;
 import org.apache.seata.core.model.GlobalStatus;
@@ -74,7 +74,7 @@ public abstract class AbstractTransactionExecutor implements TransactionExecutor
         GlobalTransaction tx = GlobalTransactionContext.getCurrentOrCreate();
         long startTime = System.currentTimeMillis();
         String xid = null;
-        String status = "Unknown";
+        String status = BenchmarkConstants.STATUS_UNKNOWN;
         int branchCount = getBranchCount();
         boolean success = false;
 
@@ -86,21 +86,21 @@ public abstract class AbstractTransactionExecutor implements TransactionExecutor
 
             if (shouldRollback()) {
                 tx.rollback();
-                status = "Rollbacked";
+                status = BenchmarkConstants.STATUS_ROLLBACKED;
             } else {
                 tx.commit();
-                status = "Committed";
+                status = BenchmarkConstants.STATUS_COMMITTED;
                 success = true;
             }
 
         } catch (TransactionException e) {
             getLogger().warn("Transaction failed: {}", e.getMessage());
-            status = "Failed";
+            status = BenchmarkConstants.STATUS_FAILED;
             rollbackTransaction(tx);
 
         } catch (Exception e) {
             getLogger().warn("Unexpected error during transaction execution: {}", e.getMessage(), e);
-            status = "Failed";
+            status = BenchmarkConstants.STATUS_FAILED;
             rollbackTransaction(tx);
         }
 

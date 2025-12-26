@@ -17,8 +17,8 @@
 package org.apache.seata.benchmark.executor;
 
 import com.google.common.util.concurrent.RateLimiter;
-import org.apache.seata.benchmark.BenchmarkConstants;
 import org.apache.seata.benchmark.config.BenchmarkConfig;
+import org.apache.seata.benchmark.constant.BenchmarkConstants;
 import org.apache.seata.benchmark.model.BenchmarkMetrics;
 import org.apache.seata.benchmark.model.TransactionRecord;
 import org.apache.seata.common.thread.NamedThreadFactory;

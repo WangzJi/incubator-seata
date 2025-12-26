@@ -44,6 +44,12 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.apache.seata.benchmark.constant.BenchmarkConstants.STATUS_COMMITTED;
+import static org.apache.seata.benchmark.constant.BenchmarkConstants.STATUS_COMPENSATED;
+import static org.apache.seata.benchmark.constant.BenchmarkConstants.STATUS_COMPENSATION_FAILED;
+import static org.apache.seata.benchmark.constant.BenchmarkConstants.STATUS_FAILED;
+import static org.apache.seata.benchmark.constant.BenchmarkConstants.STATUS_UNKNOWN;
+
 /**
  * Saga mode transaction executor supporting both mock and real modes
  * - branches == 0: Mock mode (simplified Saga simulation without state machine)
@@ -114,7 +120,7 @@ public class SagaModeExecutor implements TransactionExecutor {
         GlobalTransaction tx = GlobalTransactionContext.getCurrentOrCreate();
         long startTime = System.currentTimeMillis();
         String xid = null;
-        String status = "Unknown";
+        String status = STATUS_UNKNOWN;
         int branchCount = config.getBranches();
         boolean success = false;
 
@@ -133,16 +139,16 @@ public class SagaModeExecutor implements TransactionExecutor {
                     simulateCompensation(i);
                 }
                 tx.rollback();
-                status = "Compensated";
+                status = STATUS_COMPENSATED;
             } else {
                 tx.commit();
-                status = "Committed";
+                status = STATUS_COMMITTED;
                 success = true;
             }
 
         } catch (TransactionException e) {
             LOGGER.debug("Transaction failed: {}", e.getMessage());
-            status = "Failed";
+            status = STATUS_FAILED;
             try {
                 if (tx.getStatus() != GlobalStatus.Rollbacked && tx.getStatus() != GlobalStatus.RollbackFailed) {
                     tx.rollback();
@@ -159,7 +165,7 @@ public class SagaModeExecutor implements TransactionExecutor {
     private TransactionRecord executeRealMode() {
         long startTime = System.currentTimeMillis();
         String businessKey = "benchmark-" + BUSINESS_KEY_COUNTER.incrementAndGet();
-        String status = "Unknown";
+        String status = STATUS_UNKNOWN;
         int branchCount = config.getBranches();
         boolean success = false;
 
@@ -179,27 +185,27 @@ public class SagaModeExecutor implements TransactionExecutor {
             ExecutionStatus compensationStatus = instance.getCompensationStatus();
 
             if (ExecutionStatus.SU.equals(executionStatus)) {
-                status = "Committed";
+                status = STATUS_COMMITTED;
                 success = true;
             } else if (ExecutionStatus.FA.equals(executionStatus)) {
                 if (compensationStatus != null) {
                     if (ExecutionStatus.SU.equals(compensationStatus)) {
-                        status = "Compensated";
+                        status = STATUS_COMPENSATED;
                     } else {
-                        status = "CompensationFailed";
+                        status = STATUS_COMPENSATION_FAILED;
                     }
                 } else {
-                    status = "Failed";
+                    status = STATUS_FAILED;
                 }
             } else if (ExecutionStatus.UN.equals(executionStatus)) {
-                status = "Unknown";
+                status = STATUS_UNKNOWN;
             } else {
-                status = executionStatus != null ? executionStatus.name() : "Unknown";
+                status = executionStatus != null ? executionStatus.name() : STATUS_UNKNOWN;
             }
 
         } catch (Exception e) {
             LOGGER.debug("Saga execution failed: {}", e.getMessage());
-            status = "Failed";
+            status = STATUS_FAILED;
         }
 
         long duration = System.currentTimeMillis() - startTime;
