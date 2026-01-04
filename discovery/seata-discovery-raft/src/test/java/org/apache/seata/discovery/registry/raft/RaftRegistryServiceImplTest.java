@@ -17,12 +17,12 @@
 package org.apache.seata.discovery.registry.raft;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import okhttp3.MediaType;
+import okhttp3.Protocol;
+import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import org.apache.http.HttpStatus;
-import org.apache.http.StatusLine;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.entity.StringEntity;
 import org.apache.seata.common.exception.NotSupportYetException;
 import org.apache.seata.common.exception.ParseEndpointException;
 import org.apache.seata.common.metadata.Metadata;
@@ -97,6 +97,19 @@ class RaftRegistryServiceImplTest {
         closedField.setAccessible(true);
         AtomicBoolean closed = (AtomicBoolean) closedField.get(null);
         closed.set(false);
+    }
+
+    /**
+     * Helper method to build a mock OkHttp Response for testing.
+     */
+    private static Response buildMockResponse(int statusCode, String body) {
+        return new Response.Builder()
+                .request(new Request.Builder().url("http://localhost").build())
+                .protocol(Protocol.HTTP_1_1)
+                .code(statusCode)
+                .message("")
+                .body(ResponseBody.create(body != null ? body : "", MediaType.parse("application/json")))
+                .build();
     }
 
     /**
@@ -542,11 +555,7 @@ class RaftRegistryServiceImplTest {
     @Test
     public void acquireClusterMetaDataAuthFailureTest() throws Exception {
         try (MockedStatic<HttpClientUtil> mockedStatic = Mockito.mockStatic(HttpClientUtil.class)) {
-            CloseableHttpResponse mockResponse = mock(CloseableHttpResponse.class);
-            StatusLine mockStatusLine = mock(StatusLine.class);
-
-            when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
-            when(mockStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_UNAUTHORIZED);
+            Response mockResponse = buildMockResponse(HttpStatus.SC_UNAUTHORIZED, null);
 
             when(HttpClientUtil.doGet(anyString(), anyMap(), anyMap(), anyInt()))
                     .thenReturn(mockResponse);
@@ -738,12 +747,7 @@ class RaftRegistryServiceImplTest {
         metadata.refreshMetadata("default", metadataResponse);
 
         try (MockedStatic<HttpClientUtil> mockedStatic = Mockito.mockStatic(HttpClientUtil.class)) {
-            CloseableHttpResponse mockResponse = mock(CloseableHttpResponse.class);
-            StatusLine mockStatusLine = mock(StatusLine.class);
-
-            when(mockResponse.getEntity()).thenReturn(new StringEntity(responseBody));
-            when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
-            when(mockStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+            Response mockResponse = buildMockResponse(HttpStatus.SC_OK, responseBody);
 
             when(HttpClientUtil.doGet(anyString(), anyMap(), anyMap(), anyInt()))
                     .thenReturn(mockResponse);
@@ -788,12 +792,7 @@ class RaftRegistryServiceImplTest {
         initAddresses.put("default", addressList);
 
         try (MockedStatic<HttpClientUtil> mockedStatic = Mockito.mockStatic(HttpClientUtil.class)) {
-            CloseableHttpResponse mockResponse = mock(CloseableHttpResponse.class);
-            StatusLine mockStatusLine = mock(StatusLine.class);
-
-            when(mockResponse.getEntity()).thenReturn(new StringEntity(responseBody));
-            when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
-            when(mockStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+            Response mockResponse = buildMockResponse(HttpStatus.SC_OK, responseBody);
 
             when(HttpClientUtil.doGet(anyString(), anyMap(), anyMap(), anyInt()))
                     .thenReturn(mockResponse);
@@ -1026,17 +1025,15 @@ class RaftRegistryServiceImplTest {
         initAddresses.put("default", addressList);
 
         try (MockedStatic<HttpClientUtil> mockedStatic = Mockito.mockStatic(HttpClientUtil.class)) {
-            CloseableHttpResponse mockResponse = mock(CloseableHttpResponse.class);
-            when(mockResponse.getStatusLine()).thenReturn(null);
-
+            // Return null to simulate null response scenario
             when(HttpClientUtil.doPost(anyString(), anyMap(), anyMap(), anyInt()))
-                    .thenReturn(mockResponse);
+                    .thenReturn(null);
 
             Method watchMethod = RaftRegistryServiceImpl.class.getDeclaredMethod("watch");
             watchMethod.setAccessible(true);
             boolean result = (boolean) watchMethod.invoke(null);
 
-            assertFalse(result, "Watch should return false when statusLine is null");
+            assertFalse(result, "Watch should return false when response is null");
         } finally {
             initAddresses.remove("default");
         }
@@ -1074,11 +1071,7 @@ class RaftRegistryServiceImplTest {
         initAddresses.put("default", addressList);
 
         try (MockedStatic<HttpClientUtil> mockedStatic = Mockito.mockStatic(HttpClientUtil.class)) {
-            CloseableHttpResponse mockResponse = mock(CloseableHttpResponse.class);
-            StatusLine mockStatusLine = mock(StatusLine.class);
-
-            when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
-            when(mockStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_UNAUTHORIZED);
+            Response mockResponse = buildMockResponse(HttpStatus.SC_UNAUTHORIZED, null);
 
             when(HttpClientUtil.doPost(anyString(), anyMap(), anyMap(), anyInt()))
                     .thenReturn(mockResponse);
@@ -1205,16 +1198,8 @@ class RaftRegistryServiceImplTest {
 
         try (MockedStatic<HttpClientUtil> mockedStatic = Mockito.mockStatic(HttpClientUtil.class)) {
             String loginResponse = "{\"code\":\"200\",\"message\":\"success\",\"data\":\"newToken\",\"success\":true}";
-            CloseableHttpResponse mockLoginResponse = mock(CloseableHttpResponse.class);
-            StatusLine mockLoginStatusLine = mock(StatusLine.class);
-            when(mockLoginResponse.getEntity()).thenReturn(new StringEntity(loginResponse));
-            when(mockLoginResponse.getStatusLine()).thenReturn(mockLoginStatusLine);
-            when(mockLoginStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-
-            CloseableHttpResponse mockWatchResponse = mock(CloseableHttpResponse.class);
-            StatusLine mockWatchStatusLine = mock(StatusLine.class);
-            when(mockWatchResponse.getStatusLine()).thenReturn(mockWatchStatusLine);
-            when(mockWatchStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+            Response mockLoginResponse = buildMockResponse(HttpStatus.SC_OK, loginResponse);
+            Response mockWatchResponse = buildMockResponse(HttpStatus.SC_OK, null);
 
             when(HttpClientUtil.doPost(anyString(), anyMap(), anyMap(), anyInt()))
                     .thenReturn(mockLoginResponse, mockWatchResponse);
@@ -1283,17 +1268,8 @@ class RaftRegistryServiceImplTest {
                 (Map<String, List<InetSocketAddress>>) initAddressesField.get(null);
 
         try (MockedStatic<HttpClientUtil> mockedStatic = Mockito.mockStatic(HttpClientUtil.class)) {
-            CloseableHttpResponse mockLoginResponse = mock(CloseableHttpResponse.class);
-            StatusLine mockLoginStatusLine = mock(StatusLine.class);
-            when(mockLoginResponse.getEntity()).thenReturn(new StringEntity(loginResponse));
-            when(mockLoginResponse.getStatusLine()).thenReturn(mockLoginStatusLine);
-            when(mockLoginStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-
-            CloseableHttpResponse mockMetadataResponse = mock(CloseableHttpResponse.class);
-            StatusLine mockMetadataStatusLine = mock(StatusLine.class);
-            when(mockMetadataResponse.getEntity()).thenReturn(new StringEntity(metadataResponseBody));
-            when(mockMetadataResponse.getStatusLine()).thenReturn(mockMetadataStatusLine);
-            when(mockMetadataStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+            Response mockLoginResponse = buildMockResponse(HttpStatus.SC_OK, loginResponse);
+            Response mockMetadataResponse = buildMockResponse(HttpStatus.SC_OK, metadataResponseBody);
 
             when(HttpClientUtil.doPost(anyString(), anyMap(), anyMap(), anyInt()))
                     .thenReturn(mockLoginResponse);
