@@ -89,7 +89,7 @@ public class LoopTaskHandlerInterceptorTest {
         assertNotNull(interceptor);
     }
 
-    // ========== 新增测试：覆盖 preProcess 核心逻辑 ==========
+    // ========== Additional Tests: Coverage for preProcess Core Logic ==========
 
     @Test
     public void preProcessWhenIsLoopStateSetContextVariablesTest() {
@@ -106,30 +106,30 @@ public class LoopTaskHandlerInterceptorTest {
         when(taskState.getLoop()).thenReturn(loop);
         when(context.getVariable(DomainConstants.LOOP_COUNTER)).thenReturn(0);
 
-        // 设置 loop 配置
+        // Set loop configuration
         when(loop.getElementIndexName()).thenReturn("loopIndex");
         when(loop.getElementVariableName()).thenReturn("loopElement");
 
-        // 设置 LoopContextHolder
+        // Set LoopContextHolder
         LoopContextHolder holder = new LoopContextHolder();
         List<String> collection = Arrays.asList("item1", "item2", "item3");
         holder.setCollection(collection);
         when(context.getVariable(DomainConstants.VAR_NAME_CURRENT_LOOP_CONTEXT_HOLDER))
                 .thenReturn(holder);
 
-        // 设置 stateMachineContext
+        // Set stateMachineContext
         Map<String, Object> contextVariables = new HashMap<>();
         contextVariables.put("existingKey", "existingValue");
         when(context.getVariable(DomainConstants.VAR_NAME_STATEMACHINE_CONTEXT)).thenReturn(contextVariables);
 
-        // 执行
+        // Execute
         assertDoesNotThrow(() -> interceptor.preProcess(context));
 
-        // 验证 setVariableLocally 被调用
+        // Verify setVariableLocally is called
         verify(context).setVariableLocally(eq(DomainConstants.VAR_NAME_STATEMACHINE_CONTEXT), any(Map.class));
     }
 
-    // ========== 新增测试：覆盖 postProcess 核心逻辑 ==========
+    // ========== Additional Tests: Coverage for postProcess Core Logic ==========
 
     @Test
     public void postProcessWhenStateSuccessIncrementCompletedInstancesTest() {
@@ -146,12 +146,12 @@ public class LoopTaskHandlerInterceptorTest {
         when(context.getVariableLocally(DomainConstants.VAR_NAME_CURRENT_EXCEPTION))
                 .thenReturn(null);
 
-        // 执行
+        // Execute
         interceptor.postProcess(context, null);
 
-        // 验证 nrOfCompletedInstances 增加了
+        // Verify nrOfCompletedInstances has been incremented
         assertEquals(1, holder.getNrOfCompletedInstances().get());
-        // 验证 nrOfActiveInstances 减少了
+        // Verify nrOfActiveInstances has been decremented
         assertEquals(-1, holder.getNrOfActiveInstances().get());
     }
 
@@ -170,10 +170,10 @@ public class LoopTaskHandlerInterceptorTest {
         when(context.getVariableLocally(DomainConstants.VAR_NAME_CURRENT_EXCEPTION))
                 .thenReturn(null);
 
-        // 执行
+        // Execute
         interceptor.postProcess(context, null);
 
-        // 验证 failEnd 被设置为 true
+        // Verify failEnd is set to true
         assertTrue(holder.isFailEnd());
     }
 
@@ -197,12 +197,12 @@ public class LoopTaskHandlerInterceptorTest {
 
         Exception testException = new RuntimeException("test exception");
 
-        // 执行
+        // Execute
         interceptor.postProcess(context, testException);
 
-        // 验证 semaphore 被释放
+        // Verify semaphore is released
         assertEquals(1, semaphore.availablePermits());
-        // 验证 failEnd 被设置为 true (因为有异常)
+        // Verify failEnd is set to true (due to exception)
         assertTrue(holder.isFailEnd());
     }
 
@@ -219,10 +219,10 @@ public class LoopTaskHandlerInterceptorTest {
         when(context.getVariableLocally(DomainConstants.VAR_NAME_CURRENT_EXCEPTION))
                 .thenReturn(null);
 
-        // 执行
+        // Execute
         interceptor.postProcess(context, null);
 
-        // 验证 failEnd 保持 false
+        // Verify failEnd remains false
         assertFalse(holder.isFailEnd());
     }
 
@@ -239,15 +239,15 @@ public class LoopTaskHandlerInterceptorTest {
         when(context.getVariable(DomainConstants.VAR_NAME_CURRENT_LOOP_CONTEXT_HOLDER))
                 .thenReturn(holder);
 
-        // 本地存在异常
+        // Local exception exists
         Exception localException = new RuntimeException("local exception");
         when(context.getVariableLocally(DomainConstants.VAR_NAME_CURRENT_EXCEPTION))
                 .thenReturn(localException);
 
-        // 执行
+        // Execute
         interceptor.postProcess(context, null);
 
-        // 验证 failEnd 被设置为 true
+        // Verify failEnd is set to true
         assertTrue(holder.isFailEnd());
     }
 }

@@ -17,17 +17,37 @@
 package org.apache.seata.saga.engine.pcext.handlers;
 
 import org.apache.seata.saga.engine.StateMachineConfig;
+import org.apache.seata.saga.engine.expression.Expression;
+import org.apache.seata.saga.engine.expression.ExpressionResolver;
 import org.apache.seata.saga.engine.pcext.StateInstruction;
 import org.apache.seata.saga.engine.pcext.utils.LoopContextHolder;
+import org.apache.seata.saga.proctrl.HierarchicalProcessContext;
 import org.apache.seata.saga.proctrl.ProcessContext;
+import org.apache.seata.saga.proctrl.eventing.impl.ProcessCtrlEventPublisher;
 import org.apache.seata.saga.statelang.domain.DomainConstants;
-import org.apache.seata.saga.statelang.domain.State;
+import org.apache.seata.saga.statelang.domain.StateInstance;
 import org.apache.seata.saga.statelang.domain.StateMachineInstance;
+import org.apache.seata.saga.statelang.domain.StateType;
+import org.apache.seata.saga.statelang.domain.impl.AbstractTaskState;
+import org.apache.seata.saga.statelang.domain.impl.AbstractTaskState.LoopImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.Semaphore;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class for {@link LoopStartStateHandler}
@@ -47,7 +67,7 @@ public class LoopStartStateHandlerTest {
         StateInstruction instruction = mock(StateInstruction.class);
         StateMachineInstance smInstance = mock(StateMachineInstance.class);
         StateMachineConfig config = mock(StateMachineConfig.class);
-        State state = mock(State.class);
+        AbstractTaskState state = mock(AbstractTaskState.class);
 
         when(context.getInstruction(StateInstruction.class)).thenReturn(instruction);
         when(instruction.getState(context)).thenReturn(state);
@@ -55,7 +75,9 @@ public class LoopStartStateHandlerTest {
         when(context.getVariable(DomainConstants.VAR_NAME_STATEMACHINE_INST)).thenReturn(smInstance);
         when(context.getVariable(DomainConstants.VAR_NAME_STATEMACHINE_CONFIG)).thenReturn(config);
 
-        // When loop config is null, should set temporary state and log warning
+        when(state.getType()).thenReturn(StateType.SERVICE_TASK);
+        when(state.getLoop()).thenReturn(null);
+
         handler.process(context);
 
         verify(instruction).setTemporaryState(null);
@@ -67,32 +89,28 @@ public class LoopStartStateHandlerTest {
         assertNotNull(handler);
     }
 
-    // ========== 新增测试：覆盖 finally 块中的清理逻辑 ==========
-
     @Test
     public void processCleanupContextVariablesInFinallyBlockTest() {
         ProcessContext context = mock(ProcessContext.class);
         StateInstruction instruction = mock(StateInstruction.class);
         StateMachineInstance smInstance = mock(StateMachineInstance.class);
         StateMachineConfig config = mock(StateMachineConfig.class);
-        State state = mock(State.class);
+        AbstractTaskState state = mock(AbstractTaskState.class);
 
         when(context.getInstruction(StateInstruction.class)).thenReturn(instruction);
         when(instruction.getState(context)).thenReturn(state);
         when(instruction.getStateName()).thenReturn("testState");
         when(context.getVariable(DomainConstants.VAR_NAME_STATEMACHINE_INST)).thenReturn(smInstance);
         when(context.getVariable(DomainConstants.VAR_NAME_STATEMACHINE_CONFIG)).thenReturn(config);
+        when(state.getType()).thenReturn(StateType.SERVICE_TASK);
+        when(state.getLoop()).thenReturn(null);
 
-        // 执行
         handler.process(context);
 
-        // 验证 finally 块中的清理逻辑
         verify(context).removeVariable(DomainConstants.LOOP_SEMAPHORE);
         verify(context).removeVariable(DomainConstants.VAR_NAME_IS_LOOP_STATE);
         verify(context).removeVariable(DomainConstants.VAR_NAME_CURRENT_LOOP_CONTEXT_HOLDER);
     }
-
-    // ========== 新增测试：覆盖 failEnd 异常路由逻辑 ==========
 
     @Test
     public void processWhenLoopContextHolderIsNullNotThrowExceptionTest() {
@@ -100,7 +118,7 @@ public class LoopStartStateHandlerTest {
         StateInstruction instruction = mock(StateInstruction.class);
         StateMachineInstance smInstance = mock(StateMachineInstance.class);
         StateMachineConfig config = mock(StateMachineConfig.class);
-        State state = mock(State.class);
+        AbstractTaskState state = mock(AbstractTaskState.class);
 
         when(context.getInstruction(StateInstruction.class)).thenReturn(instruction);
         when(instruction.getState(context)).thenReturn(state);
@@ -109,8 +127,9 @@ public class LoopStartStateHandlerTest {
         when(context.getVariable(DomainConstants.VAR_NAME_STATEMACHINE_CONFIG)).thenReturn(config);
         when(context.getVariable(DomainConstants.VAR_NAME_CURRENT_LOOP_CONTEXT_HOLDER))
                 .thenReturn(null);
+        when(state.getType()).thenReturn(StateType.SERVICE_TASK);
+        when(state.getLoop()).thenReturn(null);
 
-        // Should not throw when loop context holder is created during process
         assertDoesNotThrow(() -> handler.process(context));
     }
 
@@ -120,7 +139,7 @@ public class LoopStartStateHandlerTest {
         StateInstruction instruction = mock(StateInstruction.class);
         StateMachineInstance smInstance = mock(StateMachineInstance.class);
         StateMachineConfig config = mock(StateMachineConfig.class);
-        State state = mock(State.class);
+        AbstractTaskState state = mock(AbstractTaskState.class);
 
         LoopContextHolder holder = new LoopContextHolder();
         holder.setFailEnd(false);
@@ -132,11 +151,90 @@ public class LoopStartStateHandlerTest {
         when(context.getVariable(DomainConstants.VAR_NAME_STATEMACHINE_CONFIG)).thenReturn(config);
         when(context.getVariable(DomainConstants.VAR_NAME_CURRENT_LOOP_CONTEXT_HOLDER))
                 .thenReturn(holder);
+        when(state.getType()).thenReturn(StateType.SERVICE_TASK);
+        when(state.getLoop()).thenReturn(null);
 
-        // 执行
         handler.process(context);
 
-        // 不应该抛出异常
         assertFalse(holder.isFailEnd());
+    }
+
+    @Test
+    public void processAsyncLoopExecutionHappyPathTest() {
+        HierarchicalProcessContext context = mock(HierarchicalProcessContext.class);
+        StateInstruction instruction = mock(StateInstruction.class);
+        StateMachineInstance smInstance = mock(StateMachineInstance.class);
+        StateMachineConfig config = mock(StateMachineConfig.class);
+        AbstractTaskState state = mock(AbstractTaskState.class);
+        ProcessCtrlEventPublisher publisher = mock(ProcessCtrlEventPublisher.class);
+        ExpressionResolver resolver = mock(ExpressionResolver.class);
+
+        LoopImpl loop = new LoopImpl();
+        loop.setParallel(2);
+        loop.setCollection("$.users");
+        loop.setElementVariableName("user");
+
+        when(context.getInstruction(StateInstruction.class)).thenReturn(instruction);
+        when(instruction.getState(context)).thenReturn(state);
+        when(instruction.getStateName()).thenReturn("loopState");
+        when(context.getVariable(DomainConstants.VAR_NAME_STATEMACHINE_INST)).thenReturn(smInstance);
+        when(context.getVariable(DomainConstants.VAR_NAME_STATEMACHINE_CONFIG)).thenReturn(config);
+        when(context.getVariable(DomainConstants.VAR_NAME_STATEMACHINE_CONTEXT)).thenReturn(new HashMap<>());
+
+        LoopContextHolder holder = new LoopContextHolder();
+        when(context.getVariable(DomainConstants.VAR_NAME_CURRENT_LOOP_CONTEXT_HOLDER))
+                .thenReturn(holder);
+
+        when(state.getType()).thenReturn(StateType.SERVICE_TASK);
+        when(state.getLoop()).thenReturn(loop);
+
+        Expression expression = mock(Expression.class);
+        List<String> userList = Arrays.asList("user1", "user2", "user3");
+        when(expression.getValue(any())).thenReturn(userList);
+        when(resolver.getExpression(any())).thenReturn(expression);
+        when(config.getExpressionResolver()).thenReturn(resolver);
+
+        when(config.isEnableAsync()).thenReturn(true);
+        when(config.getAsyncProcessCtrlEventPublisher()).thenReturn(publisher);
+
+        final Semaphore[] capturedSemaphore = new Semaphore[1];
+        doAnswer(invocation -> {
+                    String key = invocation.getArgument(0);
+                    Object value = invocation.getArgument(1);
+                    if (DomainConstants.LOOP_SEMAPHORE.equals(key)) {
+                        capturedSemaphore[0] = (Semaphore) value;
+                    }
+                    return null;
+                })
+                .when(context)
+                .setVariable(eq(DomainConstants.LOOP_SEMAPHORE), any());
+
+        // Merged doAnswer handling both StateInstance injection AND Semaphore release
+        doAnswer(invocation -> {
+                    ProcessContext ctx = invocation.getArgument(0);
+
+                    StateInstance mockStateInst = mock(StateInstance.class);
+                    when(mockStateInst.getOutputParams()).thenReturn(new HashMap<>());
+
+                    // Crucial Fix: Use setVariableLocally to prevent delegation to mocked parent
+                    if (ctx instanceof HierarchicalProcessContext) {
+                        ((HierarchicalProcessContext) ctx)
+                                .setVariableLocally(DomainConstants.VAR_NAME_STATE_INST, mockStateInst);
+                    } else {
+                        ctx.setVariable(DomainConstants.VAR_NAME_STATE_INST, mockStateInst);
+                    }
+
+                    if (capturedSemaphore[0] != null) {
+                        capturedSemaphore[0].release();
+                    }
+                    return null;
+                })
+                .when(publisher)
+                .publish(any());
+
+        handler.process(context);
+
+        verify(publisher, times(3)).publish(any());
+        verify(context).removeVariable(DomainConstants.LOOP_SEMAPHORE);
     }
 }

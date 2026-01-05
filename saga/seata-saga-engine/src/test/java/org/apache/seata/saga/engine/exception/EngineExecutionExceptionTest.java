@@ -30,7 +30,7 @@ public class EngineExecutionExceptionTest {
     public void defaultConstructorTest() {
         EngineExecutionException e = new EngineExecutionException();
         assertNotNull(e);
-        // 父类 FrameworkException 默认构造函数设置默认消息
+        // Parent class FrameworkException default constructor sets the default message
         assertNotNull(e.getMessage());
     }
 

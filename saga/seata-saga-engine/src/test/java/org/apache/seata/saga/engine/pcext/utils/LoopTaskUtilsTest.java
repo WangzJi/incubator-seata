@@ -89,7 +89,7 @@ public class LoopTaskUtilsTest {
         String stateName = "myState";
         int counter = LoopTaskUtils.reloadLoopCounter(stateName);
 
-        // 源码返回 -1 当找不到模式时
+        // Source code returns -1 when pattern is not found
         assertEquals(-1, counter);
     }
 
@@ -120,7 +120,7 @@ public class LoopTaskUtilsTest {
         assertEquals("-loop-", LoopTaskUtils.LOOP_STATE_NAME_PATTERN);
     }
 
-    // ========== 新增测试：覆盖 createLoopCounterContext ==========
+    // ========== Additional Tests: Coverage for createLoopCounterContext ==========
 
     @Test
     public void createLoopCounterContextPushCountersToStackTest() {
@@ -135,7 +135,7 @@ public class LoopTaskUtilsTest {
         LoopTaskUtils.createLoopCounterContext(context);
 
         assertEquals(3, holder.getNrOfInstances().get());
-        // 栈中应该有 2, 1, 0 (从大到小入栈)
+        // Stack should contain 2, 1, 0 (pushed in descending order)
         Stack<Integer> stack = holder.getLoopCounterStack();
         assertEquals(3, stack.size());
         assertEquals(Integer.valueOf(0), stack.pop());
@@ -143,7 +143,7 @@ public class LoopTaskUtilsTest {
         assertEquals(Integer.valueOf(2), stack.pop());
     }
 
-    // ========== 新增测试：覆盖 generateLoopStateName ==========
+    // ========== Additional Tests: Coverage for generateLoopStateName ==========
 
     @Test
     public void generateLoopStateNameWithValidNameAppendPatternTest() {
@@ -173,7 +173,7 @@ public class LoopTaskUtilsTest {
         assertNull(result);
     }
 
-    // ========== 新增测试：覆盖 acquireNextLoopCounter ==========
+    // ========== Additional Tests: Coverage for acquireNextLoopCounter ==========
 
     @Test
     public void acquireNextLoopCounterPopFromStackTest() {
@@ -194,7 +194,7 @@ public class LoopTaskUtilsTest {
     public void acquireNextLoopCounterWhenStackEmptyReturnNegativeOneTest() {
         ProcessContext context = mock(ProcessContext.class);
         LoopContextHolder holder = new LoopContextHolder();
-        // 空栈
+        // Empty stack
 
         when(context.getVariable(DomainConstants.VAR_NAME_CURRENT_LOOP_CONTEXT_HOLDER))
                 .thenReturn(holder);
@@ -204,7 +204,7 @@ public class LoopTaskUtilsTest {
         assertEquals(-1, counter);
     }
 
-    // ========== 新增测试：覆盖 createLoopEventContext ==========
+    // ========== Additional Tests: Coverage for createLoopEventContext ==========
 
     @Test
     public void createLoopEventContextWithPositiveCounterSetCounterDirectlyTest() {
@@ -241,7 +241,7 @@ public class LoopTaskUtilsTest {
         assertEquals(7, childContext.getVariable(DomainConstants.LOOP_COUNTER));
     }
 
-    // ========== 新增测试：覆盖 findOutLastRetriedStateInstance ==========
+    // ========== Additional Tests: Coverage for findOutLastRetriedStateInstance ==========
 
     @Test
     public void findOutLastRetriedStateInstanceWhenFoundReturnStateTest() {
