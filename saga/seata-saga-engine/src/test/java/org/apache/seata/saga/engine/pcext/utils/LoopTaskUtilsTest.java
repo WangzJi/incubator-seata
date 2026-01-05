@@ -16,9 +16,20 @@
  */
 package org.apache.seata.saga.engine.pcext.utils;
 
+import org.apache.seata.saga.engine.pcext.StateInstruction;
+import org.apache.seata.saga.proctrl.ProcessContext;
+import org.apache.seata.saga.proctrl.impl.ProcessContextImpl;
+import org.apache.seata.saga.statelang.domain.DomainConstants;
 import org.apache.seata.saga.statelang.domain.State;
+import org.apache.seata.saga.statelang.domain.StateInstance;
+import org.apache.seata.saga.statelang.domain.StateMachineInstance;
 import org.apache.seata.saga.statelang.domain.StateType;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Stack;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -107,5 +118,175 @@ public class LoopTaskUtilsTest {
     @Test
     public void loopStateNamePatternConstantTest() {
         assertEquals("-loop-", LoopTaskUtils.LOOP_STATE_NAME_PATTERN);
+    }
+
+    // ========== 新增测试：覆盖 createLoopCounterContext ==========
+
+    @Test
+    public void createLoopCounterContextPushCountersToStackTest() {
+        ProcessContext context = mock(ProcessContext.class);
+        LoopContextHolder holder = new LoopContextHolder();
+        List<String> collection = Arrays.asList("a", "b", "c");
+        holder.setCollection(collection);
+
+        when(context.getVariable(DomainConstants.VAR_NAME_CURRENT_LOOP_CONTEXT_HOLDER))
+                .thenReturn(holder);
+
+        LoopTaskUtils.createLoopCounterContext(context);
+
+        assertEquals(3, holder.getNrOfInstances().get());
+        // 栈中应该有 2, 1, 0 (从大到小入栈)
+        Stack<Integer> stack = holder.getLoopCounterStack();
+        assertEquals(3, stack.size());
+        assertEquals(Integer.valueOf(0), stack.pop());
+        assertEquals(Integer.valueOf(1), stack.pop());
+        assertEquals(Integer.valueOf(2), stack.pop());
+    }
+
+    // ========== 新增测试：覆盖 generateLoopStateName ==========
+
+    @Test
+    public void generateLoopStateNameWithValidNameAppendPatternTest() {
+        ProcessContext context = mock(ProcessContext.class);
+        when(context.getVariable(DomainConstants.LOOP_COUNTER)).thenReturn(5);
+
+        String result = LoopTaskUtils.generateLoopStateName(context, "testState");
+
+        assertEquals("testState-loop-5", result);
+    }
+
+    @Test
+    public void generateLoopStateNameWithBlankNameReturnOriginalTest() {
+        ProcessContext context = mock(ProcessContext.class);
+
+        String result = LoopTaskUtils.generateLoopStateName(context, "");
+
+        assertEquals("", result);
+    }
+
+    @Test
+    public void generateLoopStateNameWithNullNameReturnNullTest() {
+        ProcessContext context = mock(ProcessContext.class);
+
+        String result = LoopTaskUtils.generateLoopStateName(context, null);
+
+        assertNull(result);
+    }
+
+    // ========== 新增测试：覆盖 acquireNextLoopCounter ==========
+
+    @Test
+    public void acquireNextLoopCounterPopFromStackTest() {
+        ProcessContext context = mock(ProcessContext.class);
+        LoopContextHolder holder = new LoopContextHolder();
+        holder.getLoopCounterStack().push(10);
+        holder.getLoopCounterStack().push(20);
+
+        when(context.getVariable(DomainConstants.VAR_NAME_CURRENT_LOOP_CONTEXT_HOLDER))
+                .thenReturn(holder);
+
+        int counter = LoopTaskUtils.acquireNextLoopCounter(context);
+
+        assertEquals(20, counter);
+    }
+
+    @Test
+    public void acquireNextLoopCounterWhenStackEmptyReturnNegativeOneTest() {
+        ProcessContext context = mock(ProcessContext.class);
+        LoopContextHolder holder = new LoopContextHolder();
+        // 空栈
+
+        when(context.getVariable(DomainConstants.VAR_NAME_CURRENT_LOOP_CONTEXT_HOLDER))
+                .thenReturn(holder);
+
+        int counter = LoopTaskUtils.acquireNextLoopCounter(context);
+
+        assertEquals(-1, counter);
+    }
+
+    // ========== 新增测试：覆盖 createLoopEventContext ==========
+
+    @Test
+    public void createLoopEventContextWithPositiveCounterSetCounterDirectlyTest() {
+        ProcessContext parentContext = mock(ProcessContext.class);
+        StateInstruction instruction = mock(StateInstruction.class);
+        when(parentContext.getInstruction(StateInstruction.class)).thenReturn(instruction);
+        when(instruction.getStateMachineName()).thenReturn("testMachine");
+        when(instruction.getTenantId()).thenReturn("tenant1");
+        when(instruction.getStateName()).thenReturn("testState");
+        when(instruction.getTemporaryState()).thenReturn(null);
+
+        ProcessContext childContext = LoopTaskUtils.createLoopEventContext(parentContext, 5);
+
+        assertNotNull(childContext);
+        assertEquals(5, childContext.getVariable(DomainConstants.LOOP_COUNTER));
+    }
+
+    @Test
+    public void createLoopEventContextWithNegativeCounterAcquireFromStackTest() {
+        ProcessContextImpl parentContext = new ProcessContextImpl();
+        StateInstruction instruction = new StateInstruction();
+        instruction.setStateMachineName("testMachine");
+        instruction.setTenantId("tenant1");
+        instruction.setStateName("testState");
+        parentContext.setInstruction(instruction);
+
+        LoopContextHolder holder = new LoopContextHolder();
+        holder.getLoopCounterStack().push(7);
+        parentContext.setVariable(DomainConstants.VAR_NAME_CURRENT_LOOP_CONTEXT_HOLDER, holder);
+
+        ProcessContext childContext = LoopTaskUtils.createLoopEventContext(parentContext, -1);
+
+        assertNotNull(childContext);
+        assertEquals(7, childContext.getVariable(DomainConstants.LOOP_COUNTER));
+    }
+
+    // ========== 新增测试：覆盖 findOutLastRetriedStateInstance ==========
+
+    @Test
+    public void findOutLastRetriedStateInstanceWhenFoundReturnStateTest() {
+        StateMachineInstance smInstance = mock(StateMachineInstance.class);
+        StateInstance state1 = mock(StateInstance.class);
+        StateInstance state2 = mock(StateInstance.class);
+
+        when(state1.getName()).thenReturn("state-loop-0");
+        when(state2.getName()).thenReturn("state-loop-1");
+
+        List<StateInstance> stateList = new ArrayList<>();
+        stateList.add(state1);
+        stateList.add(state2);
+
+        when(smInstance.getStateList()).thenReturn(stateList);
+
+        StateInstance result = LoopTaskUtils.findOutLastRetriedStateInstance(smInstance, "state-loop-1");
+
+        assertSame(state2, result);
+    }
+
+    @Test
+    public void findOutLastRetriedStateInstanceWhenNotFoundReturnNullTest() {
+        StateMachineInstance smInstance = mock(StateMachineInstance.class);
+        StateInstance state1 = mock(StateInstance.class);
+
+        when(state1.getName()).thenReturn("state-loop-0");
+
+        List<StateInstance> stateList = new ArrayList<>();
+        stateList.add(state1);
+
+        when(smInstance.getStateList()).thenReturn(stateList);
+
+        StateInstance result = LoopTaskUtils.findOutLastRetriedStateInstance(smInstance, "nonexistent");
+
+        assertNull(result);
+    }
+
+    @Test
+    public void findOutLastRetriedStateInstanceWithEmptyListReturnNullTest() {
+        StateMachineInstance smInstance = mock(StateMachineInstance.class);
+        when(smInstance.getStateList()).thenReturn(new ArrayList<>());
+
+        StateInstance result = LoopTaskUtils.findOutLastRetriedStateInstance(smInstance, "anyState");
+
+        assertNull(result);
     }
 }

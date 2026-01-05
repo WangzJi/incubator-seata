@@ -17,9 +17,12 @@
 package org.apache.seata.saga.engine.pcext.handlers;
 
 import org.apache.seata.saga.engine.pcext.StateHandlerInterceptor;
+import org.apache.seata.saga.statelang.domain.ExecutionStatus;
+import org.apache.seata.saga.statelang.domain.StateMachineInstance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -99,5 +102,90 @@ public class SubStateMachineHandlerTest {
     @Test
     public void handlerNotNullTest() {
         assertNotNull(handler);
+    }
+
+    // ========== 新增测试：覆盖 decideStatus 静态方法 ==========
+
+    @Test
+    public void decideStatusForwardWithSuccessReturnSUTest() throws Exception {
+        StateMachineInstance instance = mock(StateMachineInstance.class);
+        when(instance.getStatus()).thenReturn(ExecutionStatus.SU);
+
+        ExecutionStatus result = invokeDecideStatus(instance, true);
+
+        assertEquals(ExecutionStatus.SU, result);
+    }
+
+    @Test
+    public void decideStatusForwardWithFailureReturnInstanceStatusTest() throws Exception {
+        StateMachineInstance instance = mock(StateMachineInstance.class);
+        when(instance.getStatus()).thenReturn(ExecutionStatus.FA);
+        when(instance.getCompensationStatus()).thenReturn(null);
+
+        ExecutionStatus result = invokeDecideStatus(instance, true);
+
+        assertEquals(ExecutionStatus.FA, result);
+    }
+
+    @Test
+    public void decideStatusWhenCompensationStatusIsNullReturnInstanceStatusTest() throws Exception {
+        StateMachineInstance instance = mock(StateMachineInstance.class);
+        when(instance.getStatus()).thenReturn(ExecutionStatus.FA);
+        when(instance.getCompensationStatus()).thenReturn(null);
+
+        ExecutionStatus result = invokeDecideStatus(instance, false);
+
+        assertEquals(ExecutionStatus.FA, result);
+    }
+
+    @Test
+    public void decideStatusWhenCompensationStatusIsFAReturnInstanceStatusTest() throws Exception {
+        StateMachineInstance instance = mock(StateMachineInstance.class);
+        when(instance.getStatus()).thenReturn(ExecutionStatus.FA);
+        when(instance.getCompensationStatus()).thenReturn(ExecutionStatus.FA);
+
+        ExecutionStatus result = invokeDecideStatus(instance, false);
+
+        assertEquals(ExecutionStatus.FA, result);
+    }
+
+    @Test
+    public void decideStatusWhenCompensationStatusIsSUReturnFATest() throws Exception {
+        StateMachineInstance instance = mock(StateMachineInstance.class);
+        when(instance.getCompensationStatus()).thenReturn(ExecutionStatus.SU);
+
+        ExecutionStatus result = invokeDecideStatus(instance, false);
+
+        assertEquals(ExecutionStatus.FA, result);
+    }
+
+    @Test
+    public void decideStatusWhenCompensationStatusIsUNReturnUNTest() throws Exception {
+        StateMachineInstance instance = mock(StateMachineInstance.class);
+        when(instance.getCompensationStatus()).thenReturn(ExecutionStatus.UN);
+
+        ExecutionStatus result = invokeDecideStatus(instance, false);
+
+        assertEquals(ExecutionStatus.UN, result);
+    }
+
+    @Test
+    public void decideStatusWhenCompensationStatusIsRUReturnUNTest() throws Exception {
+        StateMachineInstance instance = mock(StateMachineInstance.class);
+        when(instance.getCompensationStatus()).thenReturn(ExecutionStatus.RU);
+
+        ExecutionStatus result = invokeDecideStatus(instance, false);
+
+        assertEquals(ExecutionStatus.UN, result);
+    }
+
+    /**
+     * 通过反射调用私有静态方法 decideStatus
+     */
+    private ExecutionStatus invokeDecideStatus(StateMachineInstance instance, boolean isForward) throws Exception {
+        Method method = SubStateMachineHandler.class.getDeclaredMethod(
+                "decideStatus", StateMachineInstance.class, boolean.class);
+        method.setAccessible(true);
+        return (ExecutionStatus) method.invoke(null, instance, isForward);
     }
 }
