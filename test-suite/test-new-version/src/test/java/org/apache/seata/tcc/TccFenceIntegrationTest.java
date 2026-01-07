@@ -18,7 +18,6 @@ package org.apache.seata.tcc;
 
 import org.apache.seata.integration.tx.api.fence.constant.CommonFenceConstant;
 import org.apache.seata.integration.tx.api.fence.store.CommonFenceDO;
-import org.apache.seata.integration.tx.api.fence.store.db.CommonFenceStoreDataBaseDAO;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -33,11 +32,10 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Date;
 
 /**
  * TCC Fence Integration Test
- * 
+ *
  * Tests TCC Fence mechanism for idempotency, empty rollback prevention, and suspend detection.
  * Uses H2 in-memory database.
  */
@@ -58,12 +56,12 @@ public class TccFenceIntegrationTest {
         h2DataSource.setUser("sa");
         h2DataSource.setPassword("");
         dataSource = h2DataSource;
-        
+
         connection = dataSource.getConnection();
-        
+
         // Create TCC Fence table
         createFenceTable();
-        
+
         LOGGER.info("TCC Fence test database initialized");
     }
 
@@ -83,16 +81,15 @@ public class TccFenceIntegrationTest {
     }
 
     private static void createFenceTable() throws SQLException {
-        String createTableSql = "CREATE TABLE IF NOT EXISTS " + FENCE_TABLE + " (" +
-                "xid VARCHAR(128) NOT NULL, " +
-                "branch_id BIGINT NOT NULL, " +
-                "action_name VARCHAR(64) NOT NULL, " +
-                "status TINYINT NOT NULL, " +
-                "gmt_create TIMESTAMP NOT NULL, " +
-                "gmt_modified TIMESTAMP NOT NULL, " +
-                "PRIMARY KEY (xid, branch_id)" +
-                ")";
-        
+        String createTableSql = "CREATE TABLE IF NOT EXISTS " + FENCE_TABLE + " (" + "xid VARCHAR(128) NOT NULL, "
+                + "branch_id BIGINT NOT NULL, "
+                + "action_name VARCHAR(64) NOT NULL, "
+                + "status TINYINT NOT NULL, "
+                + "gmt_create TIMESTAMP NOT NULL, "
+                + "gmt_modified TIMESTAMP NOT NULL, "
+                + "PRIMARY KEY (xid, branch_id)"
+                + ")";
+
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(createTableSql);
         }
@@ -106,18 +103,18 @@ public class TccFenceIntegrationTest {
         String xid = "192.168.1.1:8091:123456";
         long branchId = 100001L;
         String actionName = "testAction";
-        
+
         // Insert fence log with TRIED status
         insertFenceLog(xid, branchId, actionName, CommonFenceConstant.STATUS_TRIED);
-        
+
         // Verify fence log exists
         CommonFenceDO fenceDO = queryFenceLog(xid, branchId);
-        
+
         Assertions.assertNotNull(fenceDO, "Fence log should exist");
         Assertions.assertEquals(xid, fenceDO.getXid());
         Assertions.assertEquals(branchId, fenceDO.getBranchId());
         Assertions.assertEquals(CommonFenceConstant.STATUS_TRIED, fenceDO.getStatus());
-        
+
         LOGGER.info("Insert fence log for TRY phase test passed");
     }
 
@@ -129,24 +126,24 @@ public class TccFenceIntegrationTest {
         String xid = "192.168.1.1:8091:123457";
         long branchId = 100002L;
         String actionName = "testIdempotentAction";
-        
+
         // First: Insert TRIED status
         insertFenceLog(xid, branchId, actionName, CommonFenceConstant.STATUS_TRIED);
-        
+
         // Second: Update to COMMITTED status
-        boolean updated = updateFenceStatus(xid, branchId, 
-                CommonFenceConstant.STATUS_TRIED, CommonFenceConstant.STATUS_COMMITTED);
+        boolean updated = updateFenceStatus(
+                xid, branchId, CommonFenceConstant.STATUS_TRIED, CommonFenceConstant.STATUS_COMMITTED);
         Assertions.assertTrue(updated, "First commit should succeed");
-        
+
         // Third: Try to update again (should fail because status is no longer TRIED)
-        boolean secondUpdate = updateFenceStatus(xid, branchId, 
-                CommonFenceConstant.STATUS_TRIED, CommonFenceConstant.STATUS_COMMITTED);
+        boolean secondUpdate = updateFenceStatus(
+                xid, branchId, CommonFenceConstant.STATUS_TRIED, CommonFenceConstant.STATUS_COMMITTED);
         Assertions.assertFalse(secondUpdate, "Second commit should be idempotent (no-op)");
-        
+
         // Verify final status is COMMITTED
         CommonFenceDO fenceDO = queryFenceLog(xid, branchId);
         Assertions.assertEquals(CommonFenceConstant.STATUS_COMMITTED, fenceDO.getStatus());
-        
+
         LOGGER.info("Idempotent commit test passed");
     }
 
@@ -158,20 +155,20 @@ public class TccFenceIntegrationTest {
         String xid = "192.168.1.1:8091:123458";
         long branchId = 100003L;
         String actionName = "testIdempotentRollback";
-        
+
         // First: Insert TRIED status
         insertFenceLog(xid, branchId, actionName, CommonFenceConstant.STATUS_TRIED);
-        
+
         // Second: Update to ROLLBACKED status
-        boolean updated = updateFenceStatus(xid, branchId, 
-                CommonFenceConstant.STATUS_TRIED, CommonFenceConstant.STATUS_ROLLBACKED);
+        boolean updated = updateFenceStatus(
+                xid, branchId, CommonFenceConstant.STATUS_TRIED, CommonFenceConstant.STATUS_ROLLBACKED);
         Assertions.assertTrue(updated);
-        
+
         // Third: Try to rollback again
-        boolean secondUpdate = updateFenceStatus(xid, branchId, 
-                CommonFenceConstant.STATUS_TRIED, CommonFenceConstant.STATUS_ROLLBACKED);
+        boolean secondUpdate = updateFenceStatus(
+                xid, branchId, CommonFenceConstant.STATUS_TRIED, CommonFenceConstant.STATUS_ROLLBACKED);
         Assertions.assertFalse(secondUpdate, "Second rollback should be idempotent");
-        
+
         LOGGER.info("Idempotent rollback test passed");
     }
 
@@ -182,13 +179,13 @@ public class TccFenceIntegrationTest {
     public void testEmptyRollbackDetection() throws SQLException {
         String xid = "192.168.1.1:8091:123459";
         long branchId = 100004L;
-        
+
         // Query fence log without prior TRY
         CommonFenceDO fenceDO = queryFenceLog(xid, branchId);
-        
+
         // Should return null (no record)
         Assertions.assertNull(fenceDO, "Fence log should not exist for empty rollback");
-        
+
         // This indicates an empty rollback scenario
         // In production, we would insert SUSPENDED status to prevent future TRY
         LOGGER.info("Empty rollback detection test passed");
@@ -202,17 +199,19 @@ public class TccFenceIntegrationTest {
         String xid = "192.168.1.1:8091:123460";
         long branchId = 100005L;
         String actionName = "testSuspendAction";
-        
+
         // Cancel arrives first (before TRY) - insert SUSPENDED status
         insertFenceLog(xid, branchId, actionName, CommonFenceConstant.STATUS_SUSPENDED);
-        
+
         // Now TRY arrives - should detect SUSPENDED status and reject
         CommonFenceDO fenceDO = queryFenceLog(xid, branchId);
-        
+
         Assertions.assertNotNull(fenceDO);
-        Assertions.assertEquals(CommonFenceConstant.STATUS_SUSPENDED, fenceDO.getStatus(),
+        Assertions.assertEquals(
+                CommonFenceConstant.STATUS_SUSPENDED,
+                fenceDO.getStatus(),
                 "Should detect suspended status and prevent TRY execution");
-        
+
         LOGGER.info("Suspend detection test passed");
     }
 
@@ -223,27 +222,27 @@ public class TccFenceIntegrationTest {
     public void testDeleteFenceByDate() throws SQLException {
         String xid = "192.168.1.1:8091:123461";
         long branchId = 100006L;
-        
+
         // Insert COMMITTED fence log
         insertFenceLog(xid, branchId, "cleanupAction", CommonFenceConstant.STATUS_COMMITTED);
-        
+
         // Delete all records (for cleanup)
         int deleted = deleteFenceLogs();
-        
+
         Assertions.assertEquals(1, deleted, "Should delete 1 fence log");
-        
+
         // Verify deleted
         CommonFenceDO fenceDO = queryFenceLog(xid, branchId);
         Assertions.assertNull(fenceDO, "Fence log should be deleted");
-        
+
         LOGGER.info("Delete fence by date test passed");
     }
 
     // Helper methods
 
     private void insertFenceLog(String xid, long branchId, String actionName, int status) throws SQLException {
-        String sql = "INSERT INTO " + FENCE_TABLE + 
-                " (xid, branch_id, action_name, status, gmt_create, gmt_modified) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO " + FENCE_TABLE
+                + " (xid, branch_id, action_name, status, gmt_create, gmt_modified) VALUES (?, ?, ?, ?, ?, ?)";
         try (java.sql.PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, xid);
             pstmt.setLong(2, branchId);
@@ -256,8 +255,8 @@ public class TccFenceIntegrationTest {
     }
 
     private CommonFenceDO queryFenceLog(String xid, long branchId) throws SQLException {
-        String sql = "SELECT xid, branch_id, status, gmt_create, gmt_modified FROM " + FENCE_TABLE + 
-                " WHERE xid = ? AND branch_id = ?";
+        String sql = "SELECT xid, branch_id, status, gmt_create, gmt_modified FROM " + FENCE_TABLE
+                + " WHERE xid = ? AND branch_id = ?";
         try (java.sql.PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, xid);
             pstmt.setLong(2, branchId);
@@ -277,8 +276,8 @@ public class TccFenceIntegrationTest {
     }
 
     private boolean updateFenceStatus(String xid, long branchId, int fromStatus, int toStatus) throws SQLException {
-        String sql = "UPDATE " + FENCE_TABLE + 
-                " SET status = ?, gmt_modified = ? WHERE xid = ? AND branch_id = ? AND status = ?";
+        String sql = "UPDATE " + FENCE_TABLE
+                + " SET status = ?, gmt_modified = ? WHERE xid = ? AND branch_id = ? AND status = ?";
         try (java.sql.PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setInt(1, toStatus);
             pstmt.setTimestamp(2, new java.sql.Timestamp(System.currentTimeMillis()));

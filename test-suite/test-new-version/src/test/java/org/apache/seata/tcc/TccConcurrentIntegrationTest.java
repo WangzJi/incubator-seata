@@ -19,13 +19,11 @@ package org.apache.seata.tcc;
 import org.apache.seata.common.ConfigurationKeys;
 import org.apache.seata.common.ConfigurationTestHelper;
 import org.apache.seata.config.ConfigurationFactory;
-import org.apache.seata.core.exception.TransactionException;
 import org.apache.seata.core.model.BranchType;
 import org.apache.seata.core.model.GlobalStatus;
 import org.apache.seata.core.model.TransactionManager;
 import org.apache.seata.core.rpc.netty.RmNettyRemotingClient;
 import org.apache.seata.core.rpc.netty.TmNettyRemotingClient;
-import org.apache.seata.core.rpc.netty.mockserver.Action1Impl;
 import org.apache.seata.core.rpc.netty.mockserver.ProtocolTestConstants;
 import org.apache.seata.core.rpc.netty.mockserver.RmClientTest;
 import org.apache.seata.core.rpc.netty.mockserver.TmClientTest;
@@ -45,7 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * TCC Concurrent Integration Test
- * 
+ *
  * Tests TCC transaction behavior under concurrent conditions.
  */
 public class TccConcurrentIntegrationTest {
@@ -61,8 +59,7 @@ public class TccConcurrentIntegrationTest {
     public static void beforeAll() {
         ConfigurationFactory.reload();
         ConfigurationTestHelper.putConfig(
-                ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL, 
-                String.valueOf(ProtocolTestConstants.MOCK_SERVER_PORT));
+                ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL, String.valueOf(ProtocolTestConstants.MOCK_SERVER_PORT));
         MockServer.start(ProtocolTestConstants.MOCK_SERVER_PORT);
         TmNettyRemotingClient.getInstance().destroy();
         RmNettyRemotingClient.getInstance().destroy();
@@ -95,46 +92,51 @@ public class TccConcurrentIntegrationTest {
         for (int i = 0; i < threadCount; i++) {
             final int index = i;
             new Thread(() -> {
-                try {
-                    startLatch.await(); // Wait for all threads to be ready
-                    
-                    String xid = tm.begin(
-                            ProtocolTestConstants.APPLICATION_ID,
-                            ProtocolTestConstants.SERVICE_GROUP,
-                            "concurrent-commit-" + index,
-                            60000);
-                    
-                    rm.branchRegister(
-                            BranchType.TCC, RESOURCE_ID, "1", xid, 
-                            "{\"thread\":" + index + "}", String.valueOf(index));
-                    
-                    GlobalStatus status = tm.commit(xid);
-                    
-                    if (status == GlobalStatus.Committed) {
-                        successCount.incrementAndGet();
-                        LOGGER.info("Thread {} committed successfully", index);
-                    } else {
-                        failCount.incrementAndGet();
-                        LOGGER.warn("Thread {} commit returned status: {}", index, status);
-                    }
-                } catch (Exception e) {
-                    failCount.incrementAndGet();
-                    LOGGER.error("Thread {} failed with exception", index, e);
-                } finally {
-                    endLatch.countDown();
-                }
-            }).start();
+                        try {
+                            startLatch.await(); // Wait for all threads to be ready
+
+                            String xid = tm.begin(
+                                    ProtocolTestConstants.APPLICATION_ID,
+                                    ProtocolTestConstants.SERVICE_GROUP,
+                                    "concurrent-commit-" + index,
+                                    60000);
+
+                            rm.branchRegister(
+                                    BranchType.TCC,
+                                    RESOURCE_ID,
+                                    "1",
+                                    xid,
+                                    "{\"thread\":" + index + "}",
+                                    String.valueOf(index));
+
+                            GlobalStatus status = tm.commit(xid);
+
+                            if (status == GlobalStatus.Committed) {
+                                successCount.incrementAndGet();
+                                LOGGER.info("Thread {} committed successfully", index);
+                            } else {
+                                failCount.incrementAndGet();
+                                LOGGER.warn("Thread {} commit returned status: {}", index, status);
+                            }
+                        } catch (Exception e) {
+                            failCount.incrementAndGet();
+                            LOGGER.error("Thread {} failed with exception", index, e);
+                        } finally {
+                            endLatch.countDown();
+                        }
+                    })
+                    .start();
         }
 
         // Start all threads simultaneously
         startLatch.countDown();
-        
+
         // Wait for all threads to complete
         boolean completed = endLatch.await(30, TimeUnit.SECONDS);
-        
+
         Assertions.assertTrue(completed, "All threads should complete within timeout");
-        Assertions.assertEquals(threadCount, successCount.get(), 
-                "All concurrent transactions should commit successfully");
+        Assertions.assertEquals(
+                threadCount, successCount.get(), "All concurrent transactions should commit successfully");
         Assertions.assertEquals(0, failCount.get(), "No transactions should fail");
     }
 
@@ -151,38 +153,36 @@ public class TccConcurrentIntegrationTest {
         for (int i = 0; i < threadCount; i++) {
             final int index = i;
             new Thread(() -> {
-                try {
-                    startLatch.await();
-                    
-                    String xid = tm.begin(
-                            ProtocolTestConstants.APPLICATION_ID,
-                            ProtocolTestConstants.SERVICE_GROUP,
-                            "concurrent-rollback-" + index,
-                            60000);
-                    
-                    rm.branchRegister(
-                            BranchType.TCC, RESOURCE_ID, "1", xid, 
-                            "{}", String.valueOf(index));
-                    
-                    GlobalStatus status = tm.rollback(xid);
-                    
-                    if (status == GlobalStatus.Rollbacked) {
-                        successCount.incrementAndGet();
-                    }
-                } catch (Exception e) {
-                    LOGGER.error("Thread {} rollback failed", index, e);
-                } finally {
-                    endLatch.countDown();
-                }
-            }).start();
+                        try {
+                            startLatch.await();
+
+                            String xid = tm.begin(
+                                    ProtocolTestConstants.APPLICATION_ID,
+                                    ProtocolTestConstants.SERVICE_GROUP,
+                                    "concurrent-rollback-" + index,
+                                    60000);
+
+                            rm.branchRegister(BranchType.TCC, RESOURCE_ID, "1", xid, "{}", String.valueOf(index));
+
+                            GlobalStatus status = tm.rollback(xid);
+
+                            if (status == GlobalStatus.Rollbacked) {
+                                successCount.incrementAndGet();
+                            }
+                        } catch (Exception e) {
+                            LOGGER.error("Thread {} rollback failed", index, e);
+                        } finally {
+                            endLatch.countDown();
+                        }
+                    })
+                    .start();
         }
 
         startLatch.countDown();
         boolean completed = endLatch.await(30, TimeUnit.SECONDS);
-        
+
         Assertions.assertTrue(completed);
-        Assertions.assertEquals(threadCount, successCount.get(),
-                "All concurrent rollbacks should succeed");
+        Assertions.assertEquals(threadCount, successCount.get(), "All concurrent rollbacks should succeed");
     }
 
     /**
@@ -193,7 +193,7 @@ public class TccConcurrentIntegrationTest {
         int commitCount = 3;
         int rollbackCount = 3;
         int totalCount = commitCount + rollbackCount;
-        
+
         CountDownLatch startLatch = new CountDownLatch(1);
         CountDownLatch endLatch = new CountDownLatch(totalCount);
         AtomicInteger commitSuccess = new AtomicInteger(0);
@@ -203,49 +203,53 @@ public class TccConcurrentIntegrationTest {
         for (int i = 0; i < commitCount; i++) {
             final int index = i;
             new Thread(() -> {
-                try {
-                    startLatch.await();
-                    String xid = tm.begin(
-                            ProtocolTestConstants.APPLICATION_ID,
-                            ProtocolTestConstants.SERVICE_GROUP,
-                            "mixed-commit-" + index, 60000);
-                    rm.branchRegister(BranchType.TCC, RESOURCE_ID, "1", xid, "{}", "c" + index);
-                    if (tm.commit(xid) == GlobalStatus.Committed) {
-                        commitSuccess.incrementAndGet();
-                    }
-                } catch (Exception e) {
-                    LOGGER.error("Commit thread {} failed", index, e);
-                } finally {
-                    endLatch.countDown();
-                }
-            }).start();
+                        try {
+                            startLatch.await();
+                            String xid = tm.begin(
+                                    ProtocolTestConstants.APPLICATION_ID,
+                                    ProtocolTestConstants.SERVICE_GROUP,
+                                    "mixed-commit-" + index,
+                                    60000);
+                            rm.branchRegister(BranchType.TCC, RESOURCE_ID, "1", xid, "{}", "c" + index);
+                            if (tm.commit(xid) == GlobalStatus.Committed) {
+                                commitSuccess.incrementAndGet();
+                            }
+                        } catch (Exception e) {
+                            LOGGER.error("Commit thread {} failed", index, e);
+                        } finally {
+                            endLatch.countDown();
+                        }
+                    })
+                    .start();
         }
 
         // Rollback threads
         for (int i = 0; i < rollbackCount; i++) {
             final int index = i;
             new Thread(() -> {
-                try {
-                    startLatch.await();
-                    String xid = tm.begin(
-                            ProtocolTestConstants.APPLICATION_ID,
-                            ProtocolTestConstants.SERVICE_GROUP,
-                            "mixed-rollback-" + index, 60000);
-                    rm.branchRegister(BranchType.TCC, RESOURCE_ID, "1", xid, "{}", "r" + index);
-                    if (tm.rollback(xid) == GlobalStatus.Rollbacked) {
-                        rollbackSuccess.incrementAndGet();
-                    }
-                } catch (Exception e) {
-                    LOGGER.error("Rollback thread {} failed", index, e);
-                } finally {
-                    endLatch.countDown();
-                }
-            }).start();
+                        try {
+                            startLatch.await();
+                            String xid = tm.begin(
+                                    ProtocolTestConstants.APPLICATION_ID,
+                                    ProtocolTestConstants.SERVICE_GROUP,
+                                    "mixed-rollback-" + index,
+                                    60000);
+                            rm.branchRegister(BranchType.TCC, RESOURCE_ID, "1", xid, "{}", "r" + index);
+                            if (tm.rollback(xid) == GlobalStatus.Rollbacked) {
+                                rollbackSuccess.incrementAndGet();
+                            }
+                        } catch (Exception e) {
+                            LOGGER.error("Rollback thread {} failed", index, e);
+                        } finally {
+                            endLatch.countDown();
+                        }
+                    })
+                    .start();
         }
 
         startLatch.countDown();
         boolean completed = endLatch.await(30, TimeUnit.SECONDS);
-        
+
         Assertions.assertTrue(completed);
         Assertions.assertEquals(commitCount, commitSuccess.get());
         Assertions.assertEquals(rollbackCount, rollbackSuccess.get());

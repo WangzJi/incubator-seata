@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * TCC Business Parameter Integration Test
- * 
+ *
  * Tests TCC transaction business parameter passing and context handling.
  */
 public class TccBusinessParamIntegrationTest {
@@ -56,8 +56,7 @@ public class TccBusinessParamIntegrationTest {
     public static void beforeAll() {
         ConfigurationFactory.reload();
         ConfigurationTestHelper.putConfig(
-                ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL, 
-                String.valueOf(ProtocolTestConstants.MOCK_SERVER_PORT));
+                ConfigurationKeys.SERVER_SERVICE_PORT_CAMEL, String.valueOf(ProtocolTestConstants.MOCK_SERVER_PORT));
         MockServer.start(ProtocolTestConstants.MOCK_SERVER_PORT);
         TmNettyRemotingClient.getInstance().destroy();
         RmNettyRemotingClient.getInstance().destroy();
@@ -82,26 +81,17 @@ public class TccBusinessParamIntegrationTest {
     @Test
     public void testSimpleJsonParams() throws TransactionException {
         String xid = tm.begin(
-                ProtocolTestConstants.APPLICATION_ID,
-                ProtocolTestConstants.SERVICE_GROUP,
-                "json-params-test",
-                60000);
-        
+                ProtocolTestConstants.APPLICATION_ID, ProtocolTestConstants.SERVICE_GROUP, "json-params-test", 60000);
+
         String applicationData = "{\"orderId\":\"123456\",\"amount\":100.50,\"userId\":\"user001\"}";
-        
-        Long branchId = rm.branchRegister(
-                BranchType.TCC,
-                RESOURCE_ID,
-                "1",
-                xid,
-                applicationData,
-                "1");
-        
+
+        Long branchId = rm.branchRegister(BranchType.TCC, RESOURCE_ID, "1", xid, applicationData, "1");
+
         Assertions.assertTrue(branchId > 0);
-        
+
         GlobalStatus status = tm.commit(xid);
         Assertions.assertEquals(GlobalStatus.Committed, status);
-        
+
         LOGGER.info("Simple JSON params test passed with applicationData: {}", applicationData);
     }
 
@@ -111,29 +101,19 @@ public class TccBusinessParamIntegrationTest {
     @Test
     public void testComplexNestedParams() throws TransactionException {
         String xid = tm.begin(
-                ProtocolTestConstants.APPLICATION_ID,
-                ProtocolTestConstants.SERVICE_GROUP,
-                "nested-params-test",
-                60000);
-        
-        String applicationData = "{" +
-                "\"order\":{\"id\":\"ORD001\",\"items\":[{\"sku\":\"SKU001\",\"qty\":2}]}," +
-                "\"customer\":{\"name\":\"John\",\"address\":{\"city\":\"Beijing\"}}" +
-                "}";
-        
-        Long branchId = rm.branchRegister(
-                BranchType.TCC,
-                RESOURCE_ID,
-                "1",
-                xid,
-                applicationData,
-                "1");
-        
+                ProtocolTestConstants.APPLICATION_ID, ProtocolTestConstants.SERVICE_GROUP, "nested-params-test", 60000);
+
+        String applicationData = "{" + "\"order\":{\"id\":\"ORD001\",\"items\":[{\"sku\":\"SKU001\",\"qty\":2}]},"
+                + "\"customer\":{\"name\":\"John\",\"address\":{\"city\":\"Beijing\"}}"
+                + "}";
+
+        Long branchId = rm.branchRegister(BranchType.TCC, RESOURCE_ID, "1", xid, applicationData, "1");
+
         Assertions.assertTrue(branchId > 0);
-        
+
         GlobalStatus status = tm.commit(xid);
         Assertions.assertEquals(GlobalStatus.Committed, status);
-        
+
         LOGGER.info("Complex nested params test passed");
     }
 
@@ -143,21 +123,18 @@ public class TccBusinessParamIntegrationTest {
     @Test
     public void testEmptyParams() throws TransactionException {
         String xid = tm.begin(
-                ProtocolTestConstants.APPLICATION_ID,
-                ProtocolTestConstants.SERVICE_GROUP,
-                "empty-params-test",
-                60000);
-        
+                ProtocolTestConstants.APPLICATION_ID, ProtocolTestConstants.SERVICE_GROUP, "empty-params-test", 60000);
+
         Long branchId = rm.branchRegister(
                 BranchType.TCC,
                 RESOURCE_ID,
                 "1",
                 xid,
-                "",  // Empty application data
+                "", // Empty application data
                 "1");
-        
+
         Assertions.assertTrue(branchId > 0);
-        
+
         GlobalStatus status = tm.commit(xid);
         Assertions.assertEquals(GlobalStatus.Committed, status);
     }
@@ -168,21 +145,18 @@ public class TccBusinessParamIntegrationTest {
     @Test
     public void testNullParams() throws TransactionException {
         String xid = tm.begin(
-                ProtocolTestConstants.APPLICATION_ID,
-                ProtocolTestConstants.SERVICE_GROUP,
-                "null-params-test",
-                60000);
-        
+                ProtocolTestConstants.APPLICATION_ID, ProtocolTestConstants.SERVICE_GROUP, "null-params-test", 60000);
+
         Long branchId = rm.branchRegister(
                 BranchType.TCC,
                 RESOURCE_ID,
                 "1",
                 xid,
-                null,  // Null application data
+                null, // Null application data
                 "1");
-        
+
         Assertions.assertTrue(branchId > 0);
-        
+
         GlobalStatus status = tm.commit(xid);
         Assertions.assertEquals(GlobalStatus.Committed, status);
     }
@@ -193,26 +167,17 @@ public class TccBusinessParamIntegrationTest {
     @Test
     public void testSpecialCharacterParams() throws TransactionException {
         String xid = tm.begin(
-                ProtocolTestConstants.APPLICATION_ID,
-                ProtocolTestConstants.SERVICE_GROUP,
-                "special-char-test",
-                60000);
-        
+                ProtocolTestConstants.APPLICATION_ID, ProtocolTestConstants.SERVICE_GROUP, "special-char-test", 60000);
+
         String applicationData = "{\"message\":\"Hello, 世界! \\\"quoted\\\" & <tag>\"}";
-        
-        Long branchId = rm.branchRegister(
-                BranchType.TCC,
-                RESOURCE_ID,
-                "1",
-                xid,
-                applicationData,
-                "1");
-        
+
+        Long branchId = rm.branchRegister(BranchType.TCC, RESOURCE_ID, "1", xid, applicationData, "1");
+
         Assertions.assertTrue(branchId > 0);
-        
+
         GlobalStatus status = tm.commit(xid);
         Assertions.assertEquals(GlobalStatus.Committed, status);
-        
+
         LOGGER.info("Special character params test passed");
     }
 }
