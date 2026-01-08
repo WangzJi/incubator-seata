@@ -48,6 +48,10 @@ public final class BenchmarkConstants {
     // Progress reporting interval
     public static final int PROGRESS_REPORT_INTERVAL_SECONDS = 10;
 
+    // Latency sampling configuration
+    public static final int MAX_LATENCY_SAMPLES = 500000;
+    public static final long LATENCY_STATS_CACHE_MS = 1000;
+
     // Transaction status constants for benchmark reporting
     public static final String STATUS_COMMITTED = "Committed";
     public static final String STATUS_ROLLBACKED = "Rollbacked";

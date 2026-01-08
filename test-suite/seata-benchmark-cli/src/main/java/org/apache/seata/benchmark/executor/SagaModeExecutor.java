@@ -37,6 +37,9 @@ import org.apache.seata.tm.api.GlobalTransactionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -269,42 +272,61 @@ public class SagaModeExecutor implements TransactionExecutor {
         @Override
         public void init() throws Exception {
             // Load state machine definitions from classpath
-            InputStream simpleSagaStream =
-                    getClass().getClassLoader().getResourceAsStream("seata/saga/statelang/benchmark_simple_saga.json");
-            InputStream orderSagaStream =
-                    getClass().getClassLoader().getResourceAsStream("seata/saga/statelang/benchmark_order_saga.json");
+            try (InputStream simpleSagaStream = getClass()
+                            .getClassLoader()
+                            .getResourceAsStream("seata/saga/statelang/benchmark_simple_saga.json");
+                    InputStream orderSagaStream = getClass()
+                            .getClassLoader()
+                            .getResourceAsStream("seata/saga/statelang/benchmark_order_saga.json")) {
 
-            if (simpleSagaStream == null || orderSagaStream == null) {
-                throw new RuntimeException("Failed to load Saga state machine definitions from classpath");
+                if (simpleSagaStream == null || orderSagaStream == null) {
+                    throw new RuntimeException("Failed to load Saga state machine definitions from classpath");
+                }
+
+                // Read streams to byte arrays before closing, as super.init() may process them asynchronously
+                byte[] simpleBytes = readAllBytes(simpleSagaStream);
+                byte[] orderBytes = readAllBytes(orderSagaStream);
+
+                setStateMachineDefInputStreamArray(
+                        new InputStream[] {new ByteArrayInputStream(simpleBytes), new ByteArrayInputStream(orderBytes)
+                        });
+
+                // Initialize parent config
+                super.init();
+
+                // Register SpEL expression factory for parameter evaluation
+                ExpressionFactoryManager expressionFactoryManager = getExpressionFactoryManager();
+                SimpleSpelExpressionFactory spelExpressionFactory = new SimpleSpelExpressionFactory();
+                // Register for default type (when expression doesn't start with $)
+                expressionFactoryManager.putExpressionFactory(
+                        ExpressionFactoryManager.DEFAULT_EXPRESSION_TYPE, spelExpressionFactory);
+                // Register for empty type (when expression is like $.xxx where type is empty string)
+                expressionFactoryManager.putExpressionFactory("", spelExpressionFactory);
+
+                // Register benchmark services with the service invoker manager
+                BenchmarkServiceInvoker serviceInvoker = new BenchmarkServiceInvoker();
+
+                // Register services with configured rollback percentage
+                // Divide rollback percentage by 3 for each service so total probability is approximately correct
+                int serviceRollbackPct = rollbackPercentage > 0 ? Math.max(1, rollbackPercentage / 3) : 0;
+
+                serviceInvoker.registerService("orderService", new OrderSagaService(serviceRollbackPct, 5));
+                serviceInvoker.registerService("inventoryService", new InventorySagaService(serviceRollbackPct, 5));
+                serviceInvoker.registerService("paymentService", new PaymentSagaService(serviceRollbackPct, 5));
+
+                // Register the service invoker for different service types
+                getServiceInvokerManager().putServiceInvoker(DomainConstants.SERVICE_TYPE_SPRING_BEAN, serviceInvoker);
             }
+        }
 
-            setStateMachineDefInputStreamArray(new InputStream[] {simpleSagaStream, orderSagaStream});
-
-            // Initialize parent config
-            super.init();
-
-            // Register SpEL expression factory for parameter evaluation
-            ExpressionFactoryManager expressionFactoryManager = getExpressionFactoryManager();
-            SimpleSpelExpressionFactory spelExpressionFactory = new SimpleSpelExpressionFactory();
-            // Register for default type (when expression doesn't start with $)
-            expressionFactoryManager.putExpressionFactory(
-                    ExpressionFactoryManager.DEFAULT_EXPRESSION_TYPE, spelExpressionFactory);
-            // Register for empty type (when expression is like $.xxx where type is empty string)
-            expressionFactoryManager.putExpressionFactory("", spelExpressionFactory);
-
-            // Register benchmark services with the service invoker manager
-            BenchmarkServiceInvoker serviceInvoker = new BenchmarkServiceInvoker();
-
-            // Register services with configured rollback percentage
-            // Divide rollback percentage by 3 for each service so total probability is approximately correct
-            int serviceRollbackPct = Math.max(1, rollbackPercentage / 3);
-
-            serviceInvoker.registerService("orderService", new OrderSagaService(serviceRollbackPct, 5));
-            serviceInvoker.registerService("inventoryService", new InventorySagaService(serviceRollbackPct, 5));
-            serviceInvoker.registerService("paymentService", new PaymentSagaService(serviceRollbackPct, 5));
-
-            // Register the service invoker for different service types
-            getServiceInvokerManager().putServiceInvoker(DomainConstants.SERVICE_TYPE_SPRING_BEAN, serviceInvoker);
+        private byte[] readAllBytes(InputStream is) throws IOException {
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            byte[] data = new byte[8192];
+            int nRead;
+            while ((nRead = is.read(data, 0, data.length)) != -1) {
+                buffer.write(data, 0, nRead);
+            }
+            return buffer.toByteArray();
         }
     }
 }

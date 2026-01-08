@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -84,8 +84,7 @@ public class BenchmarkConfigLoader {
 
     private static BenchmarkConfig loadFromStream(InputStream inputStream) {
         LoaderOptions loaderOptions = new LoaderOptions();
-        Constructor constructor = new Constructor(BenchmarkConfig.class, loaderOptions);
-        Yaml yaml = new Yaml(constructor);
+        Yaml yaml = new Yaml(new SafeConstructor(loaderOptions));
         return yaml.load(inputStream);
     }
 

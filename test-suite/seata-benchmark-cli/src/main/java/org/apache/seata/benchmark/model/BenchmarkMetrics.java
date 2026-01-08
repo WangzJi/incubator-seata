@@ -16,9 +16,12 @@
  */
 package org.apache.seata.benchmark.model;
 
+import org.apache.seata.benchmark.constant.BenchmarkConstants;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -29,22 +32,40 @@ public class BenchmarkMetrics {
     private final AtomicLong totalCount = new AtomicLong(0);
     private final AtomicLong successCount = new AtomicLong(0);
     private final AtomicLong failedCount = new AtomicLong(0);
-    private final List<Long> latencies = Collections.synchronizedList(new ArrayList<>());
+    private final List<Long> latencies =
+            Collections.synchronizedList(new ArrayList<>(BenchmarkConstants.MAX_LATENCY_SAMPLES));
+    private final AtomicLong totalSamples = new AtomicLong(0);
     private final long startTime = System.currentTimeMillis();
 
     private volatile long lastCountSnapshot = 0;
     private volatile long lastSnapshotTime = System.currentTimeMillis();
 
+    private volatile LatencyStats cachedStats = null;
+    private volatile long lastStatsUpdateTime = 0;
+
     public void recordSuccess(long latencyMs) {
         totalCount.incrementAndGet();
         successCount.incrementAndGet();
-        latencies.add(latencyMs);
+        addLatencySample(latencyMs);
     }
 
     public void recordFailure(long latencyMs) {
         totalCount.incrementAndGet();
         failedCount.incrementAndGet();
-        latencies.add(latencyMs);
+        addLatencySample(latencyMs);
+    }
+
+    private void addLatencySample(long latencyMs) {
+        totalSamples.incrementAndGet();
+        synchronized (latencies) {
+            if (latencies.size() < BenchmarkConstants.MAX_LATENCY_SAMPLES) {
+                latencies.add(latencyMs);
+            } else {
+                // Random replacement strategy to maintain bounded samples
+                int index = ThreadLocalRandom.current().nextInt(BenchmarkConstants.MAX_LATENCY_SAMPLES);
+                latencies.set(index, latencyMs);
+            }
+        }
     }
 
     public long getTotalCount() {
@@ -95,20 +116,35 @@ public class BenchmarkMetrics {
     }
 
     public LatencyStats getLatencyStats() {
-        if (latencies.isEmpty()) {
-            return new LatencyStats(0, 0, 0, 0);
+        long now = System.currentTimeMillis();
+        if (cachedStats != null && (now - lastStatsUpdateTime) < BenchmarkConstants.LATENCY_STATS_CACHE_MS) {
+            return cachedStats;
         }
 
-        List<Long> sortedLatencies = new ArrayList<>(latencies);
-        Collections.sort(sortedLatencies);
+        synchronized (this) {
+            // Double-check
+            if (cachedStats != null && (now - lastStatsUpdateTime) < BenchmarkConstants.LATENCY_STATS_CACHE_MS) {
+                return cachedStats;
+            }
 
-        int size = sortedLatencies.size();
-        long p50 = sortedLatencies.get(Math.max(0, (int) Math.ceil(size * 0.5) - 1));
-        long p95 = sortedLatencies.get(Math.max(0, (int) Math.ceil(size * 0.95) - 1));
-        long p99 = sortedLatencies.get(Math.max(0, (int) Math.ceil(size * 0.99) - 1));
-        long max = sortedLatencies.get(size - 1);
+            if (latencies.isEmpty()) {
+                cachedStats = new LatencyStats(0, 0, 0, 0);
+            } else {
+                List<Long> sortedLatencies = new ArrayList<>(latencies);
+                Collections.sort(sortedLatencies);
 
-        return new LatencyStats(p50, p95, p99, max);
+                int size = sortedLatencies.size();
+                long p50 = sortedLatencies.get(Math.max(0, (int) Math.ceil(size * 0.5) - 1));
+                long p95 = sortedLatencies.get(Math.max(0, (int) Math.ceil(size * 0.95) - 1));
+                long p99 = sortedLatencies.get(Math.max(0, (int) Math.ceil(size * 0.99) - 1));
+                long max = sortedLatencies.get(size - 1);
+
+                cachedStats = new LatencyStats(p50, p95, p99, max);
+            }
+
+            lastStatsUpdateTime = now;
+            return cachedStats;
+        }
     }
 
     public void reset() {
