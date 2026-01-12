@@ -187,12 +187,10 @@ public class ATModeExecutor extends AbstractTransactionExecutor {
         try (Connection conn = dataSourceProxy.getConnection()) {
             conn.setAutoCommit(false);
 
-            // Transfer between two random accounts
+            // Select two different accounts for transfer
             long fromAccount = (ThreadLocalRandom.current().nextInt(BenchmarkConstants.ACCOUNT_COUNT) + 1);
-            long toAccount = (ThreadLocalRandom.current().nextInt(BenchmarkConstants.ACCOUNT_COUNT) + 1);
-            while (toAccount == fromAccount) {
-                toAccount = (ThreadLocalRandom.current().nextInt(BenchmarkConstants.ACCOUNT_COUNT) + 1);
-            }
+            // Ensure toAccount is different by selecting from remaining accounts
+            long toAccount = (fromAccount % BenchmarkConstants.ACCOUNT_COUNT) + 1;
             int amount = ThreadLocalRandom.current().nextInt(BenchmarkConstants.MAX_TRANSFER_AMOUNT)
                     + BenchmarkConstants.MIN_TRANSFER_AMOUNT;
 
@@ -231,10 +229,6 @@ public class ATModeExecutor extends AbstractTransactionExecutor {
 
     private void destroyRealMode() {
         LOGGER.info("Destroying Real AT mode resources");
-
-        if (dataSourceProxy != null) {
-            dataSourceProxy = null;
-        }
 
         if (rawDataSource != null && !rawDataSource.isClosed()) {
             rawDataSource.close();

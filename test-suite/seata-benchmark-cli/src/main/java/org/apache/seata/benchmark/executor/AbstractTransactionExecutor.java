@@ -19,12 +19,13 @@ package org.apache.seata.benchmark.executor;
 import org.apache.seata.benchmark.config.BenchmarkConfig;
 import org.apache.seata.benchmark.constant.BenchmarkConstants;
 import org.apache.seata.benchmark.model.TransactionRecord;
-import org.apache.seata.core.exception.TransactionException;
-import org.apache.seata.core.model.GlobalStatus;
 import org.apache.seata.tm.api.GlobalTransaction;
 import org.apache.seata.tm.api.GlobalTransactionContext;
+import org.apache.seata.tm.api.TransactionalExecutor;
+import org.apache.seata.tm.api.TransactionalTemplate;
+import org.apache.seata.tm.api.transaction.Propagation;
+import org.apache.seata.tm.api.transaction.TransactionInfo;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -32,8 +33,6 @@ import java.util.concurrent.ThreadLocalRandom;
  * Abstract base class for transaction executors implementing common transaction handling logic
  */
 public abstract class AbstractTransactionExecutor implements TransactionExecutor {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractTransactionExecutor.class);
 
     protected final BenchmarkConfig config;
 
@@ -71,41 +70,60 @@ public abstract class AbstractTransactionExecutor implements TransactionExecutor
 
     @Override
     public final TransactionRecord execute() {
-        GlobalTransaction tx = GlobalTransactionContext.getCurrentOrCreate();
         long startTime = System.currentTimeMillis();
-        String xid = null;
+        final String[] xidHolder = new String[1]; // Use array to capture xid in lambda
         String status = BenchmarkConstants.STATUS_UNKNOWN;
         int branchCount = getBranchCount();
         boolean success = false;
 
+        TransactionalTemplate template = new TransactionalTemplate();
+
         try {
-            tx.begin(BenchmarkConstants.TRANSACTION_TIMEOUT_MS, getTransactionName());
-            xid = tx.getXid();
+            template.execute(new TransactionalExecutor() {
+                @Override
+                public Object execute() throws Throwable {
+                    // Capture XID after transaction begins
+                    GlobalTransaction tx = GlobalTransactionContext.getCurrent();
+                    if (tx != null) {
+                        xidHolder[0] = tx.getXid();
+                    }
 
-            executeBusinessLogic();
+                    // Execute business logic
+                    executeBusinessLogic();
 
-            if (shouldRollback()) {
-                tx.rollback();
-                status = BenchmarkConstants.STATUS_ROLLBACKED;
-            } else {
-                tx.commit();
-                status = BenchmarkConstants.STATUS_COMMITTED;
-                success = true;
-            }
+                    // Simulate rollback by throwing exception if configured
+                    if (shouldRollback()) {
+                        throw new BenchmarkRollbackException("Simulated rollback for benchmark");
+                    }
 
-        } catch (TransactionException e) {
-            getLogger().warn("Transaction failed: {}", e.getMessage());
+                    return null;
+                }
+
+                @Override
+                public TransactionInfo getTransactionInfo() {
+                    TransactionInfo txInfo = new TransactionInfo();
+                    txInfo.setTimeOut(BenchmarkConstants.TRANSACTION_TIMEOUT_MS);
+                    txInfo.setName(getTransactionName());
+                    txInfo.setPropagation(Propagation.REQUIRED);
+                    return txInfo;
+                }
+            });
+
+            status = BenchmarkConstants.STATUS_COMMITTED;
+            success = true;
+
+        } catch (BenchmarkRollbackException e) {
+            // Simulated rollback - this is expected behavior
+            status = BenchmarkConstants.STATUS_ROLLBACKED;
+            getLogger().debug("Transaction rolled back as configured");
+        } catch (Throwable e) {
+            // Actual exception - transaction failed
             status = BenchmarkConstants.STATUS_FAILED;
-            rollbackTransaction(tx);
-
-        } catch (Exception e) {
-            getLogger().warn("Unexpected error during transaction execution: {}", e.getMessage(), e);
-            status = BenchmarkConstants.STATUS_FAILED;
-            rollbackTransaction(tx);
+            getLogger().warn("Transaction execution failed: {}", e.getMessage());
         }
 
         long duration = System.currentTimeMillis() - startTime;
-        return new TransactionRecord(xid, status, duration, branchCount, success);
+        return new TransactionRecord(xidHolder[0], status, duration, branchCount, success);
     }
 
     /**
@@ -118,18 +136,11 @@ public abstract class AbstractTransactionExecutor implements TransactionExecutor
     }
 
     /**
-     * Attempt to rollback a transaction
-     *
-     * @param tx the global transaction to rollback
+     * Custom exception for simulated rollback in benchmark
      */
-    private void rollbackTransaction(GlobalTransaction tx) {
-        try {
-            GlobalStatus status = tx.getStatus();
-            if (status != GlobalStatus.Rollbacked && status != GlobalStatus.RollbackFailed) {
-                tx.rollback();
-            }
-        } catch (TransactionException rollbackEx) {
-            getLogger().warn("Rollback failed: {}", rollbackEx.getMessage());
+    private static class BenchmarkRollbackException extends RuntimeException {
+        public BenchmarkRollbackException(String message) {
+            super(message);
         }
     }
 }

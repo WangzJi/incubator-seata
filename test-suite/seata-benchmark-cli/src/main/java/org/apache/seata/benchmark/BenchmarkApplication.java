@@ -19,19 +19,6 @@ package org.apache.seata.benchmark;
 import org.apache.seata.benchmark.config.BenchmarkConfig;
 import org.apache.seata.benchmark.config.BenchmarkConfigLoader;
 import org.apache.seata.benchmark.constant.BenchmarkConstants;
-import org.apache.seata.benchmark.executor.ATModeExecutor;
-import org.apache.seata.benchmark.executor.SagaModeExecutor;
-import org.apache.seata.benchmark.executor.TCCModeExecutor;
-import org.apache.seata.benchmark.executor.TransactionExecutor;
-import org.apache.seata.benchmark.executor.WorkloadGenerator;
-import org.apache.seata.benchmark.model.BenchmarkMetrics;
-import org.apache.seata.benchmark.monitor.MetricsCollector;
-import org.apache.seata.core.model.BranchType;
-import org.apache.seata.core.rpc.ShutdownHook;
-import org.apache.seata.core.rpc.netty.RmNettyRemotingClient;
-import org.apache.seata.core.rpc.netty.TmNettyRemotingClient;
-import org.apache.seata.rm.RMClient;
-import org.apache.seata.tm.TMClient;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -39,7 +26,8 @@ import picocli.CommandLine.Option;
 import java.util.concurrent.Callable;
 
 /**
- * Seata Benchmark CLI Application
+ * Seata Benchmark CLI Application.
+ * Handles command-line argument parsing and delegates execution to BenchmarkRunner.
  */
 @Command(
         name = "seata-benchmark",
@@ -130,113 +118,47 @@ public class BenchmarkApplication implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        TransactionExecutor executor = null;
-        WorkloadGenerator workloadGenerator = null;
+        System.out.println("===========================================");
+        System.out.println("   Seata Benchmark CLI v1.0.0");
+        System.out.println("===========================================\n");
 
-        try {
-            System.out.println("===========================================");
-            System.out.println("   Seata Benchmark CLI v1.0.0");
-            System.out.println("===========================================\n");
+        BenchmarkConfig config = buildConfig();
+        config.validate();
+        printConfiguration(config);
 
-            BenchmarkConfig config = new BenchmarkConfig();
-            config = BenchmarkConfigLoader.merge(
-                    config,
-                    server,
-                    mode,
-                    targetTps,
-                    threads,
-                    duration,
-                    warmupDuration,
-                    applicationId,
-                    txServiceGroup,
-                    rollbackPercentage,
-                    branches);
-            config.validate();
-
-            System.out.println("Configuration:");
-            System.out.println("  Server:       " + config.getServer());
-            System.out.println("  Mode:         " + config.getMode());
-            System.out.println("  Target TPS:   " + config.getTargetTps());
-            System.out.println("  Threads:      " + config.getThreads());
-            System.out.println("  Duration:     " + config.getDuration() + "s");
-            if (config.getWarmupDuration() > 0) {
-                System.out.println("  Warmup:       " + config.getWarmupDuration() + "s");
-            }
-            System.out.println("  Rollback %:   " + config.getRollbackPercentage() + "%");
-            System.out.println("  Branches:     " + config.getBranches()
-                    + (config.getBranches() == 0 ? " (empty mode)" : " (real mode)"));
-            System.out.println();
-
-            initSeataClient(config);
-
-            executor = createExecutor(config);
-            executor.init();
-
-            BenchmarkMetrics metrics = new BenchmarkMetrics();
-            MetricsCollector metricsCollector = new MetricsCollector(metrics);
-            workloadGenerator = new WorkloadGenerator(config, executor, metrics);
-
-            System.out.println("Starting benchmark...\n");
-            workloadGenerator.start();
-            workloadGenerator.waitForCompletion();
-
-            System.out.println("\n" + metricsCollector.generateFinalReport());
-
-            if (exportCsv != null) {
-                metricsCollector.exportToCsv(exportCsv);
-                System.out.println("\nMetrics exported to: " + exportCsv);
-            }
-
-            return 0;
-
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-            e.printStackTrace();
-            return 1;
-
-        } finally {
-            if (workloadGenerator != null) {
-                workloadGenerator.stop();
-            }
-            if (executor != null) {
-                executor.destroy();
-            }
-        }
+        BenchmarkRunner runner = new BenchmarkRunner(config);
+        return runner.run(exportCsv);
     }
 
-    private void initSeataClient(BenchmarkConfig config) {
-        System.out.println("Initializing Seata client...");
-
-        TMClient.init(config.getApplicationId(), config.getTxServiceGroup());
-        RMClient.init(config.getApplicationId(), config.getTxServiceGroup());
-
-        ShutdownHook.getInstance()
-                .addDisposable(
-                        TmNettyRemotingClient.getInstance(config.getApplicationId(), config.getTxServiceGroup()));
-        ShutdownHook.getInstance()
-                .addDisposable(
-                        RmNettyRemotingClient.getInstance(config.getApplicationId(), config.getTxServiceGroup()));
-
-        System.out.println("Seata client initialized\n");
+    private BenchmarkConfig buildConfig() {
+        BenchmarkConfig config = new BenchmarkConfig();
+        return BenchmarkConfigLoader.merge(
+                config,
+                server,
+                mode,
+                targetTps,
+                threads,
+                duration,
+                warmupDuration,
+                applicationId,
+                txServiceGroup,
+                rollbackPercentage,
+                branches);
     }
 
-    private TransactionExecutor createExecutor(BenchmarkConfig config) {
-        boolean isRealMode = config.getBranches() > 0;
-
-        if (config.getMode() == BranchType.AT) {
-            String mode = isRealMode ? " (MySQL via Testcontainers)" : " (empty transaction)";
-            System.out.println("Creating AT mode executor" + mode + "\n");
-            return new ATModeExecutor(config);
-        } else if (config.getMode() == BranchType.TCC) {
-            System.out.println("Creating TCC mode executor (mock implementation)\n");
-            return new TCCModeExecutor(config);
-        } else if (config.getMode() == BranchType.SAGA) {
-            String mode = isRealMode ? " (state machine engine)" : " (empty transaction)";
-            System.out.println("Creating Saga mode executor" + mode + "\n");
-            return new SagaModeExecutor(config);
-        } else {
-            throw new IllegalArgumentException(
-                    "Unsupported mode: " + config.getMode() + ". Only AT, TCC, and SAGA are supported.");
+    private void printConfiguration(BenchmarkConfig config) {
+        System.out.println("Configuration:");
+        System.out.println("  Server:       " + config.getServer());
+        System.out.println("  Mode:         " + config.getMode());
+        System.out.println("  Target TPS:   " + config.getTargetTps());
+        System.out.println("  Threads:      " + config.getThreads());
+        System.out.println("  Duration:     " + config.getDuration() + "s");
+        if (config.getWarmupDuration() > 0) {
+            System.out.println("  Warmup:       " + config.getWarmupDuration() + "s");
         }
+        System.out.println("  Rollback %:   " + config.getRollbackPercentage() + "%");
+        System.out.println("  Branches:     " + config.getBranches()
+                + (config.getBranches() == 0 ? " (empty mode)" : " (real mode)"));
+        System.out.println();
     }
 }

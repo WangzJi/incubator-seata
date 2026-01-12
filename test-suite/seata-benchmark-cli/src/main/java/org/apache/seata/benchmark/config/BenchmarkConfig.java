@@ -16,6 +16,7 @@
  */
 package org.apache.seata.benchmark.config;
 
+import org.apache.seata.benchmark.constant.BenchmarkConstants;
 import org.apache.seata.core.model.BranchType;
 
 /**
@@ -119,35 +120,58 @@ public class BenchmarkConfig {
     }
 
     public void validate() {
+        validateMode();
+        validateNotEmpty(server, "server");
+        validateNotEmpty(applicationId, "applicationId");
+        validateNotEmpty(txServiceGroup, "txServiceGroup");
+        validatePositive(targetTps, "targetTps");
+        validatePositive(threads, "threads");
+        validatePositive(duration, "duration");
+        validateNonNegative(warmupDuration, "warmupDuration");
+        validateNonNegative(branches, "branches");
+        validateRange(rollbackPercentage, 0, 100, "rollbackPercentage");
+        validateTpsAndThreads();
+    }
+
+    private void validateMode() {
         if (mode != BranchType.AT && mode != BranchType.TCC && mode != BranchType.SAGA) {
             throw new IllegalArgumentException("Unsupported mode: " + mode + ". Only AT, TCC, and SAGA are supported.");
         }
-        if (server == null || server.trim().isEmpty()) {
-            throw new IllegalArgumentException("server cannot be empty");
+    }
+
+    private void validateNotEmpty(String value, String fieldName) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException(fieldName + " cannot be empty");
         }
-        if (targetTps <= 0) {
-            throw new IllegalArgumentException("targetTps must be positive");
+    }
+
+    private void validatePositive(int value, String fieldName) {
+        if (value <= 0) {
+            throw new IllegalArgumentException(fieldName + " must be positive");
         }
-        if (threads <= 0) {
-            throw new IllegalArgumentException("threads must be positive");
+    }
+
+    private void validateNonNegative(int value, String fieldName) {
+        if (value < 0) {
+            throw new IllegalArgumentException(fieldName + " cannot be negative");
         }
-        if (duration <= 0) {
-            throw new IllegalArgumentException("duration must be positive");
+    }
+
+    private void validateRange(int value, int min, int max, String fieldName) {
+        if (value < min || value > max) {
+            throw new IllegalArgumentException(fieldName + " must be between " + min + " and " + max);
         }
-        if (warmupDuration < 0) {
-            throw new IllegalArgumentException("warmupDuration cannot be negative");
-        }
-        if (applicationId == null || applicationId.trim().isEmpty()) {
-            throw new IllegalArgumentException("applicationId cannot be empty");
-        }
-        if (txServiceGroup == null || txServiceGroup.trim().isEmpty()) {
-            throw new IllegalArgumentException("txServiceGroup cannot be empty");
-        }
-        if (rollbackPercentage < 0 || rollbackPercentage > 100) {
-            throw new IllegalArgumentException("rollbackPercentage must be between 0 and 100");
-        }
-        if (branches < 0) {
-            throw new IllegalArgumentException("branches cannot be negative");
+    }
+
+    private void validateTpsAndThreads() {
+        if (targetTps < BenchmarkConstants.UNLIMITED_TPS_THRESHOLD && threads > 1) {
+            throw new IllegalArgumentException(String.format(
+                    "Invalid configuration: Cannot use both fixed TPS (%d) and multiple threads (%d). "
+                            + "Performance testing requires clear semantics. Please choose ONE of the following modes:\n"
+                            + "  1. Fixed Concurrency Mode: Set --threads=<N> and --tps=%d or higher (tests max throughput under fixed concurrency)\n"
+                            + "  2. Fixed TPS Mode: Set --tps=<target> and --threads=1 (tests latency at target throughput)\n"
+                            + "See README.md for detailed usage examples.",
+                    targetTps, threads, BenchmarkConstants.UNLIMITED_TPS_THRESHOLD));
         }
     }
 }

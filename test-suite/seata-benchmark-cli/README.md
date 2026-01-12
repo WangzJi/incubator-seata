@@ -98,13 +98,49 @@ java -jar seata-benchmark-cli.jar \
   --rollback-percentage 5
 ```
 
+### Performance Testing Modes
+
+The benchmark CLI supports two primary testing modes:
+
+#### 1. Fixed Concurrency Mode (推荐用于压力测试)
+- Set fixed thread count (`--threads`)
+- Set TPS to a very high value (e.g., `--tps 100000`) to avoid rate limiting
+- Tests maximum throughput under fixed concurrency
+
+Example:
+```bash
+java -jar seata-benchmark-cli.jar \
+  --server 127.0.0.1:8091 \
+  --mode AT \
+  --threads 50 \
+  --tps 100000 \
+  --duration 60
+```
+
+#### 2. Fixed TPS Mode (推荐用于容量规划)
+- Set target TPS (`--tps`)
+- Use single thread or few threads (`--threads 1`)
+- Tests latency and resource usage at target throughput
+
+Example:
+```bash
+java -jar seata-benchmark-cli.jar \
+  --server 127.0.0.1:8091 \
+  --mode AT \
+  --tps 500 \
+  --threads 1 \
+  --duration 60
+```
+
+**Note**: Avoid using both fixed TPS and multiple threads simultaneously, as this leads to unclear test semantics. The benchmark will reject such configurations.
+
 ### Advanced Options
 
 ```bash
 java -jar seata-benchmark-cli.jar \
   --server 127.0.0.1:8091 \
   --mode AT \
-  --tps 500 \
+  --tps 100000 \
   --threads 50 \
   --duration 300 \
   --warmup-duration 30 \
