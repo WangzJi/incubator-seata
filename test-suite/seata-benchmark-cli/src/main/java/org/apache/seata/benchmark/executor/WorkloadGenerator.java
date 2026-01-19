@@ -72,7 +72,9 @@ public class WorkloadGenerator {
                     config.getThreads());
 
             long startTime = System.currentTimeMillis();
-            long endTime = startTime + config.getDuration() * 1000L;
+            // Total duration includes warmup + benchmark duration
+            long totalDuration = (config.getWarmupDuration() + config.getDuration()) * 1000L;
+            long endTime = startTime + totalDuration;
 
             for (int i = 0; i < config.getThreads(); i++) {
                 executorService.submit(() -> {
@@ -141,18 +143,43 @@ public class WorkloadGenerator {
     public void waitForCompletion() {
         LOGGER.info("Waiting for benchmark completion...");
         long startTime = System.currentTimeMillis();
-        long duration = config.getDuration() * 1000L;
-        long endTime = startTime + duration;
+        int warmupDuration = config.getWarmupDuration();
+        long totalDuration = (warmupDuration + config.getDuration()) * 1000L;
+        long endTime = startTime + totalDuration;
+        boolean warmupCompleted = warmupDuration == 0;
+
+        if (warmupDuration > 0) {
+            LOGGER.info("Warmup phase: {} seconds", warmupDuration);
+        }
 
         try {
             while (System.currentTimeMillis() < endTime) {
                 Thread.sleep(1000);
                 long elapsed = (System.currentTimeMillis() - startTime) / 1000;
+
+                // Check if warmup phase just completed
+                if (!warmupCompleted && elapsed >= warmupDuration) {
+                    warmupCompleted = true;
+                    metrics.reset();
+                    synchronized (recentRecords) {
+                        recentRecords.clear();
+                    }
+                    LOGGER.info(
+                            "Warmup completed, metrics reset. Starting benchmark phase: {} seconds",
+                            config.getDuration());
+                }
+
                 if (elapsed % BenchmarkConstants.PROGRESS_REPORT_INTERVAL_SECONDS == 0 && elapsed > 0) {
+                    long hours = elapsed / 3600;
+                    long minutes = (elapsed % 3600) / 60;
+                    long seconds = elapsed % 60;
+                    String phase = warmupCompleted ? "" : "[WARMUP] ";
                     System.out.printf(
-                            "[%02d:%02d] %d txns, %.1f txns/sec, %.1f%% success%n",
-                            elapsed / 60,
-                            elapsed % 60,
+                            "%s[%02d:%02d:%02d] %d txns, %.1f txns/sec, %.1f%% success%n",
+                            phase,
+                            hours,
+                            minutes,
+                            seconds,
                             metrics.getTotalCount(),
                             metrics.getCurrentTps(),
                             metrics.getSuccessRate());

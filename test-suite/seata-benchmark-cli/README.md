@@ -274,7 +274,7 @@ Latency P50 (ms),12
 Latency P95 (ms),45
 Latency P99 (ms),89
 Latency Max (ms),230
-Export Timestamp,2025-12-01T10:30:45Z
+Export Timestamp,2025-12-01 10:30:45
 ```
 
 ## Examples

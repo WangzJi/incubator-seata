@@ -64,20 +64,46 @@ public class ATModeExecutor extends AbstractTransactionExecutor {
     }
 
     private void initRealMode() {
-        // Start MySQL container
-        startMySQLContainer();
+        try {
+            // Start MySQL container
+            startMySQLContainer();
 
-        // Create HikariCP connection pool
-        createDataSource();
+            // Create HikariCP connection pool
+            createDataSource();
 
-        // Initialize database schema and data
-        initDatabase();
+            // Initialize database schema and data
+            initDatabase();
 
-        // Wrap with Seata DataSourceProxy for AT mode
-        dataSourceProxy = new DataSourceProxy(rawDataSource);
+            // Wrap with Seata DataSourceProxy for AT mode
+            dataSourceProxy = new DataSourceProxy(rawDataSource);
 
-        LOGGER.info("DataSourceProxy initialized, dbType: {}", dataSourceProxy.getDbType());
-        LOGGER.info("Real AT mode executor initialized with {} accounts", BenchmarkConstants.ACCOUNT_COUNT);
+            LOGGER.info("DataSourceProxy initialized, dbType: {}", dataSourceProxy.getDbType());
+            LOGGER.info("Real AT mode executor initialized with {} accounts", BenchmarkConstants.ACCOUNT_COUNT);
+        } catch (Exception e) {
+            // Cleanup resources on initialization failure
+            cleanupOnFailure();
+            throw e instanceof RuntimeException
+                    ? (RuntimeException) e
+                    : new RuntimeException("Failed to initialize real AT mode executor", e);
+        }
+    }
+
+    private void cleanupOnFailure() {
+        LOGGER.warn("Cleaning up resources due to initialization failure");
+        if (rawDataSource != null && !rawDataSource.isClosed()) {
+            try {
+                rawDataSource.close();
+            } catch (Exception e) {
+                LOGGER.warn("Failed to close DataSource during cleanup", e);
+            }
+        }
+        if (mysqlContainer != null && mysqlContainer.isRunning()) {
+            try {
+                mysqlContainer.stop();
+            } catch (Exception e) {
+                LOGGER.warn("Failed to stop MySQL container during cleanup", e);
+            }
+        }
     }
 
     private void startMySQLContainer() {
@@ -181,7 +207,6 @@ public class ATModeExecutor extends AbstractTransactionExecutor {
         }
     }
 
-    @SuppressWarnings("lgtm[java/insecure-randomness]")
     private void executeSingleBranch() throws SQLException {
         // Use DataSourceProxy connection to enable AT mode
         try (Connection conn = dataSourceProxy.getConnection()) {
