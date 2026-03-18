@@ -41,6 +41,7 @@ public class Version {
     private static final String VERSION_0_7_1 = "0.7.1";
     private static final String VERSION_1_5_0 = "1.5.0";
     private static final String VERSION_2_3_0 = "2.3.0";
+    private static final String VERSION_2_6_0 = "2.6.0";
 
     public static final String VERSION_0_7_0 = "0.7.0";
 
@@ -50,6 +51,11 @@ public class Version {
      * The constant VERSION_MAP.
      */
     public static final Map<String, String> VERSION_MAP = new ConcurrentHashMap<>();
+
+    /**
+     * Cache server version from RegisterRMResponse, keyed by server address.
+     */
+    public static final Map<String, String> SERVER_VERSION_MAP = new ConcurrentHashMap<>();
 
     private Version() {}
 
@@ -94,6 +100,22 @@ public class Version {
 
     public static boolean isAboveOrEqualVersion230(String version) {
         return isAboveOrEqualVersion(version, VERSION_2_3_0);
+    }
+
+    public static boolean isAboveOrEqualVersion260(String version) {
+        return isAboveOrEqualVersion(version, VERSION_2_6_0);
+    }
+
+    public static void putServerVersion(String serverAddress, String version) {
+        SERVER_VERSION_MAP.put(serverAddress, version);
+    }
+
+    public static String getServerVersion(String serverAddress) {
+        return SERVER_VERSION_MAP.get(serverAddress);
+    }
+
+    public static void removeServerVersion(String serverAddress) {
+        SERVER_VERSION_MAP.remove(serverAddress);
     }
 
     public static boolean isV0(String version) {

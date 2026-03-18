@@ -35,6 +35,27 @@ public class VersionTest {
     }
 
     @Test
+    public void putAndGetServerVersionTest() {
+        String serverAddress = "127.0.0.1:8091";
+        Assertions.assertNull(Version.getServerVersion(serverAddress));
+
+        Version.putServerVersion(serverAddress, "2.6.0");
+        Assertions.assertEquals("2.6.0", Version.getServerVersion(serverAddress));
+
+        Version.removeServerVersion(serverAddress);
+        Assertions.assertNull(Version.getServerVersion(serverAddress));
+    }
+
+    @Test
+    public void isAboveOrEqualVersion260Test() {
+        Assertions.assertFalse(Version.isAboveOrEqualVersion260("2.5.0"));
+        Assertions.assertTrue(Version.isAboveOrEqualVersion260("2.6.0"));
+        Assertions.assertTrue(Version.isAboveOrEqualVersion260("3.0.0"));
+        Assertions.assertFalse(Version.isAboveOrEqualVersion260(""));
+        Assertions.assertFalse(Version.isAboveOrEqualVersion260("1.0.0"));
+    }
+
+    @Test
     public void testConvertVersion() {
         // case: success
         Assertions.assertDoesNotThrow(() -> {

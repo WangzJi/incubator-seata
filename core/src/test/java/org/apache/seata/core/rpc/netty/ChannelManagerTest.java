@@ -26,7 +26,9 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -1006,5 +1008,56 @@ public class ChannelManagerTest {
         assertNotNull(resultApp2, "Should find channel for app2");
 
         assertNotEquals(resultApp1, resultApp2, "Different apps should have different channels");
+    }
+
+    @Test
+    public void unregisterPartialResourcesTest() throws Exception {
+        Channel ch = mock(Channel.class);
+        when(ch.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 9090));
+        when(ch.isActive()).thenReturn(true);
+
+        RegisterRMRequest request = new RegisterRMRequest();
+        request.setApplicationId("test-app");
+        request.setTransactionServiceGroup("test-group");
+        request.setVersion("2.6.0");
+        request.setResourceIds("resource1,resource2");
+        ChannelManager.registerRMChannel(request, ch);
+
+        assertTrue(ChannelManager.isRegistered(ch));
+
+        Set<String> toRemove = new HashSet<>();
+        toRemove.add("resource1");
+        ChannelManager.unregisterRMChannel(ch, toRemove);
+
+        // Channel should still be registered because resource2 remains
+        assertTrue(ChannelManager.isRegistered(ch));
+        RpcContext ctx = ChannelManager.getContextFromIdentified(ch);
+        assertNotNull(ctx);
+        assertNotNull(ctx.getResourceSets());
+        assertFalse(ctx.getResourceSets().contains("resource1"));
+        assertTrue(ctx.getResourceSets().contains("resource2"));
+    }
+
+    @Test
+    public void unregisterAllResourcesRemovesChannelTest() throws Exception {
+        Channel ch = mock(Channel.class);
+        when(ch.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 9091));
+        when(ch.isActive()).thenReturn(true);
+
+        RegisterRMRequest request = new RegisterRMRequest();
+        request.setApplicationId("test-app");
+        request.setTransactionServiceGroup("test-group");
+        request.setVersion("2.6.0");
+        request.setResourceIds("resource1,resource2");
+        ChannelManager.registerRMChannel(request, ch);
+
+        assertTrue(ChannelManager.isRegistered(ch));
+
+        Set<String> toRemove = new HashSet<>();
+        toRemove.add("resource1");
+        toRemove.add("resource2");
+        ChannelManager.unregisterRMChannel(ch, toRemove);
+
+        assertFalse(ChannelManager.isRegistered(ch));
     }
 }

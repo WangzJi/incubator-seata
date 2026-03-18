@@ -33,6 +33,8 @@ import org.apache.seata.core.protocol.AbstractMessage;
 import org.apache.seata.core.protocol.MessageType;
 import org.apache.seata.core.protocol.RegisterRMRequest;
 import org.apache.seata.core.protocol.RegisterRMResponse;
+import org.apache.seata.core.protocol.UnregisterRMRequest;
+import org.apache.seata.core.protocol.Version;
 import org.apache.seata.core.rpc.netty.NettyPoolKey.TransactionRole;
 import org.apache.seata.core.rpc.processor.client.ClientHeartbeatProcessor;
 import org.apache.seata.core.rpc.processor.client.ClientOnResponseProcessor;
@@ -216,6 +218,7 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
                     channel);
         }
         getClientChannelManager().registerChannel(serverAddress, channel, registerRMRequest.getVersion());
+        Version.putServerVersion(serverAddress, registerRMResponse.getVersion());
         String dbKey = getMergedResourceKeys();
         if (registerRMRequest.getResourceIds() != null) {
             if (!registerRMRequest.getResourceIds().equals(dbKey)) {
@@ -292,6 +295,47 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
         }
     }
 
+    public void unregisterResource(String resourceGroupId, String resourceId) {
+        if (StringUtils.isBlank(transactionServiceGroup) || StringUtils.isBlank(resourceId)) {
+            return;
+        }
+        if (getClientChannelManager().getChannels().isEmpty()) {
+            return;
+        }
+        synchronized (getClientChannelManager().getChannels()) {
+            for (Map.Entry<String, Channel> entry :
+                    getClientChannelManager().getChannels().entrySet()) {
+                String serverAddress = entry.getKey();
+                Channel channel = entry.getValue();
+                if (!channel.isActive()) {
+                    continue;
+                }
+                String serverVersion = Version.getServerVersion(serverAddress);
+                if (serverVersion == null || !Version.isAboveOrEqualVersion260(serverVersion)) {
+                    LOGGER.warn(
+                            "Server {} does not support UnregisterRMRequest (version: {})",
+                            serverAddress,
+                            serverVersion);
+                    continue;
+                }
+                UnregisterRMRequest message = new UnregisterRMRequest(applicationId, transactionServiceGroup);
+                message.setResourceIds(resourceId);
+                try {
+                    super.sendAsyncRequest(channel, message);
+                } catch (FrameworkException e) {
+                    if (e.getErrcode() == FrameworkErrorCode.ChannelIsNotWritable && serverAddress != null) {
+                        getClientChannelManager().releaseChannel(channel, serverAddress);
+                        if (LOGGER.isInfoEnabled()) {
+                            LOGGER.info("remove not writable channel:{}", channel);
+                        }
+                    } else {
+                        LOGGER.error("unregister resource failed, channel:{},resourceId:{}", channel, resourceId, e);
+                    }
+                }
+            }
+        }
+    }
+
     public String getMergedResourceKeys() {
         Map<String, Resource> managedResources = resourceManager.getManagedResources();
         Set<String> resourceIds = managedResources.keySet();
@@ -317,6 +361,35 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
 
     @Override
     public void destroy() {
+        if (resourceManager != null && StringUtils.isNotBlank(transactionServiceGroup)) {
+            String allResourceIds = getMergedResourceKeys();
+            if (StringUtils.isNotBlank(allResourceIds)) {
+                for (Map.Entry<String, Channel> entry :
+                        getClientChannelManager().getChannels().entrySet()) {
+                    String serverAddress = entry.getKey();
+                    Channel channel = entry.getValue();
+                    if (!channel.isActive()) {
+                        continue;
+                    }
+                    String serverVersion = Version.getServerVersion(serverAddress);
+                    if (serverVersion == null || !Version.isAboveOrEqualVersion260(serverVersion)) {
+                        LOGGER.warn(
+                                "Server {} does not support UnregisterRMRequest (version: {})",
+                                serverAddress,
+                                serverVersion);
+                        continue;
+                    }
+                    UnregisterRMRequest message = new UnregisterRMRequest(applicationId, transactionServiceGroup);
+                    message.setResourceIds(allResourceIds);
+                    try {
+                        super.sendAsyncRequest(channel, message);
+                    } catch (Exception e) {
+                        LOGGER.warn("Failed to send unregister request to server {}", serverAddress, e);
+                    }
+                }
+            }
+        }
+        Version.SERVER_VERSION_MAP.clear();
         super.destroy();
         initialized.getAndSet(false);
         instance = null;
@@ -371,6 +444,7 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
         super.registerProcessor(MessageType.TYPE_BRANCH_STATUS_REPORT_RESULT, onResponseProcessor, null);
         super.registerProcessor(MessageType.TYPE_GLOBAL_LOCK_QUERY_RESULT, onResponseProcessor, null);
         super.registerProcessor(MessageType.TYPE_REG_RM_RESULT, onResponseProcessor, null);
+        super.registerProcessor(MessageType.TYPE_UNREG_RM_RESULT, onResponseProcessor, null);
         super.registerProcessor(MessageType.TYPE_BATCH_RESULT_MSG, onResponseProcessor, null);
         // 5.registry heartbeat message processor
         ClientHeartbeatProcessor clientHeartbeatProcessor = new ClientHeartbeatProcessor();
