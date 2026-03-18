@@ -299,10 +299,11 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
         if (StringUtils.isBlank(transactionServiceGroup) || StringUtils.isBlank(resourceId)) {
             return;
         }
-        if (getClientChannelManager().getChannels().isEmpty()) {
-            return;
-        }
-        synchronized (getClientChannelManager().getChannels()) {
+        sendUnregisterToServers(resourceId);
+    }
+
+    private void sendUnregisterToServers(String resourceIds) {
+        try {
             for (Map.Entry<String, Channel> entry :
                     getClientChannelManager().getChannels().entrySet()) {
                 String serverAddress = entry.getKey();
@@ -319,7 +320,7 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
                     continue;
                 }
                 UnregisterRMRequest message = new UnregisterRMRequest(applicationId, transactionServiceGroup);
-                message.setResourceIds(resourceId);
+                message.setResourceIds(resourceIds);
                 try {
                     super.sendAsyncRequest(channel, message);
                 } catch (FrameworkException e) {
@@ -329,10 +330,12 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
                             LOGGER.info("remove not writable channel:{}", channel);
                         }
                     } else {
-                        LOGGER.error("unregister resource failed, channel:{},resourceId:{}", channel, resourceId, e);
+                        LOGGER.error("unregister resource failed, channel:{},resourceIds:{}", channel, resourceIds, e);
                     }
                 }
             }
+        } catch (Exception e) {
+            LOGGER.warn("Failed to send unregister request for resource {}", resourceIds, e);
         }
     }
 
@@ -364,29 +367,7 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
         if (resourceManager != null && StringUtils.isNotBlank(transactionServiceGroup)) {
             String allResourceIds = getMergedResourceKeys();
             if (StringUtils.isNotBlank(allResourceIds)) {
-                for (Map.Entry<String, Channel> entry :
-                        getClientChannelManager().getChannels().entrySet()) {
-                    String serverAddress = entry.getKey();
-                    Channel channel = entry.getValue();
-                    if (!channel.isActive()) {
-                        continue;
-                    }
-                    String serverVersion = Version.getServerVersion(serverAddress);
-                    if (serverVersion == null || !Version.isAboveOrEqualVersion260(serverVersion)) {
-                        LOGGER.warn(
-                                "Server {} does not support UnregisterRMRequest (version: {})",
-                                serverAddress,
-                                serverVersion);
-                        continue;
-                    }
-                    UnregisterRMRequest message = new UnregisterRMRequest(applicationId, transactionServiceGroup);
-                    message.setResourceIds(allResourceIds);
-                    try {
-                        super.sendAsyncRequest(channel, message);
-                    } catch (Exception e) {
-                        LOGGER.warn("Failed to send unregister request to server {}", serverAddress, e);
-                    }
-                }
+                sendUnregisterToServers(allResourceIds);
             }
         }
         Version.SERVER_VERSION_MAP.clear();

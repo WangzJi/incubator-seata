@@ -19,6 +19,7 @@ package org.apache.seata.core.rpc.processor.server;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.seata.common.Constants;
 import org.apache.seata.common.util.NetUtil;
+import org.apache.seata.common.util.StringUtils;
 import org.apache.seata.core.protocol.RpcMessage;
 import org.apache.seata.core.protocol.UnregisterRMRequest;
 import org.apache.seata.core.protocol.UnregisterRMResponse;
@@ -55,6 +56,12 @@ public class UnregRmProcessor implements RemotingProcessor {
         boolean isSuccess = false;
         try {
             String resourceIdStr = message.getResourceIds();
+            if (StringUtils.isBlank(resourceIdStr)) {
+                LOGGER.warn("RM unregister request has empty resourceIds, client:{}", ipAndPort);
+                UnregisterRMResponse response = new UnregisterRMResponse(false);
+                remotingServer.sendAsyncResponse(rpcMessage, ctx.channel(), response);
+                return;
+            }
             Set<String> resourceIdSet = new HashSet<>(Arrays.asList(resourceIdStr.split(Constants.DBKEYS_SPLIT_CHAR)));
             ChannelManager.unregisterRMChannel(ctx.channel(), resourceIdSet);
             isSuccess = true;

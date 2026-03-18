@@ -223,14 +223,14 @@ public class ChannelManager {
             if (portMap != null) {
                 portMap.remove(clientPort);
                 if (portMap.isEmpty()) {
-                    ipMap.remove(clientIp);
+                    ipMap.remove(clientIp, portMap);
                 }
             }
             if (ipMap.isEmpty()) {
-                applicationIdMap.remove(applicationId);
+                applicationIdMap.remove(applicationId, ipMap);
             }
             if (applicationIdMap.isEmpty()) {
-                RM_CHANNELS.remove(resourceId);
+                RM_CHANNELS.remove(resourceId, applicationIdMap);
             }
             rpcContext.removeResource(resourceId);
         }
