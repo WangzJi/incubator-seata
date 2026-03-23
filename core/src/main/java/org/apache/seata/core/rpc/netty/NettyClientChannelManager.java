@@ -58,6 +58,8 @@ class NettyClientChannelManager {
 
     private final ConcurrentMap<String, Channel> channels = new ConcurrentHashMap<>();
 
+    private final ConcurrentMap<String, String> serverVersionMap = new ConcurrentHashMap<>();
+
     private final GenericKeyedObjectPool<NettyPoolKey, Channel> nettyClientKeyPool;
 
     private Function<String, NettyPoolKey> poolKeyFunction;
@@ -295,6 +297,18 @@ class NettyClientChannelManager {
         }
         channels.put(serverAddress, channel);
         Version.putChannelVersion(channel, version);
+    }
+
+    void putServerVersion(String serverAddress, String version) {
+        serverVersionMap.put(serverAddress, version);
+    }
+
+    String getServerVersion(String serverAddress) {
+        return serverVersionMap.get(serverAddress);
+    }
+
+    void clearServerVersions() {
+        serverVersionMap.clear();
     }
 
     private Channel doConnect(String serverAddress) {

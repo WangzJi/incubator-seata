@@ -218,7 +218,7 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
                     channel);
         }
         getClientChannelManager().registerChannel(serverAddress, channel, registerRMRequest.getVersion());
-        Version.putServerVersion(serverAddress, registerRMResponse.getVersion());
+        getClientChannelManager().putServerVersion(serverAddress, registerRMResponse.getVersion());
         String dbKey = getMergedResourceKeys();
         if (registerRMRequest.getResourceIds() != null) {
             if (!registerRMRequest.getResourceIds().equals(dbKey)) {
@@ -311,7 +311,7 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
                 if (!channel.isActive()) {
                     continue;
                 }
-                String serverVersion = Version.getServerVersion(serverAddress);
+                String serverVersion = getClientChannelManager().getServerVersion(serverAddress);
                 if (serverVersion == null || !Version.isAboveOrEqualVersion260(serverVersion)) {
                     LOGGER.warn(
                             "Server {} does not support UnregisterRMRequest (version: {})",
@@ -370,7 +370,7 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
                 sendUnregisterToServers(allResourceIds);
             }
         }
-        Version.SERVER_VERSION_MAP.clear();
+        getClientChannelManager().clearServerVersions();
         super.destroy();
         initialized.getAndSet(false);
         instance = null;

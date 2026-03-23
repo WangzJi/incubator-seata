@@ -28,7 +28,6 @@ import org.apache.seata.core.protocol.RegisterRMRequest;
 import org.apache.seata.core.protocol.RegisterRMResponse;
 import org.apache.seata.core.protocol.ResultCode;
 import org.apache.seata.core.protocol.UnregisterRMRequest;
-import org.apache.seata.core.protocol.Version;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -397,15 +396,13 @@ class RmNettyClientTest {
         when(channelManager.getChannels()).thenReturn(channels);
         setChannelManager(client, channelManager);
 
-        Version.putServerVersion(serverAddress, "2.6.0");
+        when(channelManager.getServerVersion(serverAddress)).thenReturn("2.6.0");
 
         RmNettyRemotingClient spyClient = Mockito.spy(client);
 
         spyClient.unregisterResource("group1", "jdbc:mysql://localhost:3306/test");
 
         verify(spyClient).sendAsyncRequest(eq(channel), any(UnregisterRMRequest.class));
-
-        Version.SERVER_VERSION_MAP.remove(serverAddress);
     }
 
     @Test
@@ -423,15 +420,13 @@ class RmNettyClientTest {
         when(channelManager.getChannels()).thenReturn(channels);
         setChannelManager(client, channelManager);
 
-        Version.putServerVersion(serverAddress, "2.5.0");
+        when(channelManager.getServerVersion(serverAddress)).thenReturn("2.5.0");
 
         RmNettyRemotingClient spyClient = Mockito.spy(client);
 
         spyClient.unregisterResource("group1", "jdbc:mysql://localhost:3306/test");
 
         verify(spyClient, never()).sendAsyncRequest(any(Channel.class), any(UnregisterRMRequest.class));
-
-        Version.SERVER_VERSION_MAP.remove(serverAddress);
     }
 
     @Test
@@ -471,7 +466,7 @@ class RmNettyClientTest {
         when(channelManager.getChannels()).thenReturn(channels);
         setChannelManager(client, channelManager);
 
-        Version.putServerVersion(serverAddress, "2.6.0");
+        when(channelManager.getServerVersion(serverAddress)).thenReturn("2.6.0");
 
         RmNettyRemotingClient spyClient = Mockito.spy(client);
         doThrow(new FrameworkException("Channel is not writable", FrameworkErrorCode.ChannelIsNotWritable))
@@ -481,8 +476,6 @@ class RmNettyClientTest {
         spyClient.unregisterResource("group1", "jdbc:mysql://localhost:3306/test");
 
         verify(channelManager).releaseChannel(eq(channel), eq(serverAddress));
-
-        Version.SERVER_VERSION_MAP.remove(serverAddress);
     }
 
     @Test

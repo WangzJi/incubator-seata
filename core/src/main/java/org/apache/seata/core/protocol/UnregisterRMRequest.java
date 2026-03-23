@@ -16,12 +16,10 @@
  */
 package org.apache.seata.core.protocol;
 
-import java.io.Serializable;
-
 /**
  * The type Unregister rm request.
  */
-public class UnregisterRMRequest extends AbstractIdentifyRequest implements Serializable {
+public class UnregisterRMRequest extends AbstractIdentifyRequest {
 
     public UnregisterRMRequest() {
         this(null, null);
