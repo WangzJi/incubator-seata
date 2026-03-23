@@ -418,4 +418,29 @@ class NettyClientChannelManagerTest {
             Assertions.fail("Should not throw exception: " + e.getMessage());
         }
     }
+
+    @Test
+    void putAndGetServerVersionTest() {
+        channelManager.putServerVersion("127.0.0.1:8091", "2.1.0");
+        assertEquals("2.1.0", channelManager.getServerVersion("127.0.0.1:8091"));
+
+        channelManager.putServerVersion("127.0.0.1:8091", "2.2.0");
+        assertEquals("2.2.0", channelManager.getServerVersion("127.0.0.1:8091"));
+    }
+
+    @Test
+    void getServerVersionReturnNullWhenNotExistTest() {
+        Assertions.assertNull(channelManager.getServerVersion("127.0.0.1:9999"));
+    }
+
+    @Test
+    void clearServerVersionsTest() {
+        channelManager.putServerVersion("127.0.0.1:8091", "2.1.0");
+        channelManager.putServerVersion("127.0.0.1:8092", "2.2.0");
+
+        channelManager.clearServerVersions();
+
+        Assertions.assertNull(channelManager.getServerVersion("127.0.0.1:8091"));
+        Assertions.assertNull(channelManager.getServerVersion("127.0.0.1:8092"));
+    }
 }
