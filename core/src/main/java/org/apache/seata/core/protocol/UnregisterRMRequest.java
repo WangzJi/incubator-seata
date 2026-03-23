@@ -21,9 +21,6 @@ package org.apache.seata.core.protocol;
  */
 public class UnregisterRMRequest extends AbstractIdentifyRequest {
 
-    public UnregisterRMRequest() {
-        this(null, null);
-    }
 
     public UnregisterRMRequest(String applicationId, String transactionServiceGroup) {
         super(applicationId, transactionServiceGroup);
