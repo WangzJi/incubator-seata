@@ -65,8 +65,14 @@ public class UnregRmProcessor implements RemotingProcessor {
             Set<String> resourceIdSet = new HashSet<>(Arrays.asList(resourceIdStr.split(Constants.DBKEYS_SPLIT_CHAR)));
             resourceIdSet.removeIf(StringUtils::isBlank);
             isSuccess = ChannelManager.unregisterRMChannel(ctx.channel(), resourceIdSet);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("RM unregister success, message:{}, channel:{}", message, ctx.channel());
+            if (isSuccess) {
+                if (LOGGER.isInfoEnabled()) {
+                    LOGGER.info("RM unregister success, message:{}, channel:{}", message, ctx.channel());
+                }
+            } else {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("RM unregister not successful, message:{}, channel:{}", message, ctx.channel());
+                }
             }
         } catch (Exception exx) {
             LOGGER.error("RM unregister fail, client:{}, error message:{}", ipAndPort, exx.getMessage());
