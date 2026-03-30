@@ -200,10 +200,10 @@ public class ChannelManager {
      * @param channel     the channel
      * @param resourceIds the resource ids to unregister
      */
-    public static void unregisterRMChannel(Channel channel, Set<String> resourceIds) {
+    public static boolean unregisterRMChannel(Channel channel, Set<String> resourceIds) {
         RpcContext rpcContext = IDENTIFIED_CHANNELS.get(channel);
         if (rpcContext == null) {
-            return;
+            return false;
         }
         String applicationId = rpcContext.getApplicationId();
         String clientIp = ChannelUtil.getClientIpFromChannel(channel);
@@ -238,6 +238,7 @@ public class ChannelManager {
         if (rpcContext.getResourceSets() == null || rpcContext.getResourceSets().isEmpty()) {
             IDENTIFIED_CHANNELS.remove(channel);
         }
+        return true;
     }
 
     private static void updateChannelsResource(String resourceId, String clientIp, String applicationId) {

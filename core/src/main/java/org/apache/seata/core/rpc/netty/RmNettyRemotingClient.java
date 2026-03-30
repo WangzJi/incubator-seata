@@ -17,6 +17,7 @@
 package org.apache.seata.core.rpc.netty;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import org.apache.seata.common.DefaultValues;
 import org.apache.seata.common.exception.FrameworkErrorCode;
 import org.apache.seata.common.exception.FrameworkException;
@@ -31,8 +32,10 @@ import org.apache.seata.core.model.Resource;
 import org.apache.seata.core.model.ResourceManager;
 import org.apache.seata.core.protocol.AbstractMessage;
 import org.apache.seata.core.protocol.MessageType;
+import org.apache.seata.core.protocol.ProtocolConstants;
 import org.apache.seata.core.protocol.RegisterRMRequest;
 import org.apache.seata.core.protocol.RegisterRMResponse;
+import org.apache.seata.core.protocol.RpcMessage;
 import org.apache.seata.core.protocol.UnregisterRMRequest;
 import org.apache.seata.core.protocol.Version;
 import org.apache.seata.core.rpc.netty.NettyPoolKey.TransactionRole;
@@ -44,6 +47,8 @@ import org.apache.seata.core.rpc.processor.client.RmUndoLogProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -302,7 +307,10 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
         sendUnregisterToServers(resourceId);
     }
 
-    private void sendUnregisterToServers(String resourceIds) {
+    private static final long UNREGISTER_FLUSH_TIMEOUT_MS = 1000;
+
+    private List<ChannelFuture> sendUnregisterToServers(String resourceIds) {
+        List<ChannelFuture> futures = new ArrayList<>();
         try {
             for (Map.Entry<String, Channel> entry :
                     getClientChannelManager().getChannels().entrySet()) {
@@ -322,7 +330,12 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
                 UnregisterRMRequest message = new UnregisterRMRequest(applicationId, transactionServiceGroup);
                 message.setResourceIds(resourceIds);
                 try {
-                    super.sendAsyncRequest(channel, message);
+                    if (!channel.isWritable()) {
+                        throw new FrameworkException(
+                                "msg:" + message.toString(), FrameworkErrorCode.ChannelIsNotWritable);
+                    }
+                    RpcMessage rpcMessage = buildRequestMessage(message, ProtocolConstants.MSGTYPE_RESQUEST_ONEWAY);
+                    futures.add(channel.writeAndFlush(rpcMessage));
                 } catch (FrameworkException e) {
                     if (e.getErrcode() == FrameworkErrorCode.ChannelIsNotWritable && serverAddress != null) {
                         getClientChannelManager().releaseChannel(channel, serverAddress);
@@ -337,6 +350,7 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
         } catch (Exception e) {
             LOGGER.warn("Failed to send unregister request for resource {}", resourceIds, e);
         }
+        return futures;
     }
 
     public String getMergedResourceKeys() {
@@ -367,7 +381,15 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
         if (resourceManager != null && StringUtils.isNotBlank(transactionServiceGroup)) {
             String allResourceIds = getMergedResourceKeys();
             if (StringUtils.isNotBlank(allResourceIds)) {
-                sendUnregisterToServers(allResourceIds);
+                List<ChannelFuture> futures = sendUnregisterToServers(allResourceIds);
+                for (ChannelFuture future : futures) {
+                    try {
+                        future.await(UNREGISTER_FLUSH_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
             }
         }
         getClientChannelManager().clearServerVersions();
