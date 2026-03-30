@@ -160,6 +160,7 @@ class NettyClientChannelManager {
         try {
             if (channel.equals(channels.get(serverAddress))) {
                 channels.remove(serverAddress);
+                serverVersionMap.remove(serverAddress);
             }
             nettyClientKeyPool.returnObject(poolKeyMap.get(serverAddress), channel);
         } catch (Exception exx) {
@@ -283,6 +284,7 @@ class NettyClientChannelManager {
             } else {
                 RegistryFactory.getInstance().refreshAliveLookup(transactionServiceGroup, Collections.emptyList());
             }
+            cleanupStaleAddresses(availList);
         }
     }
 
@@ -309,6 +311,37 @@ class NettyClientChannelManager {
 
     void clearServerVersions() {
         serverVersionMap.clear();
+    }
+
+    /**
+     * Remove entries from internal maps for addresses that are no longer
+     * in the available server list and have no active channel.
+     * This prevents unbounded map growth in environments like Kubernetes
+     * where server IPs change frequently.
+     */
+    private void cleanupStaleAddresses(List<String> availList) {
+        Set<String> availSet = new HashSet<>(availList);
+        Set<String> staleAddresses = serverVersionMap.keySet().stream()
+                .filter(address -> !availSet.contains(address) && !channels.containsKey(address))
+                .collect(Collectors.toSet());
+
+        poolKeyMap.keySet().stream()
+                .filter(address -> !availSet.contains(address) && !channels.containsKey(address))
+                .forEachOrdered(staleAddresses::add);
+
+        channelLocks.keySet().stream()
+                .filter(address -> !availSet.contains(address) && !channels.containsKey(address))
+                .forEachOrdered(staleAddresses::add);
+
+        staleAddresses.forEach(address -> {
+            serverVersionMap.remove(address);
+            poolKeyMap.remove(address);
+            channelLocks.remove(address);
+        });
+        
+        if (!staleAddresses.isEmpty() && LOGGER.isInfoEnabled()) {
+            LOGGER.info("Cleaned up stale channel metadata for addresses: {}", staleAddresses);
+        }
     }
 
     private Channel doConnect(String serverAddress) {

@@ -443,4 +443,78 @@ class NettyClientChannelManagerTest {
         Assertions.assertNull(channelManager.getServerVersion("127.0.0.1:8091"));
         Assertions.assertNull(channelManager.getServerVersion("127.0.0.1:8092"));
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testDestroyChannelCleansUpServerVersionMap() throws Exception {
+        String serverAddress = "127.0.0.1:8091";
+        setNettyClientKeyPool();
+        ConcurrentMap<String, NettyPoolKey> poolKeyMap =
+                (ConcurrentMap<String, NettyPoolKey>) getFieldValue("poolKeyMap", channelManager);
+        poolKeyMap.put(serverAddress, nettyPoolKey);
+
+        channelManager.getChannels().put(serverAddress, channel);
+        channelManager.putServerVersion(serverAddress, "2.1.0");
+
+        channelManager.destroyChannel(serverAddress, channel);
+
+        assertFalse(channelManager.getChannels().containsKey(serverAddress));
+        Assertions.assertNull(channelManager.getServerVersion(serverAddress));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testDestroyChannelKeepsServerVersionWhenChannelMismatch() throws Exception {
+        String serverAddress = "127.0.0.1:8091";
+        setNettyClientKeyPool();
+        ConcurrentMap<String, NettyPoolKey> poolKeyMap =
+                (ConcurrentMap<String, NettyPoolKey>) getFieldValue("poolKeyMap", channelManager);
+        poolKeyMap.put(serverAddress, nettyPoolKey);
+
+        // Put a different channel in the map
+        channelManager.getChannels().put(serverAddress, newChannel);
+        channelManager.putServerVersion(serverAddress, "2.1.0");
+
+        // Destroy with a channel that doesn't match the cached one
+        channelManager.destroyChannel(serverAddress, channel);
+
+        // channels and serverVersionMap should remain since the channel didn't match
+        assertTrue(channelManager.getChannels().containsKey(serverAddress));
+        assertEquals("2.1.0", channelManager.getServerVersion(serverAddress));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testDoReconnectCleansUpStaleAddresses() {
+        String transactionServiceGroup = "default_tx_group";
+        String staleAddress = "10.0.0.1:8091";
+        String activeAddress = "10.0.0.2:8091";
+        List<InetSocketAddress> availableServers = new ArrayList<>();
+        availableServers.add(new InetSocketAddress("10.0.0.2", 8091));
+
+        // Pre-populate maps with a stale address (no longer in available list)
+        channelManager.putServerVersion(staleAddress, "2.1.0");
+        ConcurrentMap<String, Object> channelLocks =
+                (ConcurrentMap<String, Object>) getFieldValue("channelLocks", channelManager);
+        channelLocks.put(staleAddress, new Object());
+        ConcurrentMap<String, NettyPoolKey> poolKeyMap =
+                (ConcurrentMap<String, NettyPoolKey>) getFieldValue("poolKeyMap", channelManager);
+        poolKeyMap.put(staleAddress, nettyPoolKey);
+
+        try (MockedStatic<RegistryFactory> registryFactoryMock = mockStatic(RegistryFactory.class)) {
+            registryFactoryMock.when(RegistryFactory::getInstance).thenReturn(registryService);
+            when(registryService.lookup(transactionServiceGroup)).thenReturn(availableServers);
+
+            setupPoolFactory(nettyPoolKey, channel);
+
+            channelManager.doReconnect(transactionServiceGroup, false);
+
+            // Stale address entries should be cleaned up
+            Assertions.assertNull(channelManager.getServerVersion(staleAddress));
+            assertFalse(channelLocks.containsKey(staleAddress));
+            assertFalse(poolKeyMap.containsKey(staleAddress));
+        } catch (Exception e) {
+            Assertions.fail("Should not throw exception: " + e.getMessage());
+        }
+    }
 }
