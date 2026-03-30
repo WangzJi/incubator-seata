@@ -485,36 +485,46 @@ class NettyClientChannelManagerTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void testDoReconnectCleansUpStaleAddresses() {
-        String transactionServiceGroup = "default_tx_group";
-        String staleAddress = "10.0.0.1:8091";
-        String activeAddress = "10.0.0.2:8091";
-        List<InetSocketAddress> availableServers = new ArrayList<>();
-        availableServers.add(new InetSocketAddress("10.0.0.2", 8091));
+    void testCleanupDisconnectedChannelMetadata() {
+        String serverAddress = "10.0.0.1:8091";
 
-        // Pre-populate maps with a stale address (no longer in available list)
-        channelManager.putServerVersion(staleAddress, "2.1.0");
+        // Pre-populate maps with metadata for the address
+        channelManager.putServerVersion(serverAddress, "2.1.0");
         ConcurrentMap<String, Object> channelLocks =
                 (ConcurrentMap<String, Object>) getFieldValue("channelLocks", channelManager);
-        channelLocks.put(staleAddress, new Object());
+        channelLocks.put(serverAddress, new Object());
         ConcurrentMap<String, NettyPoolKey> poolKeyMap =
                 (ConcurrentMap<String, NettyPoolKey>) getFieldValue("poolKeyMap", channelManager);
-        poolKeyMap.put(staleAddress, nettyPoolKey);
+        poolKeyMap.put(serverAddress, nettyPoolKey);
 
-        try (MockedStatic<RegistryFactory> registryFactoryMock = mockStatic(RegistryFactory.class)) {
-            registryFactoryMock.when(RegistryFactory::getInstance).thenReturn(registryService);
-            when(registryService.lookup(transactionServiceGroup)).thenReturn(availableServers);
+        // No active channel for this address — cleanup should proceed
+        channelManager.cleanupDisconnectedChannelMetadata(serverAddress);
 
-            setupPoolFactory(nettyPoolKey, channel);
+        Assertions.assertNull(channelManager.getServerVersion(serverAddress));
+        assertFalse(channelLocks.containsKey(serverAddress));
+        assertFalse(poolKeyMap.containsKey(serverAddress));
+    }
 
-            channelManager.doReconnect(transactionServiceGroup, false);
+    @Test
+    @SuppressWarnings("unchecked")
+    void testCleanupSkippedWhenActiveChannelExists() {
+        String serverAddress = "10.0.0.1:8091";
 
-            // Stale address entries should be cleaned up
-            Assertions.assertNull(channelManager.getServerVersion(staleAddress));
-            assertFalse(channelLocks.containsKey(staleAddress));
-            assertFalse(poolKeyMap.containsKey(staleAddress));
-        } catch (Exception e) {
-            Assertions.fail("Should not throw exception: " + e.getMessage());
-        }
+        // Pre-populate maps and an active channel
+        channelManager.getChannels().put(serverAddress, channel);
+        channelManager.putServerVersion(serverAddress, "2.1.0");
+        ConcurrentMap<String, Object> channelLocks =
+                (ConcurrentMap<String, Object>) getFieldValue("channelLocks", channelManager);
+        channelLocks.put(serverAddress, new Object());
+        ConcurrentMap<String, NettyPoolKey> poolKeyMap =
+                (ConcurrentMap<String, NettyPoolKey>) getFieldValue("poolKeyMap", channelManager);
+        poolKeyMap.put(serverAddress, nettyPoolKey);
+
+        // Active channel exists — cleanup should be skipped
+        channelManager.cleanupDisconnectedChannelMetadata(serverAddress);
+
+        assertEquals("2.1.0", channelManager.getServerVersion(serverAddress));
+        assertTrue(channelLocks.containsKey(serverAddress));
+        assertTrue(poolKeyMap.containsKey(serverAddress));
     }
 }

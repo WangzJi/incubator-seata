@@ -127,7 +127,8 @@ class NettyClientChannelManager {
             return;
         }
         try {
-            synchronized (channelLocks.get(serverAddress)) {
+            Object lockObj = CollectionUtils.computeIfAbsent(channelLocks, serverAddress, key -> new Object());
+            synchronized (lockObj) {
                 Channel ch = channels.get(serverAddress);
                 if (ch == null) {
                     nettyClientKeyPool.returnObject(poolKeyMap.get(serverAddress), channel);
@@ -284,7 +285,6 @@ class NettyClientChannelManager {
             } else {
                 RegistryFactory.getInstance().refreshAliveLookup(transactionServiceGroup, Collections.emptyList());
             }
-            cleanupStaleAddresses(availList);
         }
     }
 
@@ -314,33 +314,26 @@ class NettyClientChannelManager {
     }
 
     /**
-     * Remove entries from internal maps for addresses that are no longer
-     * in the available server list and have no active channel.
-     * This prevents unbounded map growth in environments like Kubernetes
-     * where server IPs change frequently.
+     * Clean up metadata for a disconnected channel's address.
+     * Called from the channelInactive event handler after the channel
+     * has been released. Skips cleanup if a new channel already exists
+     * for the same address (reconnection happened before cleanup).
+     *
+     * @param serverAddress the address whose metadata should be cleaned
      */
-    private void cleanupStaleAddresses(List<String> availList) {
-        Set<String> availSet = new HashSet<>(availList);
-        Set<String> staleAddresses = serverVersionMap.keySet().stream()
-                .filter(address -> !availSet.contains(address) && !channels.containsKey(address))
-                .collect(Collectors.toSet());
-
-        poolKeyMap.keySet().stream()
-                .filter(address -> !availSet.contains(address) && !channels.containsKey(address))
-                .forEachOrdered(staleAddresses::add);
-
-        channelLocks.keySet().stream()
-                .filter(address -> !availSet.contains(address) && !channels.containsKey(address))
-                .forEachOrdered(staleAddresses::add);
-
-        staleAddresses.forEach(address -> {
-            serverVersionMap.remove(address);
-            poolKeyMap.remove(address);
-            channelLocks.remove(address);
-        });
-
-        if (!staleAddresses.isEmpty() && LOGGER.isInfoEnabled()) {
-            LOGGER.info("Cleaned up stale channel metadata for addresses: {}", staleAddresses);
+    void cleanupDisconnectedChannelMetadata(String serverAddress) {
+        if (serverAddress == null) {
+            return;
+        }
+        if (channels.containsKey(serverAddress)) {
+            return;
+        }
+        boolean removed = false;
+        removed |= serverVersionMap.remove(serverAddress) != null;
+        removed |= poolKeyMap.remove(serverAddress) != null;
+        removed |= channelLocks.remove(serverAddress) != null;
+        if (removed && LOGGER.isInfoEnabled()) {
+            LOGGER.info("Cleaned up channel metadata for disconnected address: {}", serverAddress);
         }
     }
 
