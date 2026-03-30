@@ -338,7 +338,7 @@ class NettyClientChannelManager {
             poolKeyMap.remove(address);
             channelLocks.remove(address);
         });
-        
+
         if (!staleAddresses.isEmpty() && LOGGER.isInfoEnabled()) {
             LOGGER.info("Cleaned up stale channel metadata for addresses: {}", staleAddresses);
         }
