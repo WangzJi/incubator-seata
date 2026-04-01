@@ -527,4 +527,14 @@ class NettyClientChannelManagerTest {
         assertTrue(channelLocks.containsKey(serverAddress));
         assertTrue(poolKeyMap.containsKey(serverAddress));
     }
+
+    @Test
+    void testCleanupDisconnectedChannelMetadataWithNullAddressTest() {
+        channelManager.putServerVersion("10.0.0.1:8091", "2.1.0");
+
+        channelManager.cleanupDisconnectedChannelMetadata(null);
+
+        // Should not throw and metadata should remain unchanged
+        assertEquals("2.1.0", channelManager.getServerVersion("10.0.0.1:8091"));
+    }
 }

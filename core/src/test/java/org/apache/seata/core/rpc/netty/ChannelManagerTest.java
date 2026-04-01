@@ -1060,4 +1060,65 @@ public class ChannelManagerTest {
 
         assertFalse(ChannelManager.isRegistered(ch));
     }
+
+    @Test
+    public void unregisterRMChannelWithUnknownChannelReturnsFalseTest() {
+        Channel ch = mock(Channel.class);
+        when(ch.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 9999));
+
+        Set<String> toRemove = new HashSet<>();
+        toRemove.add("resource1");
+        boolean result = ChannelManager.unregisterRMChannel(ch, toRemove);
+
+        assertFalse(result);
+    }
+
+    @Test
+    public void unregisterRMChannelWithNonExistentResourceIdTest() throws Exception {
+        Channel ch = mock(Channel.class);
+        when(ch.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 9092));
+        when(ch.isActive()).thenReturn(true);
+
+        RegisterRMRequest request = new RegisterRMRequest();
+        request.setApplicationId("test-app");
+        request.setTransactionServiceGroup("test-group");
+        request.setVersion("2.6.0");
+        request.setResourceIds("resource1");
+        ChannelManager.registerRMChannel(request, ch);
+
+        assertTrue(ChannelManager.isRegistered(ch));
+
+        Set<String> toRemove = new HashSet<>();
+        toRemove.add("nonExistentResource");
+        boolean result = ChannelManager.unregisterRMChannel(ch, toRemove);
+
+        assertTrue(result);
+        assertTrue(ChannelManager.isRegistered(ch));
+        RpcContext ctx = ChannelManager.getContextFromIdentified(ch);
+        assertNotNull(ctx);
+        assertTrue(ctx.getResourceSets().contains("resource1"));
+    }
+
+    @Test
+    public void unregisterRMChannelCleanupEmptyMapsTest() throws Exception {
+        Channel ch = mock(Channel.class);
+        when(ch.remoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 9093));
+        when(ch.isActive()).thenReturn(true);
+
+        RegisterRMRequest request = new RegisterRMRequest();
+        request.setApplicationId("test-app");
+        request.setTransactionServiceGroup("test-group");
+        request.setVersion("2.6.0");
+        request.setResourceIds("singleResource");
+        ChannelManager.registerRMChannel(request, ch);
+
+        assertTrue(ChannelManager.isRegistered(ch));
+
+        Set<String> toRemove = new HashSet<>();
+        toRemove.add("singleResource");
+        boolean result = ChannelManager.unregisterRMChannel(ch, toRemove);
+
+        assertTrue(result);
+        assertFalse(ChannelManager.isRegistered(ch));
+    }
 }
