@@ -75,7 +75,7 @@ public class UnregRmProcessor implements RemotingProcessor {
                 }
             }
         } catch (Exception exx) {
-            LOGGER.error("RM unregister fail, client:{}, error message:{}", ipAndPort, exx.getMessage());
+            LOGGER.error("RM unregister fail, client:{}, error message:{}", ipAndPort, exx.getMessage(), exx);
         }
         UnregisterRMResponse response = new UnregisterRMResponse(isSuccess);
         remotingServer.sendAsyncResponse(rpcMessage, ctx.channel(), response);
