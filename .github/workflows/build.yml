@@ -39,6 +39,7 @@ jobs:
         image: nacos/nacos-server:v2.4.2
         ports:
           - 8848:8848
+          - 9848:9848
         env:
           MODE: standalone
           SPRING_SECURITY_ENABLED: false
