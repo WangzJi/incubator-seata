@@ -81,6 +81,7 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
         registerProcessor();
         if (initialized.compareAndSet(false, true)) {
             super.init();
+            ServerVersionHolder.attach(TransactionRole.RMROLE.name());
 
             // Found one or more resources that were registered before initialization
             if (resourceManager != null
@@ -394,6 +395,8 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
         initialized.getAndSet(false);
         instance = null;
         transactionServiceGroup = null;
+        // after sendUnregisterToServers, which is the only reader of the recorded versions
+        ServerVersionHolder.detach(TransactionRole.RMROLE.name());
     }
 
     @Override

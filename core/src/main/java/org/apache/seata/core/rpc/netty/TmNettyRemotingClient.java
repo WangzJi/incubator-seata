@@ -215,6 +215,7 @@ public final class TmNettyRemotingClient extends AbstractNettyRemotingClient {
         registerProcessor();
         if (initialized.compareAndSet(false, true)) {
             super.init();
+            ServerVersionHolder.attach(NettyPoolKey.TransactionRole.TMROLE.name());
             if (isNotBlank(transactionServiceGroup)) {
                 initConnection();
             }
@@ -268,6 +269,7 @@ public final class TmNettyRemotingClient extends AbstractNettyRemotingClient {
         super.destroy();
         initialized.getAndSet(false);
         instance = null;
+        ServerVersionHolder.detach(NettyPoolKey.TransactionRole.TMROLE.name());
     }
 
     @Override

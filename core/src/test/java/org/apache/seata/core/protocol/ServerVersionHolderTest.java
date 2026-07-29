@@ -34,12 +34,23 @@ class ServerVersionHolderTest {
 
     @BeforeEach
     void setUp() {
+        detachAllClients();
         ServerVersionHolder.clear();
     }
 
     @AfterEach
     void tearDown() {
+        detachAllClients();
         ServerVersionHolder.clear();
+    }
+
+    /**
+     * A client attached by another test class would keep the holder from discarding its entries, so
+     * drain the active clients to make the detach cases independent of the execution order.
+     */
+    private static void detachAllClients() {
+        ServerVersionHolder.detach("RMROLE");
+        ServerVersionHolder.detach("TMROLE");
     }
 
     @Test
@@ -77,8 +88,44 @@ class ServerVersionHolderTest {
     }
 
     @Test
+    void isServerAboveOrEqualVersionReturnFalseWhenTargetVersionIsBlankTest() {
+        ServerVersionHolder.putServerVersion(SERVER_ADDRESS, "2.6.0");
+
+        assertFalse(ServerVersionHolder.isServerAboveOrEqualVersion(SERVER_ADDRESS, null));
+        assertFalse(ServerVersionHolder.isServerAboveOrEqualVersion(SERVER_ADDRESS, ""));
+        assertFalse(ServerVersionHolder.isServerAboveOrEqualVersion(SERVER_ADDRESS, "  "));
+    }
+
+    @Test
     void isServerAboveOrEqualVersionReturnFalseWhenUnknownTest() {
         assertFalse(ServerVersionHolder.isServerAboveOrEqualVersion("127.0.0.1:9999", Version.VERSION_2_6_0));
+    }
+
+    @Test
+    void detachKeepsVersionsWhileAnotherClientIsActiveTest() {
+        ServerVersionHolder.attach("RMROLE");
+        ServerVersionHolder.attach("TMROLE");
+        ServerVersionHolder.putServerVersion(SERVER_ADDRESS, "2.6.0");
+
+        ServerVersionHolder.detach("RMROLE");
+        assertEquals("2.6.0", ServerVersionHolder.getServerVersion(SERVER_ADDRESS));
+
+        ServerVersionHolder.detach("TMROLE");
+        assertNull(ServerVersionHolder.getServerVersion(SERVER_ADDRESS));
+    }
+
+    @Test
+    void detachOfUnknownClientKeepsVersionsTest() {
+        ServerVersionHolder.attach("RMROLE");
+        ServerVersionHolder.putServerVersion(SERVER_ADDRESS, "2.6.0");
+
+        ServerVersionHolder.detach("TMROLE");
+        ServerVersionHolder.detach(null);
+        ServerVersionHolder.detach("");
+        assertEquals("2.6.0", ServerVersionHolder.getServerVersion(SERVER_ADDRESS));
+
+        ServerVersionHolder.detach("RMROLE");
+        assertNull(ServerVersionHolder.getServerVersion(SERVER_ADDRESS));
     }
 
     @Test

@@ -19,6 +19,7 @@ package org.apache.seata.core.protocol;
 import org.apache.seata.common.util.StringUtils;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -33,12 +34,18 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@code NettyClientChannelManager#channels}), NOT the resolved remote address of a channel, so it
  * must not be mixed up with {@link Version#getChannelVersion(io.netty.channel.Channel)}.
  * <p>
- * Entries are only written, never removed on disconnection, and that is intentional: TM and RM
- * connect to the same servers through two independent channel managers, so removing an entry when
+ * Entries are not removed when a single channel disconnects, and that is intentional: TM and RM
+ * connect to the same servers through two independent channel managers, so dropping an entry when
  * one of them disconnects would break feature detection for the other one. A version is an
  * intrinsic attribute of the server at a given address and is overwritten on every successful
- * registration, and a stale entry can never be read for a live request since a request always goes
- * through a channel whose registration has just refreshed the entry.
+ * registration, so a stale entry can never be read through a live channel, since such a channel can
+ * only exist after a registration that has just refreshed the entry. A caller that looks a version
+ * up by address without holding a channel to that server is not covered by this and has to handle a
+ * stale or absent version itself.
+ * <p>
+ * The recorded versions are discarded once every client that could read them has been destroyed,
+ * see {@link #attach(String)} and {@link #detach(String)}, so the map does not outlive the clients
+ * that populated it.
  *
  * @since 2.6.0
  */
@@ -46,7 +53,40 @@ public class ServerVersionHolder {
 
     private static final Map<String, String> SERVER_VERSION_MAP = new ConcurrentHashMap<>();
 
+    private static final Set<String> ACTIVE_CLIENTS = ConcurrentHashMap.newKeySet();
+
     private ServerVersionHolder() {}
+
+    /**
+     * Mark a client as active. Should be called by a client once it is initialized, so that the
+     * recorded versions are kept as long as that client may read them.
+     *
+     * @param clientRole the role of the client, that is the name of a
+     *                   {@code NettyPoolKey.TransactionRole}
+     */
+    public static void attach(String clientRole) {
+        if (StringUtils.isBlank(clientRole)) {
+            return;
+        }
+        ACTIVE_CLIENTS.add(clientRole);
+    }
+
+    /**
+     * Mark a client as destroyed, and discard the recorded versions once no client is left. This is
+     * the only point at which entries are removed, see the class javadoc for why a single channel
+     * disconnection must not remove them.
+     *
+     * @param clientRole the role of the client, that is the name of a
+     *                   {@code NettyPoolKey.TransactionRole}
+     */
+    public static void detach(String clientRole) {
+        if (StringUtils.isBlank(clientRole)) {
+            return;
+        }
+        if (ACTIVE_CLIENTS.remove(clientRole) && ACTIVE_CLIENTS.isEmpty()) {
+            clear();
+        }
+    }
 
     /**
      * Record the version of the server. Should only be called by the rpc layer once the
@@ -86,7 +126,7 @@ public class ServerVersionHolder {
      */
     public static boolean isServerAboveOrEqualVersion(String serverAddress, String targetVersion) {
         String serverVersion = getServerVersion(serverAddress);
-        if (StringUtils.isBlank(serverVersion)) {
+        if (StringUtils.isBlank(serverVersion) || StringUtils.isBlank(targetVersion)) {
             return false;
         }
         return Version.isAboveOrEqualVersion(serverVersion, targetVersion);
