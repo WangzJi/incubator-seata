@@ -19,16 +19,6 @@ name: Label PR by Title
 on:
   pull_request_target:
     types: [opened, edited, reopened]
-  workflow_dispatch:
-    inputs:
-      pr_number:
-        description: 'PR number in this repository to verify'
-        required: true
-        type: string
-      dry_run:
-        description: 'Only log the matching label without applying it'
-        default: true
-        type: boolean
 
 permissions:
   pull-requests: write
@@ -42,21 +32,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            let pr = context.payload.pull_request;
-            const manual = context.eventName === 'workflow_dispatch';
-            const dryRun = manual && String(context.payload.inputs.dry_run) !== 'false';
-            if (manual) {
-              const number = String(context.payload.inputs.pr_number).trim();
-              if (!/^[1-9]\d*$/.test(number) || !Number.isSafeInteger(Number(number))) {
-                throw new Error('pr_number must be a positive safe integer.');
-              }
-              const response = await github.rest.pulls.get({
-                ...context.repo,
-                pull_number: Number(number),
-              });
-              pr = response.data;
-            }
-            core.info(`Checking PR #${pr.number}: ${pr.title}`);
+            const pr = context.payload.pull_request;
             const match = pr.title.trim().match(
               /^(bugfix|docs|test|optimize|feature|refactor)(?:\([^)]*\))?\s*:/i
             );
@@ -76,11 +52,6 @@ jobs:
             const label = labels[match[1].toLowerCase()];
             if (pr.labels.some(existing => existing.name === label)) {
               core.info(`PR already has label "${label}".`);
-              return;
-            }
-
-            core.info(`Matched label "${label}"; dry_run=${dryRun}.`);
-            if (dryRun) {
               return;
             }
 
